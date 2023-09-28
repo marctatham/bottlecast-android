@@ -1,0 +1,8 @@
+# Firebase-project specific configuration
+firebase.json
+
+# IntelliJ
+.idea
+
+# OSX
+.DS_Store
