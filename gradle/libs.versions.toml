@@ -1,19 +1,19 @@
 [versions]
-pluginAndroidGradle = "8.1.4"
-pluginKotlin = "1.9.25"
+pluginAndroidGradle = "8.9.1"
+pluginKotlin = "2.0.21"
 pluginParcelize = "1.9.0"
-pluginKsp = "1.9.24-1.0.20"
-pluginHilt = "2.51"
+pluginKsp = "2.0.21-1.0.28"
+pluginHilt = "2.56.2"
 pluginGoogleServices = "4.4.2"
-pluginFirebaseCrashlytics = "3.0.2"
+pluginFirebaseCrashlytics = "3.0.3"
 coroutines = "1.7.3"
-androidxCore = "1.13.1"
-androidxLifecycle = "2.8.5"
-androidxActivity = "1.9.2"
-androidxComposeBom = "2024.09.01"
+androidxCore = "1.16.0"
+androidxLifecycle = "2.8.7"
+androidxActivity = "1.10.1"
+androidxComposeBom = "2025.04.01"
 androidxComposeCompiler = "1.5.15"
 androidxHilt = "1.2.0"
-androidxNavigation = "2.8.0"
+androidxNavigation = "2.8.9"
 androidx-window = "1.3.0"
 androidxTest = "1.6.1"
 androidxTestExt = "1.2.1"
@@ -26,8 +26,8 @@ timber = "5.0.1"
 lottie = "6.1.0"
 firebaseAnalytics = "21.3.0"
 firebaseAuth = "22.1.0"
-playServices = "21.2.0"
-firebase = "33.3.0"
+playServices = "21.3.0"
+firebase = "33.13.0"
 googleFonts = "1.5.1"
 
 [libraries]
@@ -80,10 +80,10 @@ androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "pluginAndroidGradle" }
-android-library = { id = "com.android.library", version.ref = "pluginAndroidGradle" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "pluginKotlin" }
-kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "pluginParcelize" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "pluginKotlin" }
 kotlin-kapt = { id = "org.jetbrains.kotlin.kapt", version.ref = "pluginKotlin" }
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "pluginParcelize" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "pluginKsp" }
 hilt-gradle = { id = "com.google.dagger.hilt.android", version.ref = "pluginHilt" }
 google-services = { id = "com.google.gms.google-services", version.ref = "pluginGoogleServices" }

@@ -1,3 +1,4 @@
+import com.android.build.api.dsl.ApkSigningConfig
 import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 
 /*
@@ -20,17 +21,20 @@ import com.android.build.gradle.internal.cxx.configure.gradleLocalProperties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.kotlin.kapt)
     alias(libs.plugins.hilt.gradle)
     alias(libs.plugins.ksp)
+
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
 }
 
 android {
     namespace = "com.bottlecast.app"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.bottlecast.app"
@@ -46,16 +50,30 @@ android {
     }
 
     signingConfigs {
-        val keyStoreAlias = gradleLocalProperties(rootDir).getProperty("keyStoreAlias")
-        val keyStoreAliasPassword = gradleLocalProperties(rootDir).getProperty("keyStoreAliasPassword")
-        val keyStorePassword = gradleLocalProperties(rootDir).getProperty("keyStorePassword")
+
+        // TODO: fix up signing config block
+//        val keyStoreAlias = project.properties["keyStoreAlias"]  as String
+//        val keyStoreAliasPassword = project.properties["keyStoreAliasPassword"]  as String
+//        val keyStorePassword = project.properties["keyStorePassword"] as String
+//
+//        create("release") {
+//            println("keyStoreAlias: $keyStoreAlias keyStoreAliasPassword: $keyStoreAliasPassword keyStorePassword: $keyStorePassword")
+//            storeFile = file("bottlecast-upload-keystore.jks")
+//            storePassword = keyStorePassword
+//            keyAlias = keyStoreAlias
+//            keyPassword = keyStoreAliasPassword
+//        }
 
         create("release") {
-            println("keyStoreAlias: $keyStoreAlias keyStoreAliasPassword: $keyStoreAliasPassword keyStorePassword: $keyStorePassword")
-            storeFile = file("bottlecast-upload-keystore.jks")
-            storePassword = keyStorePassword
-            keyAlias = keyStoreAlias
-            keyPassword = keyStoreAliasPassword
+//            val keyStoreAlias = gradleLocalProperties(rootDir).getProperty("keyStoreAlias")
+//            val keyStoreAliasPassword = gradleLocalProperties(rootDir).getProperty("keyStoreAliasPassword")
+//            val keyStorePassword = gradleLocalProperties(rootDir).getProperty("keyStorePassword")
+
+            val debugSigningConfig: ApkSigningConfig = getByName("debug")
+            storeFile = debugSigningConfig.storeFile
+            storePassword = debugSigningConfig.storePassword
+            keyAlias = debugSigningConfig.keyAlias
+            keyPassword = debugSigningConfig.keyPassword
         }
     }
 
@@ -83,12 +101,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "11"
     }
 
     buildFeatures {
@@ -97,10 +115,6 @@ android {
         buildConfig = false
         renderScript = false
         shaders = false
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.androidxComposeCompiler.get()
     }
 }
 
