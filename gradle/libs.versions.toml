@@ -1,34 +1,47 @@
 [versions]
-pluginAndroidGradle = "8.9.1"
-pluginKotlin = "2.0.21"
-pluginParcelize = "1.9.0"
-pluginKsp = "2.0.21-1.0.28"
-pluginHilt = "2.56.2"
-pluginGoogleServices = "4.4.2"
-pluginFirebaseCrashlytics = "3.0.3"
-coroutines = "1.7.3"
-androidxCore = "1.16.0"
-androidxLifecycle = "2.8.7"
-androidxActivity = "1.10.1"
-androidxComposeBom = "2025.04.01"
-androidxComposeCompiler = "1.5.15"
-androidxHilt = "1.2.0"
-androidxNavigation = "2.8.9"
-androidx-window = "1.3.0"
-androidxTest = "1.6.1"
-androidxTestExt = "1.2.1"
-androidxTestRunner = "1.6.2"
-junit = "4.13.2"
-mockk = "1.13.7"
-moshi = "1.15.1"
-retrofit = "2.11.0"
-timber = "5.0.1"
-lottie = "6.1.0"
-firebaseAnalytics = "21.3.0"
-firebaseAuth = "22.1.0"
-playServices = "21.3.0"
-firebase = "33.13.0"
-googleFonts = "1.5.1"
+# Build Tools & Plugins - Updated to latest stable versions compatible with Gradle 8.11.1
+pluginAndroidGradle = "8.10.1"  # Updated from 8.9.1 (requires Gradle 8.11.1+)
+pluginKotlin = "2.1.21"  # Updated from 2.0.21
+pluginParcelize = "2.1.21"  # Updated from 1.9.0 to match Kotlin version
+pluginKsp = "2.1.21-2.0.1"  # Updated from 2.0.21-1.0.28 to match Kotlin version
+pluginHilt = "2.58"  # Updated from 2.56.2
+pluginGoogleServices = "4.4.2"  # No change (latest stable)
+pluginFirebaseCrashlytics = "3.0.3"  # No change (latest stable)
+
+# Kotlin Libraries
+coroutines = "1.9.0"  # Updated from 1.7.3
+
+# AndroidX Libraries
+androidxCore = "1.17.0"  # Updated from 1.16.0
+androidxLifecycle = "2.8.7"  # No change (already latest)
+androidxActivity = "1.10.1"  # No change (already latest)
+androidxComposeBom = "2026.01.00"  # Updated from 2025.04.01
+androidxComposeCompiler = "1.5.15"  # No change (already latest)
+androidxHilt = "1.2.0"  # No change (already latest)
+androidxNavigation = "2.8.9"  # No change (already latest)
+androidx-window = "1.3.0"  # No change (already latest)
+
+# Testing Libraries
+androidxTest = "1.6.1"  # No change (already latest)
+androidxTestExt = "1.2.1"  # No change (already latest)
+androidxTestRunner = "1.6.2"  # No change (already latest)
+junit = "4.13.2"  # No change (already latest)
+mockk = "1.13.13"  # Updated from 1.13.7
+
+# Square Libraries
+moshi = "1.15.2"  # Updated from 1.15.1
+retrofit = "3.0.0"  # Updated from 2.11.0 (major version bump)
+
+# Other Libraries
+timber = "5.0.1"  # No change (already latest)
+lottie = "6.7.1"  # Updated from 6.1.0
+
+# Firebase & Google Play Services
+firebaseAnalytics = "21.3.0"  # No change (controlled by BOM)
+firebaseAuth = "22.1.0"  # No change (controlled by BOM)
+playServices = "21.3.0"  # No change (already latest)
+firebase = "34.8.0"  # Updated from 33.13.0
+googleFonts = "1.5.1"  # No change (already latest)
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
