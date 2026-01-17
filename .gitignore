@@ -2,7 +2,12 @@
 bottlecast-upload-keystore.jks
 
 # Built application files
+*.apk
+*.aab
+*.ap_
+*.dex
 /build
+/*/build
 /release/output.json
 /debug/output.json
 
@@ -13,6 +18,7 @@ bottlecast-upload-keystore.jks
 
 # Gradle files
 .gradle/
+gradle-app.setting
 
 # Local configuration file (sdk path, etc)
 local.properties
@@ -25,6 +31,11 @@ captures/
 
 # IntelliJ
 .idea
+*.iml
 
 # OSX
 .DS_Store
+
+# Firebase
+google-services.json
+app/google-services.json
