@@ -89,7 +89,7 @@ mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 androidx-compose-materialWindow = { module = "androidx.compose.material3:material3-window-size-class" }
 androidx-compose-material-iconsExtended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-window = { module = "androidx.window:window", version.ref = "androidx-window" }
-androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version = "googleFonts" }
+androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "googleFonts" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "pluginAndroidGradle" }

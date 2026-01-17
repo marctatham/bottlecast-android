@@ -72,11 +72,12 @@ All dependencies have been updated to their latest stable versions as of January
 
 Retrofit 3.0.0 is a major version update with the following key changes:
 
-1. **Binary Compatibility**: Maintains binary compatibility with Retrofit 2.x, so existing code should continue to work.
-2. **OkHttp Upgrade**: Internally uses OkHttp 4.12+ with improved Kotlin support.
-3. **No Breaking API Changes**: The public API remains the same, so no code changes are required.
+1. **OkHttp Upgrade**: The primary change is upgrading the internal OkHttp dependency from 3.14 (legacy) to OkHttp 4.12, which is written in Kotlin and actively maintained.
+2. **Transitive Kotlin Dependency**: Because OkHttp 4.x is written in Kotlin, Retrofit 3.0.0 introduces a transitive dependency on Kotlin (already present in this project).
+3. **Forward Binary Compatibility**: Maintains forward binary compatibility with Retrofit 2.x at runtime, so libraries compiled against 2.x can still work with 3.x.
+4. **No API Changes**: The public API remains unchanged - no code modifications are required.
 
-**Action Required**: None - the upgrade should be transparent to the application code.
+**Action Required**: None - the upgrade is transparent to application code as Kotlin is already in use.
 
 ### Kotlin 2.1.21
 
