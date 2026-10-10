@@ -1,8 +1,21 @@
 package com.bottlecast.app
 
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -30,38 +43,59 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = Screen.HOME,
+    // the app draws edge-to-edge, so the system bar areas are handled here once for every screen
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // keep the status bar painted in the primary colour, as it was before edge-to-edge
+        Spacer(
+            modifier = Modifier
+                .fillMaxWidth()
+                .windowInsetsTopHeight(WindowInsets.statusBars)
+                .background(MaterialTheme.colorScheme.primary)
+        )
 
+        NavHost(
+            navController = navController,
+            startDestination = Screen.HOME,
+            // keep content clear of the navigation bar, display cutouts & the keyboard,
+            // and stop oversized backgrounds (e.g. CustomBox's circle) painting over the status bar
+            modifier = Modifier
+                .weight(1f)
+                .clipToBounds()
+                .consumeWindowInsets(WindowInsets.statusBars)
+                .safeDrawingPadding(),
         ) {
-        composable(Screen.HOME) {
-            HomeScreen(
-                onGetMessageHandler = { navController.navigate(Screen.GET_MESSAGES) },
-                onPostMessageHandler = {
-                    val destination: String = viewModel.onNavigateToPostMessage()
-                    navController.navigate(destination)
-                },
-                onViewMessagesHandler = { navController.navigate(Screen.VIEW_MESSAGES) },
-            )
+            composable(Screen.HOME) {
+                HomeScreen(
+                    onGetMessageHandler = { navController.navigate(Screen.GET_MESSAGES) },
+                    onPostMessageHandler = {
+                        val destination: String = viewModel.onNavigateToPostMessage()
+                        navController.navigate(destination)
+                    },
+                    onViewMessagesHandler = { navController.navigate(Screen.VIEW_MESSAGES) },
+                )
+            }
+            composable(Screen.GET_MESSAGES) { GetMessageScreen(homeHandler) }
+            composable(Screen.POST_MESSAGE_EDUCATIONAL) {
+                LoginRequiredToPostScreen(
+                    onProceedHandler = {
+                        navController.popBackStack(Screen.POST_MESSAGE_EDUCATIONAL, inclusive = true)
+                        navController.navigate(Screen.POST_MESSAGE)
+                    },
+                    onBackHandler = backHandler,
+                    onCancelHandler = homeHandler
+                )
+            }
+            composable(Screen.POST_MESSAGE) {
+                PostMessageScreen(
+                    onBackHandler = backHandler,
+                    onHomeHandler = homeHandler,
+                )
+            }
+            composable(Screen.VIEW_MESSAGES) { ViewMessagesScreen() }
         }
-        composable(Screen.GET_MESSAGES) { GetMessageScreen(homeHandler) }
-        composable(Screen.POST_MESSAGE_EDUCATIONAL) {
-            LoginRequiredToPostScreen(
-                onProceedHandler = {
-                    navController.popBackStack(Screen.POST_MESSAGE_EDUCATIONAL, inclusive = true)
-                    navController.navigate(Screen.POST_MESSAGE)
-                },
-                onBackHandler = backHandler,
-                onCancelHandler = homeHandler
-            )
-        }
-        composable(Screen.POST_MESSAGE) {
-            PostMessageScreen(
-                onBackHandler = backHandler,
-                onHomeHandler = homeHandler,
-            )
-        }
-        composable(Screen.VIEW_MESSAGES) { ViewMessagesScreen() }
     }
 }

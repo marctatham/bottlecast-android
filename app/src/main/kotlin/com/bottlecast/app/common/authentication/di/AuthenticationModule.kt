@@ -1,8 +1,8 @@
 package com.bottlecast.app.common.authentication.di
 
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.auth.auth
+import com.google.firebase.Firebase
 import com.bottlecast.app.common.authentication.data.AuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.threading.DispatcherIO

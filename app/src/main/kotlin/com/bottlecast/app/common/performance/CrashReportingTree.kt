@@ -1,8 +1,8 @@
 package com.bottlecast.app.common.performance
 
 import android.util.Log
-import com.google.firebase.crashlytics.ktx.crashlytics
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.crashlytics.crashlytics
+import com.google.firebase.Firebase
 import timber.log.Timber
 
 /** A tree which logs important information for crash reporting.  */
