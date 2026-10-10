@@ -12,20 +12,18 @@ import javax.inject.Singleton
 class FakeMessageRepository @Inject constructor() : IMessageRepository {
 
     private val messages: MutableList<MessageEntity> = mutableListOf(
-        MessageEntity(message = "Ahoy! This bottle washed up from the test sea.", userId = "fakeUserId")
+        MessageEntity(message = SEEDED_MESSAGE, userId = "fakeUserId")
     )
 
-    var getMessageCalls: Int = 0
-        private set
-
-    override suspend fun getMessage(): MessageEntity {
-        getMessageCalls++
-        return messages.first()
-    }
+    override suspend fun getMessage(): MessageEntity = messages.first()
 
     override suspend fun getMessages(): List<MessageEntity> = messages.toList()
 
     override suspend fun postMessage(message: MessageEntity) {
         messages += message
+    }
+
+    companion object {
+        const val SEEDED_MESSAGE: String = "Ahoy! This bottle washed up from the test sea."
     }
 }

@@ -27,7 +27,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCancellationBehavior
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
@@ -63,16 +62,13 @@ private fun GetMessageView(
         handlerDismissReportDialog()
     }
 
-    // animation control
-    val isPlaying = uiState is MessageUiState.PlayingAnimation
+    // animation control: the bottle always plays through once, independent of uiState, as the
+    // composition is parsed asynchronously & may only be ready after the message has arrived
     val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.message_from_bottle))
     val progress: Float by animateLottieCompositionAsState(
         composition = composition,
-        isPlaying = isPlaying,
         speed = 1f,
-        restartOnPlay = true,
         iterations = 1,
-        cancellationBehavior = LottieCancellationBehavior.OnIterationFinish
     )
 
     val transitionEnterFade = fadeIn(animationSpec = tween(2000, 0, FastOutSlowInEasing))
@@ -168,7 +164,7 @@ private fun GetMessageReceivedPreview(
 ) {
     GetMessageView(
         onHomeHandler = {},
-        uiState = MessageUiState.MessageReceived(MessageEntity("1", "Hello World"))
+        uiState = MessageUiState.MessageReceived(MessageEntity(message = "Hello World", userId = "1"))
     )
 }
 
