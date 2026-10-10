@@ -143,8 +143,10 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.crashlytics)
 
-    // play services
-    implementation(libs.play.services.auth)
+    // sign in with google, via credential manager
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
 
     // ui bits (worth revisiting & replacing with jetpack compose for the most part)
     implementation(libs.androidx.ui.text.google.fonts)

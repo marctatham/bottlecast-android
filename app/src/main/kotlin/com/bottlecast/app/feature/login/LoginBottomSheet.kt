@@ -1,15 +1,7 @@
 package com.bottlecast.app.feature.login
 
-import android.app.Activity
 import android.content.Context
 import android.widget.Toast
-import androidx.activity.compose.ManagedActivityResultLauncher
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultLauncher
-import androidx.activity.result.IntentSenderRequest
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.result.contract.ActivityResultContracts.StartIntentSenderForResult.Companion.EXTRA_SEND_INTENT_EXCEPTION
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -32,15 +24,20 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.google.android.gms.auth.api.identity.BeginSignInRequest
-import com.google.android.gms.auth.api.identity.Identity
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.bottlecast.app.R
 import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.components.BottlingButtonType
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -57,39 +54,16 @@ fun LoginBottomSheet(
     val uiState: State by viewModel.state.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
 
-    // configure & remember launcher that facilitates the Google One Tap Sign-in UI
-    val launcher: ManagedActivityResultLauncher<IntentSenderRequest, ActivityResult> =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.StartIntentSenderForResult()
-        ) { result ->
-            if (result.resultCode != Activity.RESULT_OK) {
-                // The user cancelled the login, was it due to an Exception?
-                if (result.data?.action == ActivityResultContracts.StartIntentSenderForResult.ACTION_INTENT_SENDER_REQUEST) {
-                    val exception = result.data?.getSerializableExtra(EXTRA_SEND_INTENT_EXCEPTION)
-                    Timber.e("Couldn't sign in using Google One Tap: $exception")
-                    Toast.makeText(
-                        context,
-                        "There was a problem signing in with Google",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-
-                return@rememberLauncherForActivityResult
-            }
-            val oneTapClient = Identity.getSignInClient(context)
-            val credential = oneTapClient.getSignInCredentialFromIntent(result.data)
-            val idToken = credential.googleIdToken
-            if (idToken != null) {
-                // Got an ID token from Google. Use it to authenticate with your backend.
-                Timber.i("Sign in with Google successful, attempting authenticate to backend with idToken")
-                viewModel.initiateLoginWithGoogle(idToken)
-            } else {
-                Timber.e("Null idToken from google, sign in to google failed")
-            }
-        }
-
     val clickAnon: () -> Unit = { viewModel.initiateAnonymousLogin() }
-    val clickGoogle: () -> Unit = { scope.launch { signInWithGoogle(context, launcher) } }
+    val clickGoogle: () -> Unit = {
+        scope.launch {
+            val idToken: String = signInWithGoogle(context) ?: return@launch
+
+            // Got an ID token from Google. Use it to authenticate with your backend.
+            Timber.i("Sign in with Google successful, attempting authenticate to backend with idToken")
+            viewModel.initiateLoginWithGoogle(idToken)
+        }
+    }
     LoginBottomSheet(
         signInWithGoogleHandler = clickGoogle,
         signInAnonymouslyHandler = clickAnon,
@@ -232,40 +206,35 @@ private fun LoadingContentPreview(
     )
 }
 
-suspend fun signInWithGoogle(
-    context: Context,
-    launcher: ActivityResultLauncher<IntentSenderRequest>
-) {
-    val oneTapClient = Identity.getSignInClient(context)
-    val signInRequest = BeginSignInRequest.builder()
-        .setPasswordRequestOptions(
-            BeginSignInRequest.PasswordRequestOptions.builder()
-                .setSupported(true)
-                .build()
-        )
-        .setGoogleIdTokenRequestOptions(
-            BeginSignInRequest.GoogleIdTokenRequestOptions.builder()
-                .setSupported(true)
-                .setServerClientId(context.getString(R.string.firebase_webclient_id)) // Your server's client ID, not your Android client ID.
-                .setFilterByAuthorizedAccounts(false) // Only show accounts previously used to sign in.
-                .build()
-        )
+/**
+ * Presents Credential Manager's Google account picker & returns the chosen account's ID token.
+ * Returns null if the user cancelled, or if signing in failed (in which case they've been told).
+ */
+private suspend fun signInWithGoogle(context: Context): String? {
+    val googleIdOption = GetGoogleIdOption.Builder()
+        .setServerClientId(context.getString(R.string.firebase_webclient_id)) // Your server's client ID, not your Android client ID.
+        .setFilterByAuthorizedAccounts(false) // Offer all of the user's Google accounts, not just those previously used to sign in.
         .setAutoSelectEnabled(true) // Automatically sign in when exactly one credential is retrieved.
         .build()
+    val request = GetCredentialRequest(listOf(googleIdOption))
 
     try {
-        // Use await() from https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-play-services
-        // Instead of listeners that aren't cleaned up automatically
-        val result = oneTapClient.beginSignIn(signInRequest).await()
-
-        // Now construct the IntentSenderRequest the launcher requires
-        val intentSenderRequest = IntentSenderRequest.Builder(result.pendingIntent).build()
-        launcher.launch(intentSenderRequest)
-    } catch (exception: Exception) {
-        // No saved credentials found. Launch the One Tap sign-up flow, or
-        // do nothing which results in no state changes & therefore continues
-        // presenting the UnauthenticatedView.
-        Timber.e(exception, "there was a problem Signing in with Google One Tap")
+        val credential = CredentialManager.create(context).getCredential(context, request).credential
+        if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+            return GoogleIdTokenCredential.createFrom(credential.data).idToken
+        }
+        Timber.e("Unexpected credential type from Credential Manager: ${credential.type}")
+    } catch (exception: GetCredentialCancellationException) {
+        // The user dismissed the account picker, which continues presenting the login options
+        Timber.i("Sign in with Google was cancelled by the user")
+        return null
+    } catch (exception: GetCredentialException) {
+        Timber.e(exception, "Couldn't sign in with Google")
+    } catch (exception: GoogleIdTokenParsingException) {
+        Timber.e(exception, "Received an invalid Google ID token credential")
     }
+
+    Toast.makeText(context, "There was a problem signing in with Google", Toast.LENGTH_SHORT).show()
+    return null
 }
 
