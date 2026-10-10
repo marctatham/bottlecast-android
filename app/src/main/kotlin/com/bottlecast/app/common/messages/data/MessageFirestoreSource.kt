@@ -20,6 +20,9 @@ import javax.inject.Inject
 
 private const val COLLECTION = "messages"
 
+// how many documents to fetch per random search, so that malformed ones can be skipped over
+private const val RANDOM_SEARCH_BATCH = 10L
+
 class MessageFirestoreSource @Inject constructor(
     firestore: FirebaseFirestore,
     private val mapper: MessageDataModelMapper,
@@ -36,35 +39,32 @@ class MessageFirestoreSource @Inject constructor(
         val searchUpTheIndex: Query = collectionReference
             .whereGreaterThanOrEqualTo(FieldPath.documentId(), randomIndexId)
             .orderBy(FieldPath.documentId())
-            .limit(1)
+            .limit(RANDOM_SEARCH_BATCH)
 
-        // define the query to search down the index
-        val searchDownTheIndex: Query = collectionReference
-            .whereLessThanOrEqualTo(FieldPath.documentId(), randomIndexId)
+        // define the query to wrap around to the start of the index
+        val searchFromTheStart: Query = collectionReference
             .orderBy(FieldPath.documentId())
-            .limit(1)
+            .limit(RANDOM_SEARCH_BATCH)
 
-        var querySnapshot: QuerySnapshot = Tasks.await(searchUpTheIndex.get())
-        if (querySnapshot.documents.size == 0) {
-            Timber.d("No firestore document found, searching down the index instead")
-            querySnapshot = Tasks.await(searchDownTheIndex.get())
+        findFirstMessage(searchUpTheIndex)?.let { return it }
+
+        Timber.d("No message found up the index, searching from the start instead")
+        return findFirstMessage(searchFromTheStart)
+            ?: throw IllegalStateException("No message exists found in remoteSource")
+    }
+
+    // the first document of the query that holds a readable message, skipping any malformed ones
+    private fun findFirstMessage(query: Query): MessageEntity? {
+        val querySnapshot: QuerySnapshot = Tasks.await(query.get())
+        return querySnapshot.documents.firstNotNullOfOrNull { mapMessage(it) }
+    }
+
+    private fun mapMessage(doc: DocumentSnapshot): MessageEntity? {
+        val message: MessageEntity? = doc.data?.let { mapper.mapFrom(it) }
+        if (message == null) {
+            Timber.w("Skipping firestore document ${doc.id} as it holds no readable message")
         }
-
-        if (querySnapshot.documents.size == 0) {
-            Timber.d("No documents found down the index EITHER")
-            querySnapshot = Tasks.await(searchDownTheIndex.get())
-        }
-
-        val doc: DocumentSnapshot = querySnapshot.documents.first()
-        if (doc.exists()) {
-            val docData: Map<String, Any> = doc.data!!
-            val messageContent: String = docData["messageContent"].toString()
-            val userId: String = docData["userId"].toString()
-            val dataModel = MessageFirestoreDataModel(messageContent, userId)
-            return mapper.mapFrom(dataModel)
-        }
-
-        throw IllegalStateException("No message exists found in remoteSource")
+        return message
     }
 
     override suspend fun getMessages(): List<MessageEntity> {
@@ -72,14 +72,7 @@ class MessageFirestoreSource @Inject constructor(
         val querySnapshot: QuerySnapshot = Tasks.await(collectionReference.get())
         return querySnapshot
             .documents
-            .map {
-                MessageFirestoreDataModel(
-                    it.data!!["messageContent"].toString(),
-                    it.data!!["userId"].toString()
-                )
-            }.map {
-                mapper.mapFrom(it)
-            }
+            .mapNotNull { mapMessage(it) }
     }
 
     override suspend fun postMessage(message: MessageEntity) {
