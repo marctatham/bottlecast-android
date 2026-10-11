@@ -6,7 +6,7 @@ publisher service account) mints a short-lived token for that service account, a
 grants the service account its release permissions for this app.
 
     scripts/play_upload.py check
-    scripts/play_upload.py release --track production --notes "What's new" [--rollout 0.2] [--yes]
+    scripts/play_upload.py release --track production --notes "What's new" [--name "Bug fixes"] [--rollout 0.2] [--yes]
 
 `check`, and `release` without --yes, change nothing: they open an edit, report, then discard it.
 `release --yes` uploads the bundle, puts it on the track, validates the edit and commits it.
@@ -96,6 +96,7 @@ def main():
     release_parser.add_argument("--bundle", default=DEFAULT_BUNDLE)
     release_parser.add_argument("--track", required=True, help="internal, alpha, beta or production")
     release_parser.add_argument("--notes", required=True, help="release notes, in the listing's default language")
+    release_parser.add_argument("--name", help="release name shown in Play Console (default: \"<versionCode> (<versionName>)\")")
     release_parser.add_argument("--rollout", type=float, help="staged rollout fraction, e.g. 0.2 (default: everyone)")
     release_parser.add_argument("--yes", action="store_true", help="upload and commit for real")
     args = parser.parse_args()
@@ -120,7 +121,7 @@ def main():
             raise SystemExit(f"versionCode {version_code} is not above the {highest_version_code(tracks)} already on Play")
 
         release = {
-            "name": f"{version_code} ({version_name})",
+            "name": args.name or f"{version_code} ({version_name})",
             "versionCodes": [str(version_code)],
             "releaseNotes": [{"language": language, "text": args.notes}],
             "status": "inProgress" if args.rollout else "completed",
@@ -128,7 +129,8 @@ def main():
         if args.rollout:
             release["userFraction"] = args.rollout
         rollout = f"{args.rollout:.0%} staged rollout" if args.rollout else "full rollout"
-        print(f"\nplanned: {release['name']} -> {args.track}, {rollout}, notes ({language}): {args.notes!r}")
+        print(f"\nplanned: {release['name']!r}, versionCode {version_code} ({version_name}) -> {args.track}, "
+              f"{rollout}, notes ({language}): {args.notes!r}")
         if not args.yes:
             print("dry run: nothing uploaded, pass --yes to upload and commit")
             return
