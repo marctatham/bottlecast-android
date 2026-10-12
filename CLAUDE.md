@@ -41,7 +41,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **UI text** lives in `res/values/strings.xml` (`stringResource`, `@StringRes` parameters). No hard-coded strings.
 - **Hilt and dispatchers:** modules use `@InstallIn(SingletonComponent::class)` with `@Provides @Singleton`; leaf classes use `@Inject constructor`. Inject dispatchers with the qualifiers in `common/threading/` (`@DispatcherIO` and the rest), and switch with `withContext` in repositories.
 - **Analytics:** add a case to the sealed `AnalyticsEvent` (snake_case name) and send it through `LocalTracker.current`. Tracker wiring is in two `AnalyticsModule`s, one in `src/debug` and one in `src/release`; change both.
-- **Logging:** Timber only. Never log tokens, emails or message text, because release builds forward info and above to Crashlytics. `AuthenticationRepository` still logs the ID token at debug level; remove that when you touch auth.
+- **Logging:** Timber only. Never log tokens, emails or message text, because release builds forward info and above to Crashlytics.
 - **Redesign UI** takes colours, type, shapes and spacing from theme tokens: no literal hex or one-off sizes in composables. Use start/end, never left/right. The spec turns RTL on, though the manifest still sets `supportsRtl="false"`.
 
 ## Build and verify

@@ -44,7 +44,6 @@ class AuthenticationRepository constructor(
             val taskGetIdToken: Task<GetTokenResult> = currentUser.getIdToken(false)
             taskGetIdToken.addOnSuccessListener { tokenResult ->
                 Timber.d("Received token result...")
-                Timber.d("Token - [${tokenResult.token}]")
                 Timber.d("Sign in Provider - [${tokenResult.signInProvider}]")
 
                 val providerType: AuthProviderType = getProviderTypeForSignInProvider(tokenResult.signInProvider!!)
