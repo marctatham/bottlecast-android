@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BottleCast — Settings, full scroll</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&amp;family=Roboto+Mono:wght@400;500&amp;family=Roboto+Slab:wght@400;500;600;700;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#63D3FF}a:hover{color:#9BE3FF}
+@keyframes bc-bob{0%,100%{transform:translateY(0) rotate(-14deg)}50%{transform:translateY(-6px) rotate(-9deg)}}
+@keyframes bc-halo{0%,100%{opacity:0.9}50%{opacity:1}}
+.bc-bob{animation:bc-bob 6.7s ease-in-out infinite;transform-origin:50% 85%}
+.bc-halo{animation:bc-halo 6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.bc-bob,.bc-halo{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 1400px; overflow: hidden; box-sizing: border-box; background: #0D1214; color: #E8ECE6; font-family: 'Roboto Flex', system-ui, sans-serif">
+
+<div aria-hidden="true" style="position: absolute; left: -227px; top: -736px; width: 844px; height: 844px; border-radius: 50%; background: radial-gradient(circle at 72% 94%, #2E383B 0%, #20272A 26%)"></div>
+<div aria-hidden="true" style="position: absolute; left: -229px; top: -738px; width: 846px; height: 846px; border-radius: 50%; border: 1px solid transparent; border-bottom-color: rgba(240,224,196,0.28)"></div>
+<div aria-hidden="true" style="position: absolute; left: 300px; top: 56px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.4"></div>
+<div aria-hidden="true" style="position: absolute; left: 68px; top: 94px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.3"></div>
+
+<div style="position: absolute; left: 0; top: 44px; width: 390px; height: 64px; box-sizing: border-box; padding: 0 4px; display: flex; align-items: center">
+<a href="Profile.dc.html" aria-label="Back" style="flex: none; width: 48px; height: 48px; border-radius: 999px; color: #E8ECE6; display: flex; align-items: center; justify-content: center; text-decoration: none">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+</a>
+<h1 style="flex: 1; margin: 0; text-align: center; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 24px; line-height: 32px; color: #E8ECE6">Settings</h1>
+<span aria-hidden="true" style="flex: none; width: 48px; height: 48px"></span>
+</div>
+
+<div style="position: absolute; left: 16px; top: 112px; width: 358px; display: flex; flex-direction: column; gap: 12px">
+
+<section aria-labelledby="sec-appearance">
+<h2 id="sec-appearance" style="margin: 0 0 6px; padding: 0 16px; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE">Appearance</h2>
+<div style="background: #161D20; border-radius: 24px; overflow: hidden">
+<div style="min-height: 48px; box-sizing: border-box; padding: 0 8px 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<span id="set-theme" style="font-size: 16px; line-height: 24px; color: #E8ECE6">Theme</span>
+<div role="group" aria-labelledby="set-theme" style="display: flex">
+<button type="button" aria-pressed="true" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; padding: 4px 0; background: transparent; font: inherit; color: inherit; cursor: pointer; height: 48px; display: flex; align-items: center">
+<span style="height: 40px; box-sizing: border-box; padding: 0 12px 0 10px; border: 1px solid #7E8B85; border-radius: 999px 0 0 999px; background: #2E3A34; color: #DCE8DF; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 14px; line-height: 20px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg>System</span>
+</button>
+<button type="button" aria-pressed="false" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; padding: 4px 0; background: transparent; font: inherit; color: inherit; cursor: pointer; height: 48px; display: flex; align-items: center">
+<span style="height: 40px; box-sizing: border-box; padding: 0 16px; border: 1px solid #7E8B85; border-left: 0; color: #E8ECE6; display: flex; align-items: center; font-weight: 500; font-size: 14px; line-height: 20px">Night</span>
+</button>
+<button type="button" aria-pressed="false" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; padding: 4px 0; background: transparent; font: inherit; color: inherit; cursor: pointer; height: 48px; display: flex; align-items: center">
+<span style="height: 40px; box-sizing: border-box; padding: 0 16px; border: 1px solid #7E8B85; border-left: 0; border-radius: 0 999px 999px 0; color: #E8ECE6; display: flex; align-items: center; font-weight: 500; font-size: 14px; line-height: 20px">Dawn</span>
+</button>
+</div>
+</div>
+<label style="display: flex; align-items: center; gap: 16px; min-height: 48px; box-sizing: border-box; padding: 8px 16px; border-top: 1px solid #343E41; cursor: pointer">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Reduce motion</span>
+<span style="position: relative; flex: none; width: 52px; height: 32px">
+<input type="checkbox" role="switch" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; margin: 0; opacity: 0; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; box-sizing: border-box; border-radius: 999px; background: #343E41; border: 2px solid #7E8B85"></span>
+<span aria-hidden="true" style="position: absolute; left: 8px; top: 8px; width: 16px; height: 16px; border-radius: 50%; background: #7E8B85"></span>
+</span>
+</label>
+</div>
+</section>
+
+<section aria-labelledby="sec-reminders">
+<h2 id="sec-reminders" style="margin: 0 0 6px; padding: 0 16px; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE">Reminders</h2>
+<div style="background: #161D20; border-radius: 24px; overflow: hidden">
+<div style="min-height: 48px; box-sizing: border-box; padding: 0 16px; display: flex; align-items: center; gap: 4px">
+<label for="set-daily" style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6; cursor: pointer">Daily reminder</label>
+<button type="button" aria-label="Reminder time, 9:00 AM. Change time" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; padding: 0 8px; background: transparent; font: inherit; color: inherit; cursor: pointer; height: 48px; display: flex; align-items: center">
+<span style="height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; border: 1px solid #7E8B85; color: #E8ECE6; display: flex; align-items: center; gap: 6px; font-weight: 500; font-size: 14px; line-height: 20px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#63D3FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg><span>9:00 AM</span></span>
+</button>
+<span style="position: relative; flex: none; width: 52px; height: 32px; margin-left: 8px">
+<input id="set-daily" type="checkbox" role="switch" checked="" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; margin: 0; opacity: 0; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; border-radius: 999px; background: #C3CFC6"></span>
+<span aria-hidden="true" style="position: absolute; left: 24px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: #17201B; color: #C3CFC6; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+</span>
+</div>
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; border-top: 1px solid #343E41; background: transparent; font: inherit; color: inherit; cursor: pointer; width: 100%; min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; display: flex; align-items: center; gap: 12px; text-align: left">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Quiet hours</span>
+<span style="font-size: 14px; line-height: 20px; color: #A9B4AE">10 PM – 8 AM</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9B4AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</button>
+<label style="display: flex; align-items: center; gap: 16px; min-height: 48px; box-sizing: border-box; padding: 8px 16px; border-top: 1px solid #343E41; cursor: pointer">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">When someone finds my bottle</span>
+<span style="position: relative; flex: none; width: 52px; height: 32px">
+<input type="checkbox" role="switch" checked="" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; margin: 0; opacity: 0; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; border-radius: 999px; background: #C3CFC6"></span>
+<span aria-hidden="true" style="position: absolute; left: 24px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: #17201B; color: #C3CFC6; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+</span>
+</label>
+</div>
+</section>
+
+<section aria-labelledby="sec-discovering">
+<h2 id="sec-discovering" style="margin: 0 0 6px; padding: 0 16px; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE">Discovering</h2>
+<div style="background: #161D20; border-radius: 24px; overflow: hidden">
+<label style="display: flex; align-items: center; gap: 16px; min-height: 48px; box-sizing: border-box; padding: 8px 16px; cursor: pointer">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Shake to uncork</span>
+<span style="position: relative; flex: none; width: 52px; height: 32px">
+<input type="checkbox" role="switch" checked="" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; margin: 0; opacity: 0; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; border-radius: 999px; background: #C3CFC6"></span>
+<span aria-hidden="true" style="position: absolute; left: 24px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: #17201B; color: #C3CFC6; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+</span>
+</label>
+<label style="display: flex; align-items: center; gap: 16px; min-height: 48px; box-sizing: border-box; padding: 8px 16px; border-top: 1px solid #343E41; cursor: pointer">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Haptics</span>
+<span style="position: relative; flex: none; width: 52px; height: 32px">
+<input type="checkbox" role="switch" checked="" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; margin: 0; opacity: 0; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; border-radius: 999px; background: #C3CFC6"></span>
+<span aria-hidden="true" style="position: absolute; left: 24px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: #17201B; color: #C3CFC6; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+</span>
+</label>
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; border-top: 1px solid #343E41; background: transparent; font: inherit; color: inherit; cursor: pointer; width: 100%; min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; display: flex; align-items: center; gap: 12px; text-align: left">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Translate bottles into</span>
+<span style="font-size: 14px; line-height: 20px; color: #A9B4AE">English</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9B4AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</button>
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; border-top: 1px solid #343E41; background: transparent; font: inherit; color: inherit; cursor: pointer; width: 100%; min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; display: flex; align-items: center; gap: 12px; text-align: left">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Language packs</span>
+<span style="font-size: 14px; line-height: 20px; color: #A9B4AE">Spanish · 30 MB</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9B4AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</button>
+</div>
+</section>
+
+<section aria-labelledby="sec-keepsakes">
+<h2 id="sec-keepsakes" style="margin: 0 0 6px; padding: 0 16px; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE">Keepsakes &amp; wallets</h2>
+<div style="background: #161D20; border-radius: 24px; overflow: hidden">
+<a href="Wallets-Manage.dc.html" style="min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; display: flex; align-items: center; gap: 12px; text-decoration: none">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Your wallets</span>
+<span style="font-size: 14px; line-height: 20px; color: #A9B4AE">2 linked</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9B4AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</a>
+<label style="display: flex; align-items: center; gap: 16px; min-height: 48px; box-sizing: border-box; padding: 8px 16px; border-top: 1px solid #343E41; cursor: pointer">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Seal automatically when I keep</span>
+<span style="position: relative; flex: none; width: 52px; height: 32px">
+<input type="checkbox" role="switch" checked="" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; margin: 0; opacity: 0; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; border-radius: 999px; background: #C3CFC6"></span>
+<span aria-hidden="true" style="position: absolute; left: 24px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: #17201B; color: #C3CFC6; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+</span>
+</label>
+</div>
+</section>
+
+<section aria-labelledby="sec-privacy">
+<h2 id="sec-privacy" style="margin: 0 0 6px; padding: 0 16px; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE">Privacy</h2>
+<div style="background: #161D20; border-radius: 24px; overflow: hidden">
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; background: transparent; font: inherit; color: inherit; cursor: pointer; width: 100%; min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; display: flex; align-items: center; gap: 12px; text-align: left">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Pen name</span>
+<span style="font-size: 14px; line-height: 20px; color: #A9B4AE">Driftwood</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9B4AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</button>
+<label style="display: flex; align-items: center; gap: 16px; min-height: 48px; box-sizing: border-box; padding: 8px 16px; border-top: 1px solid #343E41; cursor: pointer">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Sign new bottles with my pen name</span>
+<span style="position: relative; flex: none; width: 52px; height: 32px">
+<input type="checkbox" role="switch" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; margin: 0; opacity: 0; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; box-sizing: border-box; border-radius: 999px; background: #343E41; border: 2px solid #7E8B85"></span>
+<span aria-hidden="true" style="position: absolute; left: 8px; top: 8px; width: 16px; height: 16px; border-radius: 50%; background: #7E8B85"></span>
+</span>
+</label>
+<label style="display: flex; align-items: center; gap: 16px; min-height: 48px; box-sizing: border-box; padding: 8px 16px; border-top: 1px solid #343E41; cursor: pointer">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Public profile</span>
+<span style="position: relative; flex: none; width: 52px; height: 32px">
+<input type="checkbox" role="switch" checked="" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; margin: 0; opacity: 0; cursor: pointer">
+<span aria-hidden="true" style="position: absolute; left: 0; top: 0; width: 52px; height: 32px; border-radius: 999px; background: #C3CFC6"></span>
+<span aria-hidden="true" style="position: absolute; left: 24px; top: 4px; width: 24px; height: 24px; border-radius: 50%; background: #17201B; color: #C3CFC6; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg></span>
+</span>
+</label>
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; border-top: 1px solid #343E41; background: transparent; font: inherit; color: inherit; cursor: pointer; width: 100%; min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; display: flex; align-items: center; gap: 12px; text-align: left">
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Blocked writers</span>
+<span style="font-size: 14px; line-height: 20px; color: #A9B4AE">1</span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9B4AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</button>
+</div>
+</section>
+
+<section aria-labelledby="sec-about">
+<h2 id="sec-about" style="margin: 0 0 6px; padding: 0 16px; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE">About</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: #343E41; border-radius: 24px; overflow: hidden">
+<a href="Onboarding-1.dc.html" style="min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; background: #161D20; display: flex; align-items: center; text-decoration: none; font-weight: 500; font-size: 14px; line-height: 20px; color: #E8ECE6">How BottleCast works</a>
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; font: inherit; cursor: pointer; min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; background: #161D20; display: flex; align-items: center; text-align: left; font-weight: 500; font-size: 14px; line-height: 20px; color: #E8ECE6">Community guidelines</button>
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; font: inherit; cursor: pointer; min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; background: #161D20; display: flex; align-items: center; text-align: left; font-weight: 500; font-size: 14px; line-height: 20px; color: #E8ECE6">Terms</button>
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; font: inherit; cursor: pointer; min-height: 48px; box-sizing: border-box; padding: 8px 12px 8px 16px; background: #161D20; display: flex; align-items: center; text-align: left; font-weight: 500; font-size: 14px; line-height: 20px; color: #E8ECE6">Privacy policy</button>
+</div>
+</section>
+
+<section aria-labelledby="sec-account">
+<h2 id="sec-account" style="margin: 0 0 6px; padding: 0 16px; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE">Account</h2>
+<div style="background: #161D20; border-radius: 24px; overflow: hidden">
+<div style="min-height: 56px; box-sizing: border-box; padding: 6px 16px; display: flex; align-items: center; gap: 12px">
+<span aria-hidden="true" style="flex: none; width: 32px; height: 32px; border-radius: 50%; background: #3A3122; color: #F0E0C4; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; line-height: 16px">MT</span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+<span style="font-size: 16px; line-height: 24px; color: #E8ECE6">Signed in with Google</span>
+<span style="font-size: 14px; line-height: 20px; color: #A9B4AE">Marc T.</span>
+</span>
+</div>
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; border-top: 1px solid #343E41; background: transparent; font: inherit; color: inherit; cursor: pointer; width: 100%; min-height: 48px; box-sizing: border-box; padding: 8px 16px; display: flex; align-items: center; gap: 12px; text-align: left">
+<span style="flex: none; width: 32px; display: flex; justify-content: center; color: #A9B4AE"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4h4v16h-4"></path><path d="M10 17l5-5-5-5"></path><path d="M15 12H3"></path></svg></span>
+<span style="flex: 1; min-width: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Sign out</span>
+</button>
+<button type="button" style="appearance: none; -webkit-appearance: none; margin: 0; border: 0; border-top: 1px solid #343E41; background: transparent; font: inherit; color: inherit; cursor: pointer; width: 100%; min-height: 48px; box-sizing: border-box; padding: 12px 16px; display: flex; align-items: flex-start; gap: 12px; text-align: left">
+<span style="flex: none; width: 32px; height: 24px; display: flex; justify-content: center; color: #FFB4A8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M6 7l1 13h10l1-13"></path><path d="M9 7V4h6v3"></path></svg></span>
+<span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+<span style="font-weight: 500; font-size: 16px; line-height: 24px; color: #FFB4A8">Delete account</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">Sealed keepsakes stay on Base — they can't be deleted. Everything else is removed.</span>
+</span>
+</button>
+</div>
+</section>
+
+<p style="margin: 4px 0 0; text-align: center; font-size: 12px; line-height: 16px; color: #A9B4AE">BottleCast 1.2.0</p>
+
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1400}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

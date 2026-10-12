@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BottleCast — Foundations, the Moonlit Shore design system</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&amp;family=Roboto+Mono:wght@400;500&amp;family=Roboto+Slab:wght@400;500;600;700;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#63D3FF}a:hover{color:#9BE3FF}
+@keyframes bc-bob{0%,100%{transform:translateY(0) rotate(-14deg)}50%{transform:translateY(-6px) rotate(-9deg)}}
+@keyframes bc-halo{0%,100%{opacity:0.9}50%{opacity:1}}
+.bc-bob{animation:bc-bob 6.7s ease-in-out infinite;transform-origin:50% 85%}
+.bc-halo{animation:bc-halo 6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.bc-bob,.bc-halo{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 1440px; height: 1000px; overflow: hidden; box-sizing: border-box; padding: 64px; background: #0D1214; color: #E8ECE6; font-family: 'Roboto Flex', system-ui, sans-serif; display: grid; grid-template-columns: minmax(0, 1fr); grid-template-rows: 84px 643px 89px; row-gap: 28px">
+
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 40px; min-width: 0">
+<div style="display: flex; align-items: flex-start; gap: 20px; min-width: 0">
+<div aria-hidden="true" class="bc-halo" style="flex: none; margin-top: 8px; width: 40px; height: 40px; border-radius: 50%; background: #F0E0C4; opacity: 0.85; box-shadow: 0 0 0 10px rgba(240,224,196,0.06), 0 0 48px 12px rgba(240,224,196,0.18)"></div>
+<div style="min-width: 0">
+<h1 style="margin: 0; font-family: 'Roboto Slab', Georgia, serif; font-weight: 900; font-size: 48px; line-height: 56px; color: #E8ECE6">Moonlit Shore</h1>
+<p style="margin: 4px 0 0; font-size: 16px; line-height: 24px; color: #A9B4AE">BottleCast's look: a night sea, sea-glass sage, moonlight and parchment.</p>
+</div>
+</div>
+<p style="margin: 0; flex: none; width: 560px; box-sizing: border-box; padding: 12px 16px; border-radius: 16px; background: #3A3122; color: #F0E0C4; display: flex; align-items: flex-start; gap: 12px; font-size: 14px; line-height: 20px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><circle cx="12" cy="12" r="9"></circle><path d="M12 11v5"></path><path d="M12 8h.01"></path></svg>
+<span><span style="font-weight: 600">Fixed brand palette</span> — today the app borrows its colours from the phone's wallpaper (dynamic colour). This makes the look official.</span>
+</p>
+</header>
+
+<div style="display: grid; grid-template-columns: 392px 372px 460px; column-gap: 44px; min-height: 0">
+
+<section aria-label="Colour" style="min-width: 0">
+<h2 style="margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid #343E41; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: #F0E0C4">Colour</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px">
+
+<div style="min-width: 0">
+<h3 style="margin: 0 0 8px; font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">Night <span style="font-weight: 400; color: #A9B4AE">· dark</span></h3>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px">
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #0D1214"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">background</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#0D1214</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #20272A"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">dome</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#20272A</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #161D20"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">surface</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#161D20</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #222A2D"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">surfaceHigh</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#222A2D</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #C3CFC6"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">primary</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#C3CFC6</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #2E3A34"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">primaryContainer</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#2E3A34</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #63D3FF"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">glass</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#63D3FF</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #0E3A4A"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">glassContainer</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#0E3A4A</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #F0E0C4"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">moon</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#F0E0C4</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #3A3122"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">moonContainer</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#3A3122</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #E9DFCB"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">parchment</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#E9DFCB</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #2B241A"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">ink</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#2B241A</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #FFB4A8"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">error</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#FFB4A8</span></span></li>
+</ul>
+</div>
+
+<div style="min-width: 0">
+<h3 style="margin: 0 0 8px; font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">Dawn <span style="font-weight: 400; color: #A9B4AE">· light</span></h3>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 4px">
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #F6F4EE"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">background</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#F6F4EE</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #D5E4E3"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">dome</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#D5E4E3</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #FFFFFF"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">surface</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#FFFFFF</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #EEF1EC"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">surfaceHigh</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#EEF1EC</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #3F5A4C"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">primary</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#3F5A4C</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #D6E4DA"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">primaryContainer</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#D6E4DA</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #006688"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">glass</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#006688</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #CBEFFF"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">glassContainer</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#CBEFFF</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #7A5A1E"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">moon</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#7A5A1E</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #F6E8CC"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">moonContainer</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#F6E8CC</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #FFF9EC"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">parchment</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#FFF9EC</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #2B241A"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">ink</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#2B241A</span></span></li>
+<li style="display: flex; align-items: center; gap: 12px; height: 40px"><span aria-hidden="true" style="flex: none; width: 40px; height: 40px; box-sizing: border-box; border-radius: 10px; border: 1px solid #343E41; background: #B3261E"></span><span style="display: flex; flex-direction: column; min-width: 0"><span style="font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6">error</span><span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">#B3261E</span></span></li>
+</ul>
+</div>
+
+</div>
+</section>
+
+<section aria-label="Type" style="min-width: 0">
+<h2 style="margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid #343E41; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: #F0E0C4">Type</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+<div style="padding: 12px; border-radius: 16px; background: #161D20; display: flex; flex-direction: column; min-width: 0">
+<span aria-hidden="true" style="font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 28px; line-height: 32px; color: #E8ECE6">Aa</span>
+<span style="margin-top: 4px; font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6; white-space: nowrap">Roboto Slab</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">The voice</span>
+</div>
+<div style="padding: 12px; border-radius: 16px; background: #161D20; display: flex; flex-direction: column; min-width: 0">
+<span aria-hidden="true" style="font-family: 'Roboto Flex', system-ui, sans-serif; font-weight: 400; font-size: 28px; line-height: 32px; color: #E8ECE6">Aa</span>
+<span style="margin-top: 4px; font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6; white-space: nowrap">Roboto Flex</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">Reading</span>
+</div>
+<div style="padding: 12px; border-radius: 16px; background: #161D20; display: flex; flex-direction: column; min-width: 0">
+<span aria-hidden="true" style="font-family: 'Roboto Mono', ui-monospace, monospace; font-weight: 400; font-size: 28px; line-height: 32px; color: #E8ECE6">Aa</span>
+<span style="margin-top: 4px; font-size: 14px; line-height: 20px; font-weight: 500; color: #E8ECE6; white-space: nowrap">Roboto Mono</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">On-chain facts</span>
+</div>
+</div>
+
+<div style="margin-top: 24px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">headlineMedium · Slab 600 28/36</span>
+<p style="margin: 0; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 28px; line-height: 36px; color: #E8ECE6">A bottle washed ashore</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">titleLarge · Slab 700 22/30 · ink on parchment</span>
+<figure style="margin: 0; box-sizing: border-box; border-radius: 28px; padding: 24px; background: #E9DFCB; box-shadow: 0 0 0 1px rgba(240,224,196,0.2), 0 0 24px rgba(99,211,255,0.10); text-align: center">
+<blockquote lang="es" style="margin: 0; font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; font-size: 22px; line-height: 30px; color: #2B241A">Hoy el mar me devolvió algo que creía perdido: la calma.</blockquote>
+<figcaption style="margin-top: 12px; font-style: italic; font-size: 14px; line-height: 20px; color: #645C4F">— A stranger at sea</figcaption>
+</figure>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">bodyLarge · Flex 400 16/24</span>
+<p style="margin: 0; font-size: 16px; line-height: 24px; color: #E8ECE6">Today's bottle is waiting for you.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">labelSmall · Flex 600 11/16 · +0.8 caps</span>
+<p style="margin: 0; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #F0E0C4">Found today · Day 6</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">mono · Roboto Mono 400 13/18</span>
+<p style="margin: 0; font-family: 'Roboto Mono', ui-monospace, monospace; font-weight: 400; font-size: 13px; line-height: 18px; color: #E8ECE6">0x12…9aF</p>
+</div>
+</div>
+</section>
+
+<section aria-label="Components" style="min-width: 0">
+<h2 style="margin: 0 0 16px; padding-bottom: 8px; border-bottom: 1px solid #343E41; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: #F0E0C4">Components</h2>
+
+<div style="display: flex; gap: 24px">
+<div style="width: 280px; flex: none; display: flex; flex-direction: column; gap: 8px">
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">Pills · primary / outlined / tonal</span>
+<button type="button" style="width: 280px; height: 56px; margin: 0; padding: 0; border: 0; border-radius: 999px; background: #C3CFC6; color: #17201B; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4"></path><path d="M10.5 2v4c0 1-3.5 2-3.5 5v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9c0-3-3.5-4-3.5-5V2"></path><path d="M9.5 14h5"></path></svg>
+<span>Find today's bottle</span>
+</button>
+<button type="button" style="width: 280px; height: 56px; margin: 0; padding: 0; box-sizing: border-box; border: 1.5px solid #C3CFC6; border-radius: 999px; background: transparent; color: #C3CFC6; display: flex; align-items: center; justify-content: center; cursor: pointer; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">Cast a bottle</button>
+<button type="button" style="width: 280px; height: 56px; margin: 0; padding: 0; border: 0; border-radius: 999px; background: #2E3A34; color: #DCE8DF; display: flex; align-items: center; justify-content: center; cursor: pointer; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">Keep it</button>
+</div>
+<figure style="margin: 0; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">Wax seal · 96</span>
+<svg width="96" height="96" viewBox="0 0 64 64" role="img" aria-label="Wax seal: sealed on Base by a verified account">
+<path d="M 32.00 4.00 A 6.73 6.73 0 0 1 44.15 6.77 A 6.73 6.73 0 0 1 53.89 14.54 A 6.73 6.73 0 0 1 59.30 25.77 A 6.73 6.73 0 0 1 59.30 38.23 A 6.73 6.73 0 0 1 53.89 49.46 A 6.73 6.73 0 0 1 44.15 57.23 A 6.73 6.73 0 0 1 32.00 60.00 A 6.73 6.73 0 0 1 19.85 57.23 A 6.73 6.73 0 0 1 10.11 49.46 A 6.73 6.73 0 0 1 4.70 38.23 A 6.73 6.73 0 0 1 4.70 25.77 A 6.73 6.73 0 0 1 10.11 14.54 A 6.73 6.73 0 0 1 19.85 6.77 A 6.73 6.73 0 0 1 32.00 4.00 Z" fill="#F0E0C4"></path>
+<circle cx="32" cy="32" r="19" fill="none" stroke="#C9B48E" stroke-width="2"></circle>
+<path d="M29.5 20h5M30 20v4c0 1-4 2-4 6v9a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-9c0-4-4-5-4-6v-4" fill="none" stroke="#8C7350" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+<circle cx="48" cy="48" r="9" fill="#2B241A"></circle>
+<path d="M44 48l3 3 5-6" fill="none" stroke="#F0E0C4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+<figcaption style="font-size: 12px; line-height: 16px; color: #A9B4AE">The wax seal is the only thing that means on-chain. The check = bottled by a verified account.</figcaption>
+</figure>
+</div>
+
+<div style="margin-top: 24px; display: flex; flex-direction: column; gap: 8px">
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE">Status chips · 32 tall · always icon + text</span>
+<div style="display: flex; gap: 8px">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #0E3A4A; color: #63D3FF; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path><path d="M2 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path></svg>Drifting</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; border: 1px solid #C3CFC6; color: #C3CFC6; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4"></path><path d="M10.5 2v4c0 1-3.5 2-3.5 5v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9c0-3-3.5-4-3.5-5V2"></path><path d="M9.5 14h5"></path></svg>Found</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; border: 1px solid #7E8B85; color: #A9B4AE; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path><path d="M2 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path></svg>Not kept · 5d left</span>
+</div>
+<div style="display: flex; gap: 8px">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #2E3A34; color: #DCE8DF; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"></path><rect x="3" y="10" width="18" height="10" rx="2"></rect><path d="M3 13h18"></path><rect x="10" y="11.5" width="4" height="4" rx="1"></rect></svg>Kept</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #3A3122; color: #F0E0C4; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10"></path><path d="M7 21h10"></path><path d="M8 3c0 5 8 6 8 9s-8 4-8 9"></path><path d="M16 3c0 5-8 6-8 9s8 4 8 9"></path></svg>Waiting · 5h</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #0E3A4A; color: #63D3FF; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke-opacity="0.35"></circle><path d="M12 4a8 8 0 0 1 8 8"></path></svg>Sealing…</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #F0E0C4; color: #2B241A; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M8.5 12l2.5 2.5 4.5-5"></path></svg>Sealed</span>
+</div>
+<div style="display: flex; gap: 8px">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #5C1A12; color: #FFDAD4; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5"></path><path d="M12 16.5h.01"></path></svg>Sealing failed</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #5C1A12; color: #FFDAD4; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"></path><path d="M5 4h11l-2 4 2 4H5"></path></svg>Under review</span>
+</div>
+</div>
+
+<figure style="margin: 24px 0 0; display: flex; flex-direction: column; gap: 12px">
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0">
+<svg width="80" height="126" viewBox="0 0 140 220" aria-hidden="true">
+<rect x="52" y="104" width="36" height="84" rx="9" fill="#F0E0D0"></rect>
+<rect x="52" y="104" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="176" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="140" width="36" height="6" fill="#E8A93A"></rect>
+<path d="M60 34H80V64C80 76 112 82 112 106V190C112 204 102 212 88 212H52C38 212 28 204 28 190V106C28 82 60 76 60 64Z" fill="#00C2FF" fill-opacity="0.42" stroke="#63D3FF" stroke-width="2"></path>
+<path d="M40 112C37 140 37 168 41 194" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="5" stroke-linecap="round"></path>
+<path d="M66 40V60" fill="none" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="3" stroke-linecap="round"></path>
+<circle cx="96" cy="120" r="3" fill="#FFFFFF" fill-opacity="0.7"></circle>
+<rect x="56" y="30" width="28" height="8" rx="4" fill="#63D3FF" fill-opacity="0.85"></rect>
+<path d="M60 8H80L78 32H62Z" fill="#C9A27A"></path>
+<path d="M63 15H77M63 22H77" stroke="#A9825A" stroke-width="2" stroke-linecap="round"></path>
+</svg>
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE; white-space: nowrap">Classic · sea-glass</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0">
+<svg width="80" height="126" viewBox="0 0 140 220" aria-hidden="true">
+<rect x="52" y="104" width="36" height="84" rx="9" fill="#F0E0D0"></rect>
+<rect x="52" y="104" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="176" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="140" width="36" height="6" fill="#E8A93A"></rect>
+<path d="M60 34H80V70H106C111 70 114 73 114 78V196C114 205 108 212 99 212H41C32 212 26 205 26 196V78C26 73 29 70 34 70H60Z" fill="#E8A93A" fill-opacity="0.42" stroke="#F0C987" stroke-width="2"></path>
+<path d="M36 84C34 120 34 160 37 196" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="5" stroke-linecap="round"></path>
+<path d="M66 40V60" fill="none" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="3" stroke-linecap="round"></path>
+<circle cx="98" cy="96" r="3" fill="#FFFFFF" fill-opacity="0.7"></circle>
+<rect x="56" y="30" width="28" height="8" rx="4" fill="#F0C987" fill-opacity="0.85"></rect>
+<path d="M60 8H80L78 32H62Z" fill="#C9A27A"></path>
+<path d="M63 15H77M63 22H77" stroke="#A9825A" stroke-width="2" stroke-linecap="round"></path>
+</svg>
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE; white-space: nowrap">Flask · amber</span>
+</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0">
+<svg width="80" height="126" viewBox="0 0 140 220" aria-hidden="true">
+<rect x="52" y="104" width="36" height="84" rx="9" fill="#F0E0D0"></rect>
+<rect x="52" y="104" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="176" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="140" width="36" height="6" fill="#E8A93A"></rect>
+<path d="M60 34H80V58C96 62 100 76 92 90C116 100 118 130 114 160C110 198 92 212 70 212C48 212 30 198 26 160C22 130 24 100 48 90C40 76 44 62 60 58Z" fill="#E9E4D6" fill-opacity="0.42" stroke="#FFFFFF" stroke-width="2"></path>
+<path d="M40 112C37 140 37 168 41 194" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="5" stroke-linecap="round"></path>
+<path d="M66 40V54" fill="none" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="3" stroke-linecap="round"></path>
+<circle cx="96" cy="120" r="3" fill="#FFFFFF" fill-opacity="0.7"></circle>
+<rect x="56" y="30" width="28" height="8" rx="4" fill="#FFFFFF" fill-opacity="0.85"></rect>
+<path d="M60 8H80L78 32H62Z" fill="#C9A27A"></path>
+<path d="M63 15H77M63 22H77" stroke="#A9825A" stroke-width="2" stroke-linecap="round"></path>
+</svg>
+<span style="font-family: 'Roboto Mono', ui-monospace, monospace; font-size: 12px; line-height: 16px; color: #A9B4AE; white-space: nowrap">Gourd · moonglass</span>
+</div>
+</div>
+<figcaption style="font-size: 14px; line-height: 20px; color: #A9B4AE">Shape and tint come from the message's fingerprint — every keepsake is one of a kind. No rarity, no prices.</figcaption>
+</figure>
+</section>
+
+</div>
+
+<section aria-label="Vocabulary" style="min-width: 0; box-sizing: border-box; border-top: 1px solid #343E41; padding-top: 16px; display: flex; gap: 32px">
+<div style="width: 160px; flex: none; display: flex; flex-direction: column; gap: 6px">
+<h2 style="margin: 0; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: 0.8px; text-transform: uppercase; color: #F0E0C4">Vocabulary</h2>
+<p style="margin: 0; font-size: 12px; line-height: 16px; color: #A9B4AE">One word per stage, in order. Primary copy avoids crypto jargon.</p>
+</div>
+<div role="list" aria-label="A bottle's life, in order" style="flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr) 16px minmax(0, 1fr) 16px minmax(0, 1fr) 16px minmax(0, 1fr) 16px minmax(0, 1fr) 16px minmax(0, 1fr) 16px minmax(0, 1fr); column-gap: 10px; align-items: start">
+
+<div role="listitem" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #222A2D; color: #E8ECE6; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 5h12l-2 15H8z"></path><path d="M7.4 10h9.2"></path></svg>Corked</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">Saved on your phone, not afloat yet</span>
+</div>
+<span aria-hidden="true" style="height: 32px; display: flex; align-items: center; justify-content: center; color: #7E8B85"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+
+<div role="listitem" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #0E3A4A; color: #63D3FF; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path><path d="M2 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path></svg>Drifting</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">Afloat in the sea, waiting for a finder</span>
+</div>
+<span aria-hidden="true" style="height: 32px; display: flex; align-items: center; justify-content: center; color: #7E8B85"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+
+<div role="listitem" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; border: 1px solid #C3CFC6; color: #C3CFC6; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4"></path><path d="M10.5 2v4c0 1-3.5 2-3.5 5v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9c0-3-3.5-4-3.5-5V2"></path><path d="M9.5 14h5"></path></svg>Found</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">Someone uncorked it</span>
+</div>
+<span aria-hidden="true" style="height: 32px; display: flex; align-items: center; justify-content: center; color: #7E8B85"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+
+<div role="listitem" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #2E3A34; color: #DCE8DF; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"></path><rect x="3" y="10" width="18" height="10" rx="2"></rect><path d="M3 13h18"></path><rect x="10" y="11.5" width="4" height="4" rx="1"></rect></svg>Kept</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">In your chest. Free, not on-chain</span>
+</div>
+<span aria-hidden="true" style="height: 32px; display: flex; align-items: center; justify-content: center; color: #7E8B85"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+
+<div role="listitem" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #3A3122; color: #F0E0C4; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10"></path><path d="M7 21h10"></path><path d="M8 3c0 5 8 6 8 9s-8 4-8 9"></path><path d="M16 3c0 5-8 6-8 9s8 4 8 9"></path></svg>Waiting</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">24-hour safety check before sealing</span>
+</div>
+<span aria-hidden="true" style="height: 32px; display: flex; align-items: center; justify-content: center; color: #7E8B85"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+
+<div role="listitem" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #0E3A4A; color: #63D3FF; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8" stroke-opacity="0.35"></circle><path d="M12 4a8 8 0 0 1 8 8"></path></svg>Sealing…</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">Being sealed on Base right now</span>
+</div>
+<span aria-hidden="true" style="height: 32px; display: flex; align-items: center; justify-content: center; color: #7E8B85"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+
+<div role="listitem" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #F0E0C4; color: #2B241A; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><path d="M8.5 12l2.5 2.5 4.5-5"></path></svg>Sealed</span>
+<span style="font-size: 12px; line-height: 16px; color: #A9B4AE">A keepsake on Base, in your wallet</span>
+</div>
+
+</div>
+</section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
