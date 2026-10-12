@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BottleCast — Corked and cast, bottle drifting</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&amp;family=Roboto+Mono:wght@400;500&amp;family=Roboto+Slab:wght@400;500;600;700;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#63D3FF}a:hover{color:#9BE3FF}
+@keyframes bc-bob{0%,100%{transform:translateY(0) rotate(-14deg)}50%{transform:translateY(-6px) rotate(-9deg)}}
+@keyframes bc-halo{0%,100%{opacity:0.9}50%{opacity:1}}
+.bc-bob{animation:bc-bob 6.7s ease-in-out infinite;transform-origin:50% 85%}
+.bc-halo{animation:bc-halo 6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.bc-bob,.bc-halo{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; background: #0D1214; color: #E8ECE6; font-family: 'Roboto Flex', system-ui, sans-serif">
+
+<div aria-hidden="true" style="position: absolute; left: -227px; top: -338px; width: 844px; height: 844px; border-radius: 50%; background: radial-gradient(circle at 72% 50%, #2E383B 0%, #20272A 26%)"></div>
+<div aria-hidden="true" style="position: absolute; left: -229px; top: -340px; width: 846px; height: 846px; border-radius: 50%; border: 1px solid transparent; border-bottom-color: rgba(240,224,196,0.28)"></div>
+
+<div aria-hidden="true" style="position: absolute; left: 48px; top: 138px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.45"></div>
+<div aria-hidden="true" style="position: absolute; left: 112px; top: 92px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.3"></div>
+<div aria-hidden="true" style="position: absolute; left: 344px; top: 236px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.35"></div>
+<div aria-hidden="true" style="position: absolute; left: 30px; top: 300px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.3"></div>
+<div aria-hidden="true" class="bc-halo" style="position: absolute; left: 290px; top: 104px; width: 40px; height: 40px; border-radius: 50%; background: #F0E0C4; opacity: 0.85; box-shadow: 0 0 0 10px rgba(240,224,196,0.06), 0 0 48px 12px rgba(240,224,196,0.18)"></div>
+
+<div style="position: absolute; left: 16px; top: 188px; width: 358px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center">
+<p style="margin: 0; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #F0E0C4">Bottle #13</p>
+<h1 style="margin: 0; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 28px; line-height: 36px; color: #E8ECE6">Corked and cast</h1>
+<p style="margin: 0; padding: 0 16px; font-size: 16px; line-height: 24px; color: #A9B4AE">Your bottle is drifting. We'll tell you when someone finds it.</p>
+</div>
+
+<svg width="140" height="24" viewBox="0 0 140 24" aria-hidden="true" style="position: absolute; left: 125px; top: 420px"><ellipse cx="70" cy="12" rx="66" ry="9" fill="none" stroke="#63D3FF" stroke-opacity="0.2" stroke-width="1.5"></ellipse><ellipse cx="70" cy="12" rx="44" ry="6" fill="none" stroke="#63D3FF" stroke-opacity="0.35" stroke-width="1.5"></ellipse><ellipse cx="70" cy="12" rx="22" ry="3" fill="none" stroke="#63D3FF" stroke-opacity="0.55" stroke-width="1.5"></ellipse></svg>
+<div class="bc-bob" style="position: absolute; left: 175px; top: 371px; width: 40px; height: 63px; transform: rotate(-14deg)">
+<svg width="40" height="63" viewBox="0 0 140 220" role="img" aria-label="Your corked bottle, small and far out on the water">
+<rect x="52" y="104" width="36" height="84" rx="9" fill="#F0E0D0"></rect>
+<rect x="52" y="104" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="176" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="140" width="36" height="6" fill="#E8A93A"></rect>
+<path d="M60 34H80V64C80 76 112 82 112 106V190C112 204 102 212 88 212H52C38 212 28 204 28 190V106C28 82 60 76 60 64Z" fill="#00C2FF" fill-opacity="0.42" stroke="#63D3FF" stroke-width="4"></path>
+<path d="M40 112C37 140 37 168 41 194" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="7" stroke-linecap="round"></path>
+<rect x="56" y="30" width="28" height="8" rx="4" fill="#63D3FF" fill-opacity="0.85"></rect>
+<path d="M60 8H80L78 32H62Z" fill="#C9A27A"></path>
+</svg>
+</div>
+
+<ol aria-label="Bottle journey" style="position: absolute; left: 16px; top: 530px; width: 358px; height: 48px; margin: 0; padding: 0; list-style: none; display: flex; align-items: center; justify-content: center; gap: 4px">
+<li aria-current="step" style="display: flex; align-items: center">
+<span style="height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #0E3A4A; color: #63D3FF; display: flex; align-items: center; gap: 6px; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path><path d="M2 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path></svg>
+<span>Drifting</span>
+</span>
+</li>
+<li style="display: flex; align-items: center; gap: 4px">
+<span aria-hidden="true" style="width: 12px; height: 1px; background: #7E8B85"></span>
+<span style="height: 32px; box-sizing: border-box; padding: 0 12px; border-radius: 999px; border: 1px solid #7E8B85; color: #A9B4AE; display: flex; align-items: center; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap">Found</span>
+</li>
+<li style="display: flex; align-items: center; gap: 4px">
+<span aria-hidden="true" style="width: 12px; height: 1px; background: #7E8B85"></span>
+<span style="height: 32px; box-sizing: border-box; padding: 0 12px; border-radius: 999px; border: 1px solid #7E8B85; color: #A9B4AE; display: flex; align-items: center; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap">Kept</span>
+</li>
+<li style="display: flex; align-items: center; gap: 4px">
+<span aria-hidden="true" style="width: 12px; height: 1px; background: #7E8B85"></span>
+<span style="height: 32px; box-sizing: border-box; padding: 0 12px; border-radius: 999px; border: 1px solid #7E8B85; color: #A9B4AE; display: flex; align-items: center; font-size: 14px; line-height: 20px; font-weight: 500; white-space: nowrap">Sealed</span>
+</li>
+</ol>
+
+<sc-if value="{{showShield}}" hint-placeholder-val="{{ true }}">
+<div style="position: absolute; left: 16px; top: 594px; width: 358px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center">
+<span style="height: 32px; box-sizing: border-box; padding: 0 12px 0 8px; border-radius: 999px; background: #3A3122; color: #F0E0C4; display: flex; align-items: center; gap: 6px; font-size: 14px; line-height: 20px; font-weight: 500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"></path></svg>
+<span>+1 calm-sea shield</span>
+</span>
+<p style="margin: 0; padding: 0 8px; font-size: 14px; line-height: 20px; color: #A9B4AE">Your first cast today brings a shield — it protects your streak for one missed day.</p>
+</div>
+</sc-if>
+
+<div style="position: absolute; left: 16px; top: 700px; width: 358px; display: flex; flex-direction: column; gap: 8px">
+<a href="Main.dc.html" style="height: 56px; border-radius: 999px; background: #C3CFC6; color: #17201B; display: flex; align-items: center; justify-content: center; text-decoration: none; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">Back to the shore</a>
+<a href="Gift-Compose.dc.html" style="height: 56px; box-sizing: border-box; border-radius: 999px; border: 1.5px solid #C3CFC6; color: #C3CFC6; display: flex; align-items: center; justify-content: center; text-decoration: none; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">Send one to someone</a>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"showShield":{"editor":"boolean","default":true},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { showShield: this.props.showShield ?? true };
+  }
+}
+</script>
+</body>
+</html>

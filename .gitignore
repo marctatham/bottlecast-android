@@ -28,3 +28,7 @@ captures/
 
 # OSX
 .DS_Store
+
+# Claude Code: personal notes and local settings
+CLAUDE.local.md
+.claude/settings.local.json

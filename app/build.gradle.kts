@@ -25,6 +25,8 @@ plugins {
 
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
+
+    alias(libs.plugins.roborazzi)
 }
 
 // the upload keystore & its credentials are kept out of version control (see .gitignore & local.properties)
@@ -94,6 +96,34 @@ android {
     buildFeatures {
         compose = true
     }
+
+    testOptions {
+        // Robolectric (screenshot tests) needs the merged resources
+        unitTests.isIncludeAndroidResources = true
+    }
+}
+
+// screenshot test goldens are committed alongside the tests, see CLAUDE.md
+roborazzi {
+    outputDir.set(file("src/test/screenshots"))
+}
+
+tasks.withType<Test>().configureEach {
+    // renders shadows & elevation the way a device does
+    systemProperty("robolectric.pixelCopyRenderMode", "hardware")
+    maxHeapSize = "2g"
+    // Robolectric reaches into JDK internals, which Java 17+ only allows when opened (robolectric.org/getting-started)
+    jvmArgs(
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+        "--add-opens=java.base/java.util=ALL-UNNAMED",
+        "--add-opens=java.base/java.io=ALL-UNNAMED",
+        "--add-opens=java.base/java.net=ALL-UNNAMED",
+        "--add-opens=java.base/java.security=ALL-UNNAMED",
+        "--add-opens=java.base/java.text=ALL-UNNAMED",
+        "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+        "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED",
+        "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+    )
 }
 
 dependencies {
@@ -163,6 +193,15 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.kotlinx.test)
+
+    // Local tests: screenshot tests (Roborazzi on Robolectric)
+    testImplementation(composeBom)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.androidx.compose.ui.test.junit4)
+    testImplementation(libs.androidx.test.core)
+    testImplementation(libs.androidx.test.espresso.core)
 
     // Instrumented tests: jUnit rules and runners
     androidTestImplementation(libs.androidx.test.core)

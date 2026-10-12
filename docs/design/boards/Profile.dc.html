@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BottleCast — Me, your profile</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&amp;family=Roboto+Mono:wght@400;500&amp;family=Roboto+Slab:wght@400;500;600;700;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#63D3FF}a:hover{color:#9BE3FF}
+@keyframes bc-bob{0%,100%{transform:translateY(0) rotate(-14deg)}50%{transform:translateY(-6px) rotate(-9deg)}}
+@keyframes bc-halo{0%,100%{opacity:0.9}50%{opacity:1}}
+.bc-bob{animation:bc-bob 6.7s ease-in-out infinite;transform-origin:50% 85%}
+.bc-halo{animation:bc-halo 6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.bc-bob,.bc-halo{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; background: #0D1214; color: #E8ECE6; font-family: 'Roboto Flex', system-ui, sans-serif">
+
+<div aria-hidden="true" style="position: absolute; left: -227px; top: -608px; width: 844px; height: 844px; border-radius: 50%; background: radial-gradient(circle at 72% 50%, #2E383B 0%, #20272A 26%)"></div>
+<div aria-hidden="true" style="position: absolute; left: -229px; top: -610px; width: 846px; height: 846px; border-radius: 50%; border: 1px solid transparent; border-bottom-color: rgba(240,224,196,0.28)"></div>
+
+<div aria-hidden="true" style="position: absolute; left: 282px; top: 66px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.35"></div>
+<div aria-hidden="true" style="position: absolute; left: 296px; top: 150px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.3"></div>
+<div aria-hidden="true" class="bc-halo" style="position: absolute; left: 330px; top: 114px; width: 32px; height: 32px; border-radius: 50%; background: #F0E0C4; opacity: 0.85; box-shadow: 0 0 0 8px rgba(240,224,196,0.06), 0 0 40px 10px rgba(240,224,196,0.18)"></div>
+
+<div style="position: absolute; left: 16px; top: 56px; width: 302px; display: flex; align-items: flex-start; gap: 16px">
+<span aria-hidden="true" style="flex: none; width: 72px; height: 72px; border-radius: 50%; background: #3A3122; color: #F0E0C4; box-shadow: 0 0 0 2px #F0E0C4; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 24px; line-height: 32px">MT</span>
+<div style="flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start">
+<h1 style="margin: 0; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 24px; line-height: 32px; color: #E8ECE6">Marc T.</h1>
+<p style="margin: 0; font-size: 14px; line-height: 20px; color: #A9B4AE">@marct · casting since Oct 2026</p>
+<span style="margin-top: 8px; height: 32px; box-sizing: border-box; padding: 0 12px; border-radius: 999px; border: 1px solid #7E8B85; display: inline-flex; align-items: center; gap: 4px; font-size: 14px; line-height: 20px; font-weight: 500">
+<span style="color: #A9B4AE">Pen name:</span>
+<span style="color: #E8ECE6">Driftwood</span>
+</span>
+</div>
+</div>
+
+<a href="Settings.dc.html" aria-label="Settings" style="position: absolute; left: 326px; top: 48px; width: 48px; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #E8ECE6; text-decoration: none">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h9"></path><path d="M17 6h3"></path><circle cx="15" cy="6" r="2"></circle><path d="M4 12h3"></path><path d="M11 12h9"></path><circle cx="9" cy="12" r="2"></circle><path d="M4 18h11"></path><path d="M19 18h1"></path><circle cx="17" cy="18" r="2"></circle></svg>
+</a>
+
+<section aria-label="Your numbers" style="position: absolute; left: 16px; top: 168px; width: 358px; box-sizing: border-box; padding: 20px 12px 16px; border-radius: 24px; background: #222A2D">
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); text-align: center">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-family: 'Roboto Slab', Georgia, serif; font-weight: 900; font-size: 28px; line-height: 32px; color: #E8ECE6">12</span><span style="font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE; white-space: nowrap">Bottled</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-family: 'Roboto Slab', Georgia, serif; font-weight: 900; font-size: 28px; line-height: 32px; color: #E8ECE6">30</span><span style="font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE; white-space: nowrap">Found</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-family: 'Roboto Slab', Georgia, serif; font-weight: 900; font-size: 28px; line-height: 32px; color: #E8ECE6">9</span><span style="font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE; white-space: nowrap">Kept</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 4px"><span style="font-family: 'Roboto Slab', Georgia, serif; font-weight: 900; font-size: 28px; line-height: 32px; color: #E8ECE6">6</span><span style="font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #A9B4AE; white-space: nowrap">Day streak</span></div>
+</div>
+<div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #343E41; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; line-height: 20px; color: #A9B4AE">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F0E0C4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V6z"></path></svg>
+<span>Best streak 14 days · 1 calm-sea shield</span>
+</div>
+</section>
+
+<a href="Achievements.dc.html" aria-label="Achievements, 6 of 15 collected, including Message in a bottle, Finders keepers, Sealed with care and Full moon. See all" style="position: absolute; left: 16px; top: 321px; width: 358px; box-sizing: border-box; padding: 16px; border-radius: 24px; background: #161D20; display: flex; flex-direction: column; gap: 12px; text-decoration: none; color: #E8ECE6">
+<span style="height: 24px; display: flex; align-items: center; justify-content: space-between">
+<span style="display: flex; align-items: baseline; gap: 6px"><span style="font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px; color: #E8ECE6">Achievements</span><span style="font-size: 14px; line-height: 20px; color: #A9B4AE">· 6 of 15</span></span>
+<span style="display: flex; align-items: center; gap: 2px; font-size: 14px; line-height: 20px; font-weight: 500; color: #C3CFC6">See all<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg></span>
+</span>
+<span style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" fill="#3A3122" stroke="#3A3122" stroke-width="8" stroke-linecap="round" stroke-dasharray="0.01 6.01"></circle><g transform="translate(16 16)" fill="none" stroke="#F0E0C4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4"></path><path d="M10.5 2v4c0 1-3.5 2-3.5 5v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9c0-3-3.5-4-3.5-5V2"></path><path d="M9.5 14h5"></path></g></svg>
+<span style="height: 32px; font-size: 12px; line-height: 16px; font-weight: 500; color: #A9B4AE; text-align: center">Message in a bottle</span>
+</span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" fill="#3A3122" stroke="#3A3122" stroke-width="8" stroke-linecap="round" stroke-dasharray="0.01 6.01"></circle><g transform="translate(16 16)" fill="none" stroke="#F0E0C4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"></path><rect x="3" y="10" width="18" height="10" rx="2"></rect><path d="M3 13h18"></path><rect x="10" y="11.5" width="4" height="4" rx="1"></rect></g></svg>
+<span style="height: 32px; font-size: 12px; line-height: 16px; font-weight: 500; color: #A9B4AE; text-align: center">Finders keepers</span>
+</span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" fill="#3A3122" stroke="#3A3122" stroke-width="8" stroke-linecap="round" stroke-dasharray="0.01 6.01"></circle><g transform="translate(16 16)" fill="none" stroke="#F0E0C4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"></circle><path d="M8.5 12l2.5 2.5 4.5-5"></path></g></svg>
+<span style="height: 32px; font-size: 12px; line-height: 16px; font-weight: 500; color: #A9B4AE; text-align: center">Sealed with care</span>
+</span>
+<span style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<svg width="56" height="56" viewBox="0 0 56 56" aria-hidden="true"><circle cx="28" cy="28" r="23" fill="#3A3122" stroke="#3A3122" stroke-width="8" stroke-linecap="round" stroke-dasharray="0.01 6.01"></circle><g transform="translate(16 16)" fill="none" stroke="#F0E0C4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></g></svg>
+<span style="height: 32px; font-size: 12px; line-height: 16px; font-weight: 500; color: #A9B4AE; text-align: center">Full moon</span>
+</span>
+</span>
+</a>
+
+<a href="Wallets-Manage.dc.html" style="position: absolute; left: 16px; top: 497px; width: 358px; height: 56px; box-sizing: border-box; padding: 0 12px 0 16px; border-radius: 16px; background: #161D20; display: flex; align-items: center; gap: 16px; text-decoration: none; color: #E8ECE6">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C3CFC6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M19 7V5a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4"></path><path d="M3 6v12a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-3"></path><path d="M18 12h4v4h-4a2 2 0 0 1 0-4z"></path></svg>
+<span style="flex: 1; font-size: 16px; line-height: 24px">2 wallets · Rainbow receives</span>
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#A9B4AE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M9 6l6 6-6 6"></path></svg>
+</a>
+
+<a href="Share-Profile.dc.html" style="position: absolute; left: 16px; top: 577px; width: 358px; height: 56px; border-radius: 999px; background: #C3CFC6; color: #17201B; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4"></path><path d="M15.4 6.5l-6.8 4"></path></svg>
+<span>Share my profile</span>
+</a>
+<a href="Gift-Compose.dc.html" style="position: absolute; left: 16px; top: 641px; width: 358px; height: 56px; box-sizing: border-box; border-radius: 999px; border: 1.5px solid #C3CFC6; color: #C3CFC6; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2h4"></path><path d="M10.5 2v4c0 1-3.5 2-3.5 5v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-9c0-3-3.5-4-3.5-5V2"></path><path d="M9.5 14h5"></path></svg>
+<span>Send a bottle to someone</span>
+</a>
+
+<nav aria-label="Main" style="position: absolute; left: 0; top: 764px; width: 390px; height: 80px; background: #222A2D; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr))">
+<a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none">
+<span style="width: 64px; height: 32px; color: #A9B4AE; display: flex; align-items: center; justify-content: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"></path><path d="M6 9.5V16"></path><path d="M18 9.5V16"></path><path d="M3 20c1.5-1.2 3-1.2 4.5 0s3 1.2 4.5 0 3-1.2 4.5 0 3 1.2 4.5 0"></path></svg>
+</span>
+<span style="font-size: 12px; line-height: 16px; font-weight: 500; color: #A9B4AE">Shore</span>
+</a>
+<a href="Chest-Found.dc.html" aria-label="Chest, 1 bottle not kept yet" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none">
+<span style="position: relative; width: 64px; height: 32px; color: #A9B4AE; display: flex; align-items: center; justify-content: center">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"></path><rect x="3" y="10" width="18" height="10" rx="2"></rect><path d="M3 13h18"></path><rect x="10" y="11.5" width="4" height="4" rx="1"></rect></svg>
+<span aria-hidden="true" style="position: absolute; left: 40px; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: #F0E0C4"></span>
+</span>
+<span style="font-size: 12px; line-height: 16px; font-weight: 500; color: #A9B4AE">Chest</span>
+</a>
+<a href="Profile.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; text-decoration: none">
+<span style="width: 64px; height: 32px; border-radius: 999px; background: #2E3A34; display: flex; align-items: center; justify-content: center">
+<span aria-hidden="true" style="width: 24px; height: 24px; border-radius: 50%; background: #3A3122; color: #F0E0C4; box-shadow: 0 0 0 1.5px #F0E0C4; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600">MT</span>
+</span>
+<span style="font-size: 12px; line-height: 16px; font-weight: 600; color: #E8ECE6">Me</span>
+</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

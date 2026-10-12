@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BottleCast — Discover, one more shake</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&amp;family=Roboto+Mono:wght@400;500&amp;family=Roboto+Slab:wght@400;500;600;700;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#63D3FF}a:hover{color:#9BE3FF}
+@keyframes bc-wobble{0%,100%{transform:rotate(8deg)}50%{transform:rotate(3deg)}}
+@keyframes bc-halo{0%,100%{opacity:0.9}50%{opacity:1}}
+.bc-wobble{animation:bc-wobble 1.6s ease-in-out infinite;transform-origin:50% 85%}
+.bc-halo{animation:bc-halo 6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.bc-wobble,.bc-halo{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; background: #0D1214; color: #E8ECE6; font-family: 'Roboto Flex', system-ui, sans-serif">
+
+<div aria-hidden="true" style="position: absolute; left: -227px; top: -254px; width: 844px; height: 844px; border-radius: 50%; background: radial-gradient(circle at 72% 50%, #2E383B 0%, #20272A 26%)"></div>
+<div aria-hidden="true" style="position: absolute; left: -229px; top: -256px; width: 846px; height: 846px; border-radius: 50%; border: 1px solid transparent; border-bottom-color: rgba(240,224,196,0.28)"></div>
+
+<div aria-hidden="true" style="position: absolute; left: 34px; top: 132px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.45"></div>
+<div aria-hidden="true" style="position: absolute; left: 96px; top: 78px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.3"></div>
+<div aria-hidden="true" style="position: absolute; left: 358px; top: 236px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.35"></div>
+<div aria-hidden="true" style="position: absolute; left: 24px; top: 352px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.3"></div>
+<div aria-hidden="true" style="position: absolute; left: 362px; top: 420px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.3"></div>
+<div aria-hidden="true" class="bc-halo" style="position: absolute; left: 310px; top: 64px; width: 40px; height: 40px; border-radius: 50%; background: #F0E0C4; opacity: 0.85; box-shadow: 0 0 0 10px rgba(240,224,196,0.06), 0 0 48px 12px rgba(240,224,196,0.18)"></div>
+
+<div aria-hidden="true" style="position: absolute; left: 64px; top: 602px; width: 24px; height: 2px; border-radius: 1px; background: rgba(240,224,196,0.4)"></div>
+<div aria-hidden="true" style="position: absolute; left: 296px; top: 606px; width: 24px; height: 2px; border-radius: 1px; background: rgba(240,224,196,0.3)"></div>
+<div aria-hidden="true" style="position: absolute; left: 180px; top: 598px; width: 24px; height: 2px; border-radius: 1px; background: rgba(240,224,196,0.35)"></div>
+
+<div style="position: absolute; left: 4px; top: 44px; width: 382px; height: 64px; display: flex; align-items: center">
+<a href="Main.dc.html" aria-label="Back" style="width: 48px; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #E8ECE6; text-decoration: none">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+</a>
+</div>
+
+<div role="progressbar" aria-label="Cork progress" aria-valuemin="0" aria-valuemax="3" aria-valuenow="2" aria-valuetext="2 of 3 shakes" style="position: absolute; left: 45px; top: 116px; width: 300px; height: 300px">
+<div aria-hidden="true" style="position: absolute; left: 20px; top: 20px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, rgba(99,211,255,0.16) 0%, rgba(99,211,255,0) 70%)"></div>
+<svg width="300" height="300" viewBox="0 0 300 300" aria-hidden="true" style="position: absolute; left: 0; top: 0">
+<path d="M159.63 12.34A138 138 0 0 1 274.03 210.49" fill="none" stroke="#63D3FF" stroke-width="8" stroke-linecap="round"></path>
+<path d="M264.41 227.17A138 138 0 0 1 35.59 227.17" fill="none" stroke="#63D3FF" stroke-width="8" stroke-linecap="round"></path>
+<path d="M25.97 210.49A138 138 0 0 1 140.37 12.34" fill="none" stroke="#343E41" stroke-width="8" stroke-linecap="round"></path>
+<path d="M86 168Q74 196 86 224" fill="none" stroke="#63D3FF" stroke-opacity="0.7" stroke-width="3" stroke-linecap="round"></path>
+<path d="M70 180Q62 196 70 212" fill="none" stroke="#63D3FF" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"></path>
+<path d="M228 160Q240 188 228 216" fill="none" stroke="#63D3FF" stroke-opacity="0.7" stroke-width="3" stroke-linecap="round"></path>
+<path d="M244 172Q252 188 244 204" fill="none" stroke="#63D3FF" stroke-opacity="0.45" stroke-width="3" stroke-linecap="round"></path>
+</svg>
+</div>
+
+<button type="button" aria-label="Uncork bottle" class="bc-wobble" style="position: absolute; left: 115px; top: 140px; width: 160px; height: 251px; padding: 0; border: 0; border-radius: 24px; background: transparent; cursor: pointer; transform: rotate(8deg); transform-origin: 50% 85%">
+<svg width="160" height="251" viewBox="0 0 140 220" aria-hidden="true" style="display: block">
+<rect x="52" y="104" width="36" height="84" rx="9" fill="#F0E0D0"></rect>
+<rect x="52" y="104" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="176" width="36" height="12" rx="6" fill="#E0C0A0"></rect>
+<rect x="52" y="140" width="36" height="6" fill="#E8A93A"></rect>
+<path d="M60 34H80V64C80 76 112 82 112 106V190C112 204 102 212 88 212H52C38 212 28 204 28 190V106C28 82 60 76 60 64Z" fill="#00C2FF" fill-opacity="0.42" stroke="#63D3FF" stroke-width="2"></path>
+<path d="M40 112C37 140 37 168 41 194" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="5" stroke-linecap="round"></path>
+<path d="M66 40V60" fill="none" stroke="#FFFFFF" stroke-opacity="0.6" stroke-width="3" stroke-linecap="round"></path>
+<circle cx="96" cy="120" r="3" fill="#FFFFFF" fill-opacity="0.7"></circle>
+<rect x="56" y="30" width="28" height="8" rx="4" fill="#63D3FF" fill-opacity="0.85"></rect>
+<path d="M60 8H80L78 32H62Z" fill="#C9A27A"></path>
+<path d="M63 15H77M63 22H77" stroke="#A9825A" stroke-width="2" stroke-linecap="round"></path>
+</svg>
+</button>
+
+<div style="position: absolute; left: 16px; top: 428px; width: 358px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center">
+<p aria-live="polite" style="margin: 0; font-size: 14px; line-height: 20px; font-weight: 500; font-variant-numeric: tabular-nums; color: #63D3FF">2 of 3</p>
+<h1 style="margin: 0; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 24px; line-height: 32px; color: #E8ECE6">One more shake…</h1>
+<p style="margin: 0; padding: 0 16px; font-size: 16px; line-height: 24px; color: #A9B4AE">Almost there.</p>
+</div>
+
+<div style="position: absolute; left: 16px; top: 622px; width: 358px; display: flex; flex-direction: column; gap: 8px">
+<a href="Reveal.dc.html" style="height: 56px; border-radius: 999px; background: #C3CFC6; color: #17201B; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">Tap to uncork</a>
+<button type="button" aria-haspopup="dialog" style="align-self: center; height: 48px; padding: 0 16px; border: 0; border-radius: 999px; background: transparent; color: #C3CFC6; cursor: pointer; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">No shaking needed?</button>
+<p style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; line-height: 20px; color: #A9B4AE">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><rect x="8" y="3" width="8" height="18" rx="2"></rect><path d="M4 8l-2 4 2 4"></path><path d="M20 8l2 4-2 4"></path></svg>
+<span>Shaking is optional — tapping works just as well.</span>
+</p>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BottleCast — Reveal, today's message</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Flex:opsz,wght@8..144,400;8..144,500;8..144,600&amp;family=Roboto+Mono:wght@400;500&amp;family=Roboto+Slab:wght@400;500;600;700;900&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#63D3FF}a:hover{color:#9BE3FF}
+@keyframes bc-halo{0%,100%{opacity:0.9}50%{opacity:1}}
+.bc-halo{animation:bc-halo 6s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.bc-halo{animation:none}}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; box-sizing: border-box; background: #0D1214; color: #E8ECE6; font-family: 'Roboto Flex', system-ui, sans-serif">
+
+<div aria-hidden="true" style="position: absolute; left: -227px; top: -548px; width: 844px; height: 844px; border-radius: 50%; background: radial-gradient(circle at 72% 80%, #2E383B 0%, #20272A 26%)"></div>
+<div aria-hidden="true" style="position: absolute; left: -229px; top: -550px; width: 846px; height: 846px; border-radius: 50%; border: 1px solid transparent; border-bottom-color: rgba(240,224,196,0.28)"></div>
+
+<div aria-hidden="true" style="position: absolute; left: 44px; top: 124px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.4"></div>
+<div aria-hidden="true" style="position: absolute; left: 124px; top: 86px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.3"></div>
+<div aria-hidden="true" style="position: absolute; left: 352px; top: 122px; width: 2px; height: 2px; border-radius: 50%; background: #F0E0C4; opacity: 0.35"></div>
+<div aria-hidden="true" class="bc-halo" style="position: absolute; left: 272px; top: 62px; width: 40px; height: 40px; border-radius: 50%; background: #F0E0C4; opacity: 0.85; box-shadow: 0 0 0 10px rgba(240,224,196,0.06), 0 0 48px 12px rgba(240,224,196,0.18)"></div>
+
+<div style="position: absolute; left: 4px; top: 44px; width: 382px; height: 64px; display: flex; align-items: center; justify-content: space-between">
+<a href="Shore-B.dc.html" aria-label="Back" style="width: 48px; height: 48px; border-radius: 999px; display: flex; align-items: center; justify-content: center; color: #E8ECE6; text-decoration: none">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"></path><path d="M12 19l-7-7 7-7"></path></svg>
+</a>
+<a href="Report-Dialog.dc.html" aria-label="Report this bottle" title="Report" style="width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; text-decoration: none">
+<span style="width: 40px; height: 40px; box-sizing: border-box; border-radius: 999px; border: 1px solid #7E8B85; color: #A9B4AE; display: flex; align-items: center; justify-content: center">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 21V4"></path><path d="M5 4h11l-2 4 2 4H5"></path></svg>
+</span>
+</a>
+</div>
+
+<h1 style="position: absolute; left: 16px; top: 112px; width: 358px; margin: 0; text-align: center; font-family: 'Roboto Flex', system-ui, sans-serif; font-weight: 600; font-size: 11px; line-height: 16px; letter-spacing: 0.8px; text-transform: uppercase; color: #F0E0C4">Found today · Day 6</h1>
+
+<section aria-label="Today's message" style="position: absolute; left: 16px; top: 140px; width: 358px; min-height: 236px; box-sizing: border-box; padding: 24px; border-radius: 28px; background: #E9DFCB; color: #2B241A; box-shadow: 0 0 0 1px rgba(240,224,196,0.2), 0 0 24px rgba(99,211,255,0.10); display: flex; flex-direction: column; justify-content: space-between; gap: 16px">
+<p lang="es" style="margin: 0; font-family: 'Roboto Slab', Georgia, serif; font-weight: 700; font-size: 22px; line-height: 30px; color: #2B241A">Hoy el mar me devolvió algo que creía perdido: la calma.</p>
+<div>
+<div aria-hidden="true" style="height: 1px; background: rgba(43,36,26,0.12)"></div>
+<div style="margin-top: 12px; min-height: 32px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<sc-if value="{{anonymous}}" hint-placeholder-val="{{ true }}"><p style="margin: 0; font-style: italic; font-size: 14px; line-height: 20px; color: #645C4F">— A stranger at sea</p></sc-if>
+<sc-if value="{{penName}}" hint-placeholder-val="{{ false }}"><p style="margin: 0; font-style: italic; font-size: 14px; line-height: 20px; color: #645C4F">— Driftwood</p></sc-if>
+<svg width="20" height="32" viewBox="0 0 140 220" aria-hidden="true" style="flex: none"><path d="M60 34H80V64C80 76 112 82 112 106V190C112 204 102 212 88 212H52C38 212 28 204 28 190V106C28 82 60 76 60 64Z" fill="#00C2FF" fill-opacity="0.35" stroke="#006688" stroke-width="10" stroke-linejoin="round"></path><rect x="54" y="26" width="32" height="12" rx="6" fill="#006688"></rect></svg>
+</div>
+</div>
+</section>
+
+<div style="position: absolute; left: 16px; top: 388px; width: 358px; display: flex; justify-content: center">
+<a href="Translate-Download.dc.html" style="height: 48px; display: flex; align-items: center; text-decoration: none">
+<span style="height: 36px; box-sizing: border-box; padding: 0 16px 0 12px; border-radius: 999px; background: #0E3A4A; border: 1px solid #63D3FF; color: #63D3FF; display: flex; align-items: center; gap: 8px; font-size: 14px; line-height: 20px; font-weight: 500">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h8"></path><path d="M8 3v2"></path><path d="M5.5 5c.8 3 3 5.5 6 6.5"></path><path d="M10.5 5c-.8 3-3 5.5-6 6.5"></path><path d="M13 21l4-9 4 9"></path><path d="M14.5 18h5"></path></svg>
+<span>Translate from Spanish</span>
+</span>
+</a>
+</div>
+
+<svg width="240" height="40" viewBox="0 0 240 40" aria-hidden="true" style="position: absolute; left: 75px; top: 556px"><ellipse cx="120" cy="20" rx="110" ry="12" fill="none" stroke="#63D3FF" stroke-opacity="0.25" stroke-width="2"></ellipse><ellipse cx="120" cy="20" rx="70" ry="7" fill="none" stroke="#63D3FF" stroke-opacity="0.45" stroke-width="2"></ellipse><ellipse cx="120" cy="20" rx="34" ry="4" fill="#63D3FF" fill-opacity="0.18"></ellipse></svg>
+<div aria-hidden="true" style="position: absolute; left: 163px; top: 480px; width: 64px; height: 101px; opacity: 0.7; transform: rotate(-64deg)">
+<svg width="64" height="101" viewBox="0 0 140 220" aria-hidden="true" style="display: block">
+<path d="M60 34H80V64C80 76 112 82 112 106V190C112 204 102 212 88 212H52C38 212 28 204 28 190V106C28 82 60 76 60 64Z" fill="#00C2FF" fill-opacity="0.42" stroke="#63D3FF" stroke-width="3"></path>
+<path d="M40 112C37 140 37 168 41 194" fill="none" stroke="#FFFFFF" stroke-opacity="0.75" stroke-width="6" stroke-linecap="round"></path>
+<rect x="56" y="30" width="28" height="8" rx="4" fill="#63D3FF" fill-opacity="0.85"></rect>
+</svg>
+</div>
+
+<div style="position: absolute; left: 16px; top: 676px; width: 358px; display: flex; flex-direction: column; gap: 8px">
+<a href="SignIn-Sheet.dc.html" aria-describedby="keep-helper" style="height: 56px; border-radius: 999px; background: #C3CFC6; color: #17201B; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10V8a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2"></path><rect x="3" y="10" width="18" height="10" rx="2"></rect><path d="M3 13h18"></path><rect x="10" y="11.5" width="4" height="4" rx="1"></rect></svg>
+<span>Keep</span>
+</a>
+<p id="keep-helper" style="margin: 0; text-align: center; font-size: 12px; line-height: 16px; color: #A9B4AE">Free · goes to your chest</p>
+<div style="margin-top: 8px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<button type="button" style="height: 48px; box-sizing: border-box; border-radius: 999px; border: 1.5px solid #C3CFC6; background: transparent; color: #C3CFC6; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><path d="M8.6 13.5l6.8 4"></path><path d="M15.4 6.5l-6.8 4"></path></svg>
+<span>Share</span>
+</button>
+<button type="button" style="height: 48px; border: 0; border-radius: 999px; background: transparent; color: #C3CFC6; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; font-family: 'Roboto Slab', Georgia, serif; font-weight: 600; font-size: 16px; line-height: 24px">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path><path d="M2 15c2-2 4-2 6 0s4 2 6 0 4-2 6 0"></path></svg>
+<span>Throw it back</span>
+</button>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"penName":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const penName = this.props.penName ?? false;
+    return { penName: penName, anonymous: !penName };
+  }
+}
+</script>
+</body>
+</html>
