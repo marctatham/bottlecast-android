@@ -32,3 +32,9 @@ captures/
 # Claude Code: personal notes and local settings
 CLAUDE.local.md
 .claude/settings.local.json
+
+# Firebase rules tests (firebase/): dependencies, local project aliases and emulator logs
+firebase/node_modules/
+firebase/.firebaserc
+firebase/.firebase/
+firebase/*.log

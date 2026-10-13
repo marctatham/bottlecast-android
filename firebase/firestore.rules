@@ -1,0 +1,283 @@
+rules_version = '2';
+
+// BottleCast's Cloud Firestore security rules.
+//
+// Collections: messages, finds, daily, reports and users/{uid}/blockedWriters. Anything else is
+// denied, because rules deny by default. Tests: firebase/test, run with `npm run test:emulator`.
+//
+// The report threshold (3) also lives in the app's sea queries (reportCount in [0, 1, 2]), so change
+// both together. Access calls (get, getAfter, exists) go last in each && chain and never in a let,
+// which is evaluated eagerly.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Who is asking ----------
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function me() {
+      return request.auth.uid;
+    }
+
+    // A custom claim, set per project by scripts/set_admin_claim.py.
+    function isAdmin() {
+      return signedIn() && request.auth.token.get('admin', false) == true;
+    }
+
+    // ---------- Helpers ----------
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function changedKeys() {
+      return incoming().diff(existing()).affectedKeys();
+    }
+
+    function hasExactly(keys) {
+      return incoming().keys().hasAll(keys) && incoming().keys().hasOnly(keys);
+    }
+
+    // A find and a report share one id: "{messageId}_{uid}".
+    function pairId(messageId) {
+      return messageId + '_' + me();
+    }
+
+    function messageDoc(messageId) {
+      return /databases/$(database)/documents/messages/$(messageId);
+    }
+
+    function findDoc(findId) {
+      return /databases/$(database)/documents/finds/$(findId);
+    }
+
+    function dailyDoc(dailyId) {
+      return /databases/$(database)/documents/daily/$(dailyId);
+    }
+
+    function reportDoc(reportId) {
+      return /databases/$(database)/documents/reports/$(reportId);
+    }
+
+    // ---------- messages/{messageId} ----------
+
+    // In the sea: drifting, or found (a live or an expired hold), and reported fewer than 3 times.
+    function isInSea(m) {
+      return m.status in ['afloat', 'found'] && m.reportCount < 3;
+    }
+
+    // A find holds the bottle for 7 days. The end is computed here, never stored or swept.
+    function holdEnds(m) {
+      return m.foundAt + duration.value(7, 'd');
+    }
+
+    function holdIsLive(m) {
+      return m.status == 'found' && request.time < holdEnds(m);
+    }
+
+    function isFindable(m) {
+      return m.reportCount < 3
+        && (m.status == 'afloat' || (m.status == 'found' && request.time >= holdEnds(m)));
+    }
+
+    // Guests can still cast in slice 2, as they could before; slice 3 requires a Google identity.
+    function isValidCast(messageId) {
+      let m = incoming();
+      return hasExactly(['id', 'messageContent', 'userId', 'createdAt', 'lang', 'status',
+                         'rand', 'penName', 'sealable', 'reportCount', 'findCount', 'foundAt'])
+        && messageId.matches('^[A-Za-z0-9]{20}$')
+        && m.id == messageId
+        && m.messageContent is string
+        && m.messageContent.trim().size() >= 10
+        && m.messageContent.toUtf8().size() <= 1000
+        && m.userId == me()
+        && m.createdAt == request.time
+        && m.lang is string && m.lang.matches('^[a-z]{2,3}(-[A-Za-z0-9]{1,8})*$')
+        && m.status == 'afloat'
+        && m.rand is float && m.rand >= 0 && m.rand < 1
+        && m.penName == null
+        && m.sealable == false
+        && m.reportCount is int && m.reportCount == 0
+        && m.findCount is int && m.findCount == 0
+        && m.foundAt == null;
+    }
+
+    // The pop: one commit holds the bottle and creates my find and today's daily record.
+    function isFind(messageId) {
+      let before = existing();
+      let after = incoming();
+      return before.userId != me()
+        && isFindable(before)
+        && changedKeys().hasOnly(['status', 'findCount', 'foundAt'])
+        && after.status == 'found'
+        && after.foundAt == request.time
+        && after.findCount == before.findCount + 1
+        // Finds are create-only and stamped with the commit's time, so this proves "created now".
+        && getAfter(findDoc(pairId(messageId))).data.foundAt == request.time;
+    }
+
+    // Throw back: the live hold is mine (my find has its foundAt), and my find says so.
+    function isThrowBack(messageId) {
+      let before = existing();
+      let after = incoming();
+      return holdIsLive(before)
+        && changedKeys().hasOnly(['status', 'foundAt'])
+        && after.status == 'afloat'
+        && after.foundAt == null
+        && getAfter(findDoc(pairId(messageId))).data.foundAt == before.foundAt
+        && getAfter(findDoc(pairId(messageId))).data.status == 'thrown_back';
+    }
+
+    // Report: one more, from the live holder, with my report and my reported find in the same
+    // commit. A reported find can't be thrown back, so each report keeps the bottle out of the sea
+    // for the rest of its 7-day hold.
+    function isReport(messageId) {
+      let before = existing();
+      return changedKeys().hasOnly(['reportCount'])
+        && incoming().reportCount == before.reportCount + 1
+        && holdIsLive(before)
+        && getAfter(findDoc(pairId(messageId))).data.foundAt == before.foundAt
+        && getAfter(findDoc(pairId(messageId))).data.status == 'reported'
+        && getAfter(reportDoc(pairId(messageId))).data.createdAt == request.time;
+    }
+
+    // Moderation: pull a bottle (under_review), remove it, or restore it to the sea.
+    function isModeration() {
+      let after = incoming();
+      return isAdmin()
+        && changedKeys().hasOnly(['status', 'reportCount', 'foundAt'])
+        && after.status in ['afloat', 'under_review', 'removed']
+        && after.reportCount is int && after.reportCount >= 0
+        && (after.status != 'afloat' || after.foundAt == null);
+    }
+
+    match /messages/{messageId} {
+      allow get: if signedIn()
+        && (resource == null
+            || isAdmin()
+            || resource.data.userId == me()
+            || isInSea(resource.data));
+      allow list: if signedIn()
+        && (isAdmin()
+            || resource.data.userId == me()
+            || (request.query.limit <= 20 && isInSea(resource.data)));
+      allow create: if signedIn() && isValidCast(messageId);
+      allow update: if signedIn()
+        && (isFind(messageId) || isThrowBack(messageId) || isReport(messageId) || isModeration());
+      allow delete: if isAdmin();
+    }
+
+    // ---------- finds/{messageId}_{finderUid} ----------
+
+    function isValidFind(findId) {
+      let f = incoming();
+      return hasExactly(['messageId', 'finderUid', 'foundAt', 'dailyId', 'status'])
+        && f.finderUid == me()
+        && f.messageId is string
+        && findId == f.messageId + '_' + me()
+        && f.status == 'held'
+        && f.foundAt == request.time
+        && f.dailyId is string
+        && f.dailyId.matches('^' + me() + '_[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        // Today's daily record, created in this commit, names this bottle...
+        && getAfter(dailyDoc(f.dailyId)).data.foundAt == request.time
+        && getAfter(dailyDoc(f.dailyId)).data.messageId == f.messageId
+        // ...and the bottle was held in this commit, so a find always means a real hold.
+        && getAfter(messageDoc(f.messageId)).data.status == 'found'
+        && getAfter(messageDoc(f.messageId)).data.foundAt == request.time;
+    }
+
+    function isFindStatusChange(findId) {
+      let after = incoming();
+      return changedKeys().hasOnly(['status'])
+        && existing().status == 'held'
+        && (after.status == 'thrown_back'
+            || (after.status == 'reported'
+                && getAfter(reportDoc(findId)).data.createdAt == request.time));
+    }
+
+    match /finds/{findId} {
+      // By id, so the find's transaction can read my find before it exists.
+      allow get: if signedIn() && findId.matches('^.+_' + me() + '$');
+      allow list: if signedIn() && resource.data.finderUid == me();
+      allow create: if signedIn() && isValidFind(findId);
+      allow update: if signedIn() && resource.data.finderUid == me() && isFindStatusChange(findId);
+      // No delete: a find is forever, so nobody finds the same bottle twice.
+    }
+
+    // ---------- daily/{uid}_{yyyy-MM-dd} ----------
+
+    // A date that is today somewhere on Earth right now, from UTC-12 to UTC+14. The round trip
+    // through timestamp.date() rejects dates that don't exist, such as 2026-02-30.
+    function isLocalDateNow(dateString) {
+      let parts = dateString.split('-');
+      let day = timestamp.date(int(parts[0]), int(parts[1]), int(parts[2]));
+      return dateString.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && day.year() == int(parts[0])
+        && day.month() == int(parts[1])
+        && day.day() == int(parts[2])
+        && day >= (request.time - duration.value(12, 'h')).date()
+        && day <= (request.time + duration.value(14, 'h')).date();
+    }
+
+    function isValidDaily(dailyId) {
+      let d = incoming();
+      return hasExactly(['uid', 'date', 'zone', 'messageId', 'foundAt'])
+        && d.uid == me()
+        && d.date is string
+        && dailyId == me() + '_' + d.date
+        && isLocalDateNow(d.date)
+        && d.zone is string && d.zone.size() > 0 && d.zone.size() <= 64
+        && d.messageId is string
+        && d.foundAt == request.time
+        && getAfter(findDoc(d.messageId + '_' + me())).data.foundAt == request.time;
+    }
+
+    match /daily/{dailyId} {
+      allow get: if signedIn() && dailyId.matches('^' + me() + '_.+$');
+      allow list: if signedIn() && resource.data.uid == me();
+      allow create: if signedIn() && isValidDaily(dailyId);
+      // Create-only, so there is one find per local date.
+    }
+
+    // ---------- reports/{messageId}_{reporterUid} ----------
+
+    function isValidReport(reportId) {
+      let r = incoming();
+      return hasExactly(['messageId', 'reporterUid', 'reason', 'blockedWriter', 'createdAt'])
+        && r.reporterUid == me()
+        && r.messageId is string
+        && reportId == r.messageId + '_' + me()
+        && (r.reason == null || r.reason in ['hurtful', 'sexual', 'personal_info', 'spam', 'other'])
+        && r.blockedWriter is bool
+        && r.createdAt == request.time
+        // Counted in the same commit, so the message's report rule (a live hold, my find) applies.
+        && getAfter(messageDoc(r.messageId)).data.reportCount
+             == get(messageDoc(r.messageId)).data.reportCount + 1;
+    }
+
+    match /reports/{reportId} {
+      allow get: if isAdmin() || (signedIn() && reportId.matches('^.+_' + me() + '$'));
+      allow list, delete: if isAdmin();
+      allow create: if signedIn() && isValidReport(reportId);
+    }
+
+    // ---------- users/{uid}/blockedWriters/{writerUid} ----------
+
+    match /users/{userId}/blockedWriters/{writerUid} {
+      allow read, delete: if signedIn() && me() == userId;
+      allow create, update: if signedIn() && me() == userId
+        && writerUid != userId
+        && hasExactly(['at', 'messageId'])
+        && incoming().at == request.time
+        && incoming().messageId is string;
+    }
+  }
+}
