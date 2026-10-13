@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import com.bottlecast.app.common.ui.BottlingPreview
@@ -46,6 +47,7 @@ fun MoonDisc(
                     .dropShadow(CircleShape) {
                         radius = shadow.radius.toPx()
                         color = shadow.color
+                        offset = Offset(shadow.offset.x.toPx(), shadow.offset.y.toPx())
                         alpha = haloAlpha()
                     }
             )

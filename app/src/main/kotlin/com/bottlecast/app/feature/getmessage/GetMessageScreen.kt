@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -88,7 +89,10 @@ internal fun GetMessageView(
     val transitionExitFade = fadeOut(animationSpec = tween(2000, 0, FastOutSlowInEasing))
 
     // determined by both the animation progress and the uiState being in a final state
-    val isMessageVisible = progress() == 1f // is animation complete?
+    // read through derivedStateOf, so the screen recomposes once the animation completes rather
+    // than on every frame of it
+    val isAnimationComplete by remember(progress) { derivedStateOf { progress() == 1f } }
+    val isMessageVisible = isAnimationComplete
             && (uiState is MessageUiState.PlayingAnimation).not() // is in either success or failure state?
     val lottieVisible = !isMessageVisible
 

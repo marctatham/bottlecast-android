@@ -77,7 +77,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - Use `RobolectricTestRunner` and `@GraphicsMode(NATIVE)`.
   - Use `@Config(sdk = [37], application = Application::class, qualifiers = …)`. The plain `Application` keeps the Hilt `BottleCastApplication` out.
   - Full screens use `qualifiers = "w390dp-h844dp-xhdpi"`, the board size: PNG pixels ÷ 2 = board pixels.
-  - Capture with a compose rule and `composeTestRule.captureThemed(darkTheme) { … }` from `testing/Screenshots.kt`, which wraps the content in `BottlingTheme` and draws the window itself. Roborazzi's `captureRoboImage { }` and its node capture can come out blank depending on which tests ran before. Capture every state in Night and in Dawn.
+  - Capture with a compose rule and `composeTestRule.captureThemed(darkTheme) { … }` from `testing/Screenshots.kt`, which wraps the content in `BottlingTheme` and draws the window itself. Roborazzi's `captureRoboImage { }` and its node capture can come out blank depending on which tests ran before. The software draw leaves out elevation shadows (Dawn's 1dp card shadow); `dropShadow` glows do render. Capture every state in Night and in Dawn.
   - Sheets and dialogs are windows of their own: call `waitForIdle()`, then `captureScreenRoboImage()`. If something animates in, set `mainClock.autoAdvance = false` and advance past it first.
 - **Never capture a running animation.** Hoist Lottie `progress` (and any other animation state) into a parameter and pass a fixed value.
   - Pass the composition in too: `rememberLottieComposition` parses on a background thread, so a capture can come out blank.

@@ -229,7 +229,7 @@ private fun TypeColumn(modifier: Modifier) {
         SectionHeading(R.string.foundations_section_type)
         Row(horizontalArrangement = Arrangement.spacedBy(BottlingTheme.spacing.s)) {
             FontTile(R.string.foundations_font_slab, R.string.foundations_font_slab_caption, SpecimenDimens.fontSample(RobotoSlab, FontWeight.SemiBold), Modifier.weight(1f))
-            FontTile(R.string.foundations_font_flex, R.string.foundations_font_flex_caption, SpecimenDimens.fontSample(robotoFlex(SpecimenDimens.fontSampleSize), FontWeight.Normal), Modifier.weight(1f))
+            FontTile(R.string.foundations_font_flex, R.string.foundations_font_flex_caption, SpecimenDimens.fontSample(SpecimenDimens.flexSampleFamily, FontWeight.Normal), Modifier.weight(1f))
             FontTile(R.string.foundations_font_mono, R.string.foundations_font_mono_caption, SpecimenDimens.fontSample(RobotoMono, FontWeight.Normal), Modifier.weight(1f))
         }
         Spacer(modifier = Modifier.height(BottlingTheme.spacing.l))
@@ -431,6 +431,7 @@ private object SpecimenDimens {
     val moonTile = 96.dp
 
     val fontSampleSize = 28.sp
+    val flexSampleFamily = robotoFlex(fontSampleSize)
 
     @Composable
     fun titleStyle() = MaterialTheme.typography.displaySmall.copy(fontSize = 48.sp, lineHeight = 56.sp)

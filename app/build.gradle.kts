@@ -112,7 +112,8 @@ roborazzi {
 val mockkAgent: Configuration by configurations.creating { isTransitive = false }
 
 tasks.withType<Test>().configureEach {
-    // renders shadows & elevation the way a device does
+    // PixelCopy renders shadows & elevation the way a device does; it's used by the screen captures
+    // (sheets, dialogs), while captureThemed draws the window in software (see testing/Screenshots.kt)
     systemProperty("robolectric.pixelCopyRenderMode", "hardware")
     maxHeapSize = "2g"
     // Robolectric reaches into JDK internals, which Java 17+ only allows when opened (robolectric.org/getting-started)
@@ -130,6 +131,7 @@ tasks.withType<Test>().configureEach {
     // mockk attaches ByteBuddy's agent to the running JVM, which fails once a Robolectric NATIVE
     // test has run in the same worker; loading the agent at startup means it never has to attach
     val agent: FileCollection = mockkAgent
+    inputs.files(agent).withPropertyName("mockkAgent").withNormalizer(ClasspathNormalizer::class.java)
     jvmArgumentProviders.add(CommandLineArgumentProvider { listOf("-javaagent:${agent.singleFile.absolutePath}") })
 }
 
