@@ -1,6 +1,5 @@
 package com.bottlecast.app.common.ui
 
-import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.LocalRippleConfiguration
 import androidx.compose.material3.LocalRippleThemeConfiguration
@@ -12,10 +11,7 @@ import androidx.compose.material3.RippleThemeConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.runtime.SideEffect
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
-import androidx.core.view.WindowCompat
 
 /**
  * The Moonlit Shore theme: Night when [darkTheme], Dawn otherwise, with dynamic colour off
@@ -29,16 +25,6 @@ fun BottlingTheme(
     val colorScheme = if (darkTheme) NightColorScheme else DawnColorScheme
     val colors = if (darkTheme) NightBottlingColors else DawnBottlingColors
     val effects = if (darkTheme) NightBottlingEffects else DawnBottlingEffects
-
-    // the status bar itself is painted in MessageInABottleApp now that the app draws edge-to-edge,
-    // so only its icon colour (contrasting with colorScheme.primary) is set here
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = darkTheme
-        }
-    }
 
     CompositionLocalProvider(
         LocalBottlingColors provides colors,
