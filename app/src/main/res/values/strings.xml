@@ -15,12 +15,6 @@
   -->
 
 <resources>
-    <string name="home_title">BottleCast</string>
-    <string name="home_description">Ready for a virtual adventure filled with serendipitous discoveries? Find a hidden message in a virtual bottle or cast your own into the digital sea for others to uncover.</string>
-    <string name="home_button_get_message">Discover a message</string>
-    <string name="home_button_put_message">Send your own</string>
-    <string name="home_button_view_messages">View all</string>
-
     <string name="get_message_button_acknowledge">Message explored</string>
 
     <string name="button_back">Back</string>

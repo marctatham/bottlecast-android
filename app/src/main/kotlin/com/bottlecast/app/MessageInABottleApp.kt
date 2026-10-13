@@ -1,16 +1,20 @@
 package com.bottlecast.app
 
 import android.app.Activity
+import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -22,76 +26,102 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.bottlecast.app.common.analytics.ITracker
+import com.bottlecast.app.common.components.TabFrame
+import com.bottlecast.app.common.ui.BottlingMotion
 import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.feature.chest.ChestScreen
 import com.bottlecast.app.feature.getmessage.GetMessageScreen
-import com.bottlecast.app.feature.home.HomeScreen
 import com.bottlecast.app.feature.login.LoginRequiredToPostScreen
+import com.bottlecast.app.feature.me.MeScreen
 import com.bottlecast.app.feature.postmessage.ui.PostMessageScreen
+import com.bottlecast.app.feature.shore.ShoreScreen
 import com.bottlecast.app.feature.viewmessages.ViewMessagesScreen
 
+/**
+ * The app's shell: one NavHost, drawn edge to edge. The tab roots (Shore, Chest, Me) each draw
+ * themselves in a [TabFrame] with the navigation bar; every other route is immersive (spec §2).
+ */
 @Composable
 fun MessageInABottleApp(analyticsProvider: ITracker) {
     val navController = rememberNavController()
     TrackScreens(navController, analyticsProvider)
+    SystemBarAppearance()
 
     val viewModel: AppNavigationStateViewModel = hiltViewModel()
     val backHandler: () -> Unit = { navController.popBackStack() }
     // a pop rather than a fresh navigation, so the Shore keeps its state and the pop transitions run
     val homeHandler: () -> Unit = { navController.popBackStack<Shore>(inclusive = false) }
-
-    // the status bar's icons contrast with the primary strip painted below: dark on Night's pale
-    // sage, light on Dawn's deep sage
-    val isNight = BottlingTheme.colors.isNight
-    val view = LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = isNight
+    // tabs keep their own state, and back from any tab leads to the Shore, then out (spec §2)
+    val tabHandler: (TopLevelDestination) -> Unit = { destination ->
+        navController.navigate(destination.route) {
+            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
         }
     }
 
-    // the app draws edge-to-edge, so the system bar areas are handled here once for every screen
-    Column(
+    NavHost(
+        navController = navController,
+        startDestination = Shore,
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(MaterialTheme.colorScheme.background),
+        enterTransition = { fadeIn(BottlingMotion.screen()) },
+        exitTransition = { fadeOut(BottlingMotion.screen()) },
+        popEnterTransition = { fadeIn(BottlingMotion.screen()) },
+        popExitTransition = { fadeOut(BottlingMotion.screen()) },
     ) {
-        // keep the status bar painted in the primary colour, as it was before edge-to-edge
-        Spacer(
-            modifier = Modifier
-                .fillMaxWidth()
-                .windowInsetsTopHeight(WindowInsets.statusBars)
-                .background(MaterialTheme.colorScheme.primary)
-        )
-
-        NavHost(
-            navController = navController,
-            startDestination = Shore,
-            // keep content clear of the navigation bar, display cutouts & the keyboard,
-            // and stop oversized backgrounds (e.g. CustomBox's circle) painting over the status bar
-            modifier = Modifier
-                .weight(1f)
-                .clipToBounds()
-                .consumeWindowInsets(WindowInsets.statusBars)
-                .safeDrawingPadding(),
-        ) {
-            composable<Shore> {
-                HomeScreen(
-                    onGetMessageHandler = { navController.navigate(GetMessage) },
-                    onPostMessageHandler = { navController.navigate(viewModel.onNavigateToPostMessage()) },
-                    onViewMessagesHandler = { navController.navigate(Moderation) },
+        // a tab root stays put under whatever opens over it, so it's already there, bar and all,
+        // when a predictive back gesture reveals it
+        composable<Shore>(exitTransition = { KeepTabRoot }, popEnterTransition = { EnterTransition.None }) {
+            TabFrame(selected = TopLevelDestination.SHORE, onSelect = tabHandler) { contentPadding ->
+                ShoreScreen(
+                    onFindBottleHandler = { navController.navigate(GetMessage) },
+                    onCastHandler = { navController.navigate(viewModel.onNavigateToPostMessage()) },
+                    onModerationHandler = { navController.navigate(Moderation) },
+                    onOpenChestHandler = { tabHandler(TopLevelDestination.CHEST) },
+                    onOpenMeHandler = { tabHandler(TopLevelDestination.ME) },
+                    contentPadding = contentPadding,
                 )
             }
-            composable<GetMessage> { GetMessageScreen(homeHandler) }
-            composable<PostMessageLoginRequired> {
+        }
+        composable<Chest>(exitTransition = { KeepTabRoot }, popEnterTransition = { EnterTransition.None }) {
+            TabFrame(selected = TopLevelDestination.CHEST, onSelect = tabHandler) { contentPadding ->
+                ChestScreen(
+                    onGoToShoreHandler = { tabHandler(TopLevelDestination.SHORE) },
+                    contentPadding = contentPadding,
+                )
+            }
+        }
+        composable<Me>(exitTransition = { KeepTabRoot }, popEnterTransition = { EnterTransition.None }) {
+            TabFrame(selected = TopLevelDestination.ME, onSelect = tabHandler) { contentPadding ->
+                MeScreen(
+                    onGoToShoreHandler = { tabHandler(TopLevelDestination.SHORE) },
+                    contentPadding = contentPadding,
+                )
+            }
+        }
+
+        composable<GetMessage>(popExitTransition = { PredictiveBackExit }) {
+            ImmersiveScreen { GetMessageScreen(homeHandler) }
+        }
+        composable<PostMessageLoginRequired>(
+            // its one way forward replaces it with PostMessage, which fades in over it
+            exitTransition = { ExitTransition.None },
+            popExitTransition = { PredictiveBackExit },
+        ) {
+            ImmersiveScreen {
                 LoginRequiredToPostScreen(
                     onProceedHandler = {
                         navController.popBackStack(PostMessageLoginRequired, inclusive = true)
@@ -101,13 +131,61 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                     onCancelHandler = homeHandler
                 )
             }
-            composable<PostMessage> {
+        }
+        composable<PostMessage>(popExitTransition = { PredictiveBackExit }) {
+            ImmersiveScreen {
                 PostMessageScreen(
                     onBackHandler = backHandler,
                     onHomeHandler = homeHandler,
                 )
             }
-            composable<Moderation> { ViewMessagesScreen() }
+        }
+        composable<Moderation>(popExitTransition = { PredictiveBackExit }) {
+            ImmersiveScreen { ViewMessagesScreen() }
+        }
+    }
+}
+
+/**
+ * An immersive screen that predates the edge-to-edge redesign. It keeps its old layout by sitting
+ * inside the system bars, cutouts and keyboard, over an opaque background, and it gains rounded
+ * corners as a predictive back gesture shrinks it away (spec §1.5).
+ */
+@Composable
+private fun AnimatedContentScope.ImmersiveScreen(content: @Composable () -> Unit) {
+    val corner by transition.animateDp(
+        transitionSpec = { tween(BottlingMotion.SCREEN_MILLIS) },
+        label = "predictive back corner",
+    ) { state -> if (state == EnterExitState.PostExit) PREDICTIVE_BACK_CORNER else 0.dp }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .graphicsLayer {
+                shape = RoundedCornerShape(corner)
+                clip = true
+            }
+            .background(MaterialTheme.colorScheme.background)
+            .safeDrawingPadding()
+            // stops oversized backgrounds (CustomBox's circle) painting into the system bars
+            .clipToBounds()
+    ) { content() }
+}
+
+/**
+ * The status and navigation bars are transparent, so their icons follow the theme: light on
+ * Night, dark on Dawn (spec §1.1).
+ */
+@Composable
+private fun SystemBarAppearance() {
+    val isNight = BottlingTheme.colors.isNight
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = !isNight
+                isAppearanceLightNavigationBars = !isNight
+            }
         }
     }
 }
@@ -132,4 +210,15 @@ private fun TrackScreens(navController: NavController, tracker: ITracker) {
     }
 }
 
+// a tab root stays fully visible for as long as the screen opening over it takes to fade in
+private val KeepTabRoot: ExitTransition = fadeOut(BottlingMotion.screen(), targetAlpha = 1f)
+
+// a full-screen route shrinks to 90% as back is swiped (spec §1.5), then fades as it lets go
+private val PredictiveBackExit: ExitTransition =
+    scaleOut(targetScale = PREDICTIVE_BACK_SCALE, animationSpec = tween(BottlingMotion.SCREEN_MILLIS)) +
+        fadeOut(tween(PREDICTIVE_BACK_FADE_MILLIS, delayMillis = BottlingMotion.SCREEN_MILLIS - PREDICTIVE_BACK_FADE_MILLIS))
+
+private const val PREDICTIVE_BACK_SCALE = 0.9f
+private const val PREDICTIVE_BACK_FADE_MILLIS = 150
+private val PREDICTIVE_BACK_CORNER = 32.dp
 private const val NO_DESTINATION = 0

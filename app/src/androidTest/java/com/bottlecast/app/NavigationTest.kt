@@ -7,10 +7,13 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.lifecycle.Lifecycle
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.bottlecast.app.fakes.FakeMessageRepository
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -20,7 +23,8 @@ import org.junit.runner.RunWith
 private const val MESSAGE_REVEAL_TIMEOUT_MILLIS = 30_000L
 
 /**
- * Navigation tests for [MessageInABottleApp], backed by the fakes the testdi modules install.
+ * Navigation tests for [MessageInABottleApp]: the Shore, its tabs and today's immersive screens,
+ * backed by the fakes the testdi modules install.
  */
 @HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
@@ -33,8 +37,8 @@ class NavigationTest {
     val composeTestRule = createAndroidComposeRule<MainActivity>()
 
     @Test
-    fun discoverMessage_showsMessage_thenExplored_returnsHome() {
-        composeTestRule.onNodeWithText(string(R.string.home_button_get_message)).performClick()
+    fun findTodaysBottle_showsMessageWithoutTheBar_thenExplored_returnsToShore() {
+        composeTestRule.onNodeWithText(string(R.string.shore_find_bottle)).performClick()
 
         composeTestRule.waitUntil(
             conditionDescription = "the discovered message is shown",
@@ -45,26 +49,62 @@ class NavigationTest {
                 .isNotEmpty()
         }
         composeTestRule.onNodeWithText(FakeMessageRepository.SEEDED_MESSAGE).assertIsDisplayed()
+        // immersive routes hide the navigation bar (spec §2)
+        composeTestRule.onNodeWithText(string(R.string.nav_chest)).assertDoesNotExist()
 
         composeTestRule.onNodeWithText(string(R.string.get_message_button_acknowledge)).performClick()
 
-        composeTestRule.onNodeWithText(string(R.string.home_title)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(string(R.string.home_button_get_message)).assertIsDisplayed()
+        assertShoreIsShown()
         composeTestRule.onNodeWithText(FakeMessageRepository.SEEDED_MESSAGE).assertDoesNotExist()
     }
 
     @Test
-    fun discoverMessage_thenBack_returnsHome() {
-        composeTestRule.onNodeWithText(string(R.string.home_button_get_message)).performClick()
+    fun findTodaysBottle_thenBack_returnsToShore() {
+        composeTestRule.onNodeWithText(string(R.string.shore_find_bottle)).performClick()
 
         composeTestRule.onNodeWithContentDescription(string(R.string.button_back)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(string(R.string.home_title)).assertDoesNotExist()
+        composeTestRule.onNodeWithText(string(R.string.shore_waiting_title)).assertDoesNotExist()
 
         composeTestRule.onNodeWithContentDescription(string(R.string.button_back)).performClick()
 
-        composeTestRule.onNodeWithText(string(R.string.home_title)).assertIsDisplayed()
-        composeTestRule.onNodeWithText(string(R.string.home_button_get_message)).assertIsDisplayed()
+        assertShoreIsShown()
         composeTestRule.onNodeWithContentDescription(string(R.string.button_back)).assertDoesNotExist()
+    }
+
+    @Test
+    fun tabs_switchBetweenTheirRoots_thenBackLeadsToTheShore_thenOut() {
+        composeTestRule.onNodeWithText(string(R.string.nav_chest)).performClick()
+        composeTestRule.onNodeWithText(string(R.string.chest_empty_title)).assertIsDisplayed()
+
+        composeTestRule.onNodeWithText(string(R.string.nav_me)).performClick()
+        composeTestRule.onNodeWithText(string(R.string.me_placeholder_title)).assertIsDisplayed()
+
+        // back from any tab root leads to the Shore (spec §2)
+        Espresso.pressBack()
+        assertShoreIsShown()
+
+        // and back from the Shore leaves the app
+        Espresso.pressBackUnconditionally()
+        composeTestRule.waitUntil(conditionDescription = "the app has left the screen") {
+            !composeTestRule.activityRule.scenario.state.isAtLeast(Lifecycle.State.RESUMED)
+        }
+        Assert.assertFalse(composeTestRule.activityRule.scenario.state.isAtLeast(Lifecycle.State.RESUMED))
+    }
+
+    @Test
+    fun chest_goToTheShore_returnsToShore() {
+        composeTestRule.onNodeWithText(string(R.string.nav_chest)).performClick()
+
+        composeTestRule.onNodeWithText(string(R.string.go_to_shore)).performClick()
+
+        assertShoreIsShown()
+        composeTestRule.onNodeWithText(string(R.string.chest_empty_title)).assertDoesNotExist()
+    }
+
+    private fun assertShoreIsShown() {
+        composeTestRule.onNodeWithText(string(R.string.shore_waiting_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.shore_find_bottle)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.nav_shore)).assertIsDisplayed()
     }
 
     private fun string(@StringRes resId: Int): String = composeTestRule.activity.getString(resId)

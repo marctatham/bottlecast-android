@@ -26,6 +26,16 @@ class FakeAuthenticationRepository @Inject constructor() : IAuthenticationReposi
         _user.value = UserEntity.UnauthenticatedUser
     }
 
+    /** Signs in as the admin, who's offered the Shore's moderation menu. */
+    fun signInAsAdmin() {
+        _user.value = UserEntity.AuthenticatedUser(
+            providerType = AuthProviderType.Google,
+            jwtToken = "fakeToken",
+            userId = "fakeAdminId",
+            isAdmin = true
+        )
+    }
+
     private fun signIn(providerType: AuthProviderType) {
         _user.value = UserEntity.AuthenticatedUser(
             providerType = providerType,

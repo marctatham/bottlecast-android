@@ -22,6 +22,9 @@ class MainActivity : ComponentActivity() {
 
         // enforced from Android 15 onwards, opting in keeps older devices consistent
         enableEdgeToEdge()
+        // the bars are transparent (spec §1.1): with 3-button navigation the system would otherwise
+        // lay a scrim over the app's own navigation bar
+        window.isNavigationBarContrastEnforced = false
 
         setContent {
             BottlingTheme {
