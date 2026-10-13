@@ -67,7 +67,6 @@ firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleId" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 androidx-compose-material-iconsExtended = { module = "androidx.compose.material:material-icons-extended" }
-androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }

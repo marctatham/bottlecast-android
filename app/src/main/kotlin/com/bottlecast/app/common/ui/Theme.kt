@@ -105,7 +105,7 @@ fun BottlingTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = bottlingTypography,
+        typography = BottlingM3Typography,
         shapes = shapes,
         content = content
     )

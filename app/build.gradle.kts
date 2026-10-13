@@ -178,9 +178,6 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
-    // ui bits (worth revisiting & replacing with jetpack compose for the most part)
-    implementation(libs.androidx.ui.text.google.fonts)
-
     // Tooling
     debugImplementation(libs.androidx.compose.ui.tooling)
 
