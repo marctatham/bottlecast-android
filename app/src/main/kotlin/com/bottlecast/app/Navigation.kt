@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import kotlinx.serialization.Serializable
+import kotlin.reflect.KClass
 
 /**
  * The app's type-safe routes (spec §2). Each carries the stable snake_case name that screen
@@ -32,10 +33,26 @@ data object Me : BottlingRoute {
     override val screenName: String get() = "me"
 }
 
-/** Today's discover screen, until slice 2's Discover and Reveal replace it. */
+/**
+ * Discover: uncorking today's bottle (spec §3.6). It keeps the name of the find screen it
+ * replaced, so analytics carry on across the redesign.
+ */
 @Serializable
-data object GetMessage : BottlingRoute {
+data object Discover : BottlingRoute {
     override val screenName: String get() = "get_messages"
+}
+
+/**
+ * Reveal: a found bottle's message (spec §3.7). [fresh] when it has just been uncorked, so the
+ * moonlight sweeps across it once; reopened from the Shore, it shows still.
+ */
+@Serializable
+data class Reveal(val messageId: String, val fresh: Boolean = false) : BottlingRoute {
+    override val screenName: String get() = SCREEN_NAME
+
+    companion object {
+        const val SCREEN_NAME = "reveal"
+    }
 }
 
 /** Today's post screen, until slice 3's Compose replaces it. */
@@ -50,7 +67,7 @@ data object PostMessageLoginRequired : BottlingRoute {
     override val screenName: String get() = "post_message_login_required"
 }
 
-/** The admin's list of every message (spec §3.3: "Moderation"). */
+/** The admin's list of reported and pulled bottles (spec §3.3: "Moderation"). */
 @Serializable
 data object Moderation : BottlingRoute {
     override val screenName: String get() = "view_messages"
@@ -63,15 +80,19 @@ enum class TopLevelDestination(val route: BottlingRoute, @StringRes val label: I
     ME(Me, R.string.nav_me),
 }
 
-/** Every route, so a destination can be matched back to its route. */
-val bottlingRoutes: List<BottlingRoute> = listOf(
-    Shore,
-    Chest,
-    Me,
-    GetMessage,
-    PostMessage,
-    PostMessageLoginRequired,
-    Moderation,
+/**
+ * Every route's analytics name, by its class, so a destination can be matched back to its route.
+ * A route with arguments has no instance to ask, so the names are listed here.
+ */
+val routeScreenNames: Map<KClass<out BottlingRoute>, String> = mapOf(
+    Shore::class to Shore.screenName,
+    Chest::class to Chest.screenName,
+    Me::class to Me.screenName,
+    Discover::class to Discover.screenName,
+    Reveal::class to Reveal.SCREEN_NAME,
+    PostMessage::class to PostMessage.screenName,
+    PostMessageLoginRequired::class to PostMessageLoginRequired.screenName,
+    Moderation::class to Moderation.screenName,
 )
 
 /** True for the tab roots, which show the navigation bar; every other route is immersive. */
@@ -79,6 +100,6 @@ fun NavDestination.isTopLevel(): Boolean = TopLevelDestination.entries.any { has
 
 /** The analytics name of the route this destination was built from. */
 fun NavDestination.screenName(): String =
-    bottlingRoutes.firstOrNull { hasRoute(it::class) }?.screenName ?: UNKNOWN_SCREEN_NAME
+    routeScreenNames.entries.firstOrNull { (route, _) -> hasRoute(route) }?.value ?: UNKNOWN_SCREEN_NAME
 
 internal const val UNKNOWN_SCREEN_NAME = "unknown"

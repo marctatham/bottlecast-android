@@ -14,6 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import com.bottlecast.app.common.ui.BottlingPreview
 import com.bottlecast.app.common.ui.BottlingTheme
@@ -49,7 +50,8 @@ fun EmptyState(
         }
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge,
+            // a long title breaks into even lines, rather than leaving its last word on its own
+            style = MaterialTheme.typography.titleLarge.copy(lineBreak = LineBreak.Heading),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
             modifier = Modifier.semantics { heading() },

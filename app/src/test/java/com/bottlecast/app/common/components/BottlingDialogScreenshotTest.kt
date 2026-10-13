@@ -45,7 +45,11 @@ class BottlingDialogScreenshotTest {
                         .background(MaterialTheme.colorScheme.background)
                         .padding(BottlingTheme.spacing.l)
                 ) {
-                    Text(text = "The screen behind the dialog", style = MaterialTheme.typography.headlineMedium)
+                    Text(
+                        text = "The screen behind the dialog",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                    )
                 }
                 BottlingDialog(onDismissRequest = {}) {
                     Text(text = "A dialog", style = MaterialTheme.typography.headlineSmall)

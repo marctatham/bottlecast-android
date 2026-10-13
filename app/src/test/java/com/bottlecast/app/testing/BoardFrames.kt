@@ -21,7 +21,14 @@ internal val BoardStatusBar = WindowInsets(top = 44.dp)
 internal fun BoardTabFrame(
     selected: TopLevelDestination,
     navigationBarInsets: WindowInsets = WindowInsets(0),
+    snackbarHost: @Composable () -> Unit = {},
     content: @Composable (contentPadding: PaddingValues) -> Unit,
 ) {
-    TabFrame(selected = selected, onSelect = {}, navigationBarInsets = navigationBarInsets, content = content)
+    TabFrame(
+        selected = selected,
+        onSelect = {},
+        navigationBarInsets = navigationBarInsets,
+        snackbarHost = snackbarHost,
+        content = content,
+    )
 }

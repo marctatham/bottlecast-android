@@ -17,12 +17,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import com.bottlecast.app.R
 import com.bottlecast.app.common.components.OverlineText
 import com.bottlecast.app.common.components.ParchmentCard
-import com.bottlecast.app.common.components.StatusChip
-import com.bottlecast.app.common.components.StatusChipStyle
 import com.bottlecast.app.common.ui.BottlingPreview
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.common.ui.NightDawnPreviews
@@ -31,8 +30,8 @@ import com.bottlecast.app.feature.shore.TodaysFind
 
 /**
  * Shore B's today's-find card (spec §3.3), straddling the dome's edge: a one-line parchment
- * excerpt with its status in the ink chip style (surface chips fall to 1.6–2.7:1 on parchment)
- * and a chevron. Tapping it reopens today's bottle.
+ * excerpt and a chevron. Tapping it reopens today's bottle. Its Kept and Not kept chip arrives with
+ * Keep in slice 4.
  */
 @Composable
 internal fun TodaysFindCard(
@@ -63,23 +62,11 @@ internal fun TodaysFindCard(
                 OverlineText(text = stringResource(R.string.shore_todays_find), color = colors.inkMuted)
                 Text(
                     text = stringResource(R.string.shore_find_excerpt, find.excerpt),
-                    style = MaterialTheme.typography.titleMedium,
+                    // the message runs in its own script's direction, whichever way the app is laid out
+                    style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
                     color = colors.ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (find.isKept) {
-                StatusChip(
-                    text = stringResource(R.string.shore_find_kept),
-                    icon = R.drawable.ic_symbol_inventory_2,
-                    style = StatusChipStyle.Parchment,
-                )
-            } else {
-                StatusChip(
-                    text = stringResource(R.string.shore_find_not_kept, find.daysLeft),
-                    icon = R.drawable.ic_symbol_waves,
-                    style = StatusChipStyle.Parchment,
                 )
             }
             Icon(
@@ -99,7 +86,7 @@ private fun TodaysFindCardPreview() = BottlingPreview {
         modifier = Modifier.padding(BottlingTheme.spacing.m),
         verticalArrangement = Arrangement.spacedBy(BottlingTheme.spacing.m),
     ) {
-        TodaysFindCard(find = TodaysFind("Hoy el mar me devolvió algo que creía perdido: la calma.", isKept = true, daysLeft = 7), onClick = {})
-        TodaysFindCard(find = TodaysFind("Hey, that's pretty cool", isKept = false, daysLeft = 7), onClick = {})
+        TodaysFindCard(find = TodaysFind("preview1", "Hoy el mar me devolvió algo que creía perdido: la calma."), onClick = {})
+        TodaysFindCard(find = TodaysFind("preview2", "Hey, that's pretty cool"), onClick = {})
     }
 }

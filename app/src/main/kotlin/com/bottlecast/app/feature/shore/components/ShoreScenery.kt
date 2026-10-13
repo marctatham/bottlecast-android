@@ -51,6 +51,7 @@ internal enum class ShoreScene(val glowCenter: Offset) {
  * @param insets the status bar and cutouts; the boards place the moon from below the status bar.
  * @param largeText leaves the glints out, since they'd cross the stats once large text pushes them
  *   up to the arc.
+ * @param moon false when the hero brings a moon of its own.
  */
 @Composable
 internal fun ShoreScenery(
@@ -59,6 +60,7 @@ internal fun ShoreScenery(
     insets: PaddingValues,
     largeText: Boolean,
     modifier: Modifier = Modifier,
+    moon: Boolean = true,
 ) {
     val colors = BottlingTheme.colors
     val layoutDirection = LocalLayoutDirection.current
@@ -74,7 +76,7 @@ internal fun ShoreScenery(
                 Glints.forEach { glint -> drawGlint(glint, arcY, tide.glintPhase(), colors.sceneryAccent) }
             }
         }
-        if (scene == ShoreScene.BottleWaiting) {
+        if (scene == ShoreScene.BottleWaiting && moon) {
             MoonDisc(
                 modifier = Modifier
                     .align(Alignment.TopEnd)

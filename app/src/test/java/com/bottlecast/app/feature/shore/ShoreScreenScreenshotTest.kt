@@ -1,9 +1,13 @@
 package com.bottlecast.app.feature.shore
 
 import android.app.Application
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasScrollAction
@@ -16,6 +20,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.bottlecast.app.R
 import com.bottlecast.app.TopLevelDestination
+import com.bottlecast.app.common.components.BottlingSnackbarHost
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.common.ui.BreathingTide
 import com.bottlecast.app.feature.shore.domain.Tide
@@ -23,11 +28,11 @@ import com.bottlecast.app.testing.BoardStatusBar
 import com.bottlecast.app.testing.BoardTabFrame
 import com.bottlecast.app.testing.captureScreenByDrawing
 import com.bottlecast.app.testing.captureThemed
-import com.bottlecast.app.testing.loadLottieComposition
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.time.Duration
@@ -45,8 +50,6 @@ class ShoreScreenScreenshotTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
-
-    private val composition = loadLottieComposition(R.raw.message_in_bottle)
 
     @Test
     fun waitingWithSampleDataNight() = capture(SampleWaiting, darkTheme = true)
@@ -111,6 +114,32 @@ class ShoreScreenScreenshotTest {
     @Test
     fun navigationBarInsetDawn() = capture(SampleWaiting, darkTheme = false, navigationBarInsets = WindowInsets(bottom = 48.dp))
 
+    // the sea is known to be calm before the tap: casting is offered instead (spec §3.3)
+    @Test
+    fun seaCalmNight() = capture(ShoreUiState.BottleWaiting(seaCalm = true), darkTheme = true)
+
+    @Test
+    fun seaCalmDawn() = capture(ShoreUiState.BottleWaiting(seaCalm = true), darkTheme = false)
+
+    // today's bottle went back to the sea, or was reported: the card goes with it
+    @Test
+    fun foundTodayWithoutCardNight() = capture(SampleFoundToday.copy(todaysFind = null), darkTheme = true)
+
+    @Test
+    fun foundTodayWithoutCardDawn() = capture(SampleFoundToday.copy(todaysFind = null), darkTheme = false)
+
+    @Test
+    fun throwBackSnackbarNight() = captureSnackbar(string(R.string.shore_thrown_back), action = string(R.string.shore_undo), darkTheme = true)
+
+    @Test
+    fun throwBackSnackbarDawn() = captureSnackbar(string(R.string.shore_thrown_back), action = string(R.string.shore_undo), darkTheme = false)
+
+    @Test
+    fun alreadyFoundSnackbarNight() = captureSnackbar(alreadyFound(), action = null, darkTheme = true)
+
+    @Test
+    fun alreadyFoundSnackbarDawn() = captureSnackbar(alreadyFound(), action = null, darkTheme = false)
+
     @Test
     fun adminMenuOpenNight() = captureAdminMenu(darkTheme = true)
 
@@ -158,14 +187,48 @@ class ShoreScreenScreenshotTest {
         composeTestRule.captureScreenByDrawing()
     }
 
+    // the snackbar shows over Shore B, as it does once a throw back or a redirect lands there
+    // the Shore-B board's 7h 12m, worded as the app words it
+    private fun alreadyFound(): String =
+        string(R.string.shore_already_found, string(R.string.shore_countdown_hours_minutes, 7, 12))
+
+    private fun string(@StringRes resId: Int, vararg args: Any): String = RuntimeEnvironment.getApplication().getString(resId, *args)
+
+    private fun captureSnackbar(message: String, action: String?, darkTheme: Boolean) {
+        val hostState = SnackbarHostState()
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            BottlingTheme(darkTheme = darkTheme) {
+                ShoreFrame(
+                    uiState = SampleFoundToday.copy(todaysFind = null),
+                    navigationBarInsets = WindowInsets(0),
+                    snackbarHost = { BottlingSnackbarHost(hostState) },
+                )
+                LaunchedEffect(Unit) {
+                    hostState.showSnackbar(message, actionLabel = action, duration = SnackbarDuration.Indefinite)
+                }
+            }
+        }
+        // past the snackbar's entrance
+        composeTestRule.mainClock.advanceTimeBy(SNACKBAR_SETTLED_MILLIS)
+        composeTestRule.waitForIdle()
+        composeTestRule.captureScreenByDrawing()
+    }
+
     @Composable
-    private fun ShoreFrame(uiState: ShoreUiState, navigationBarInsets: WindowInsets) {
-        BoardTabFrame(selected = TopLevelDestination.SHORE, navigationBarInsets = navigationBarInsets) { contentPadding ->
+    private fun ShoreFrame(
+        uiState: ShoreUiState,
+        navigationBarInsets: WindowInsets,
+        snackbarHost: @Composable () -> Unit = {},
+    ) {
+        BoardTabFrame(
+            selected = TopLevelDestination.SHORE,
+            navigationBarInsets = navigationBarInsets,
+            snackbarHost = snackbarHost,
+        ) { contentPadding ->
             ShoreScreen(
                 uiState = uiState,
                 tide = BreathingTide.Still,
-                composition = composition,
-                progress = { BOTTLE_PROGRESS },
                 onFindBottleHandler = {},
                 onCastHandler = {},
                 onModerationHandler = {},
@@ -180,8 +243,8 @@ class ShoreScreenScreenshotTest {
     }
 
     private companion object {
-        const val BOTTLE_PROGRESS = 0f
         const val SHORT_SCREEN = "w390dp-h640dp-xhdpi"
+        const val SNACKBAR_SETTLED_MILLIS = 1_000L
 
         val SampleWaiting = ShoreUiState.BottleWaiting(
             streak = ShoreStreak(days = 6, shields = 1),
@@ -192,9 +255,8 @@ class ShoreScreenScreenshotTest {
         val SampleFoundToday = ShoreUiState.FoundToday(
             tide = Tide(untilNextTide = Duration.ofHours(7).plusMinutes(12), dayElapsed = 0.7f),
             todaysFind = TodaysFind(
+                messageId = "bottle00000000000001",
                 excerpt = "Hoy el mar me devolvió algo que creía perdido: la calma.",
-                isKept = true,
-                daysLeft = 7,
             ),
             reminderTime = LocalTime.of(9, 0),
             streak = ShoreStreak(days = 6, shields = 1),
@@ -203,7 +265,7 @@ class ShoreScreenScreenshotTest {
 
         val SampleFoundTodayUnderAnHour = SampleFoundToday.copy(
             tide = Tide(untilNextTide = Duration.ofMinutes(42), dayElapsed = 1f - 42f / (24 * 60)),
-            todaysFind = TodaysFind(excerpt = "Hey, that's pretty cool", isKept = false, daysLeft = 7),
+            todaysFind = TodaysFind(messageId = "bottle00000000000002", excerpt = "Hey, that's pretty cool"),
             reminderTime = null,
         )
     }

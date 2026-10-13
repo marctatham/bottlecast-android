@@ -1,5 +1,13 @@
 package com.bottlecast.app.feature.shore.components
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -27,13 +35,10 @@ import java.time.Duration
 internal fun NextTide(
     untilNextTide: Duration,
     modifier: Modifier = Modifier,
+    rollDigits: Boolean = true,
 ) {
     val countdown = countdownFor(untilNextTide)
-    val text = when (countdown) {
-        is TideCountdown.HoursMinutes -> stringResource(R.string.shore_countdown_hours_minutes, countdown.hours, countdown.minutes)
-        is TideCountdown.Minutes -> stringResource(R.string.shore_countdown_minutes, countdown.minutes)
-        TideCountdown.AnyMoment -> stringResource(R.string.shore_countdown_any_moment)
-    }
+    val text = countdownText(untilNextTide)
     val description = when (countdown) {
         is TideCountdown.HoursMinutes -> stringResource(
             R.string.shore_countdown_description,
@@ -52,8 +57,29 @@ internal fun NextTide(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         OverlineText(text = stringResource(R.string.shore_next_tide_in), color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(text = text, style = BottlingTheme.typography.countdown, color = MaterialTheme.colorScheme.onSurface)
+        // each minute the digits roll up (spec §1.5), or swap in place under reduced motion
+        AnimatedContent(
+            targetState = text,
+            transitionSpec = {
+                if (rollDigits) {
+                    (slideInVertically { it } + fadeIn()) togetherWith (slideOutVertically { -it } + fadeOut())
+                } else {
+                    EnterTransition.None togetherWith ExitTransition.None
+                }
+            },
+            label = "countdown",
+        ) { countdownText ->
+            Text(text = countdownText, style = BottlingTheme.typography.countdown, color = MaterialTheme.colorScheme.onSurface)
+        }
     }
+}
+
+/** The countdown as it reads: "3h 12m", "42 min" under an hour, "Any moment…" under a minute. */
+@Composable
+internal fun countdownText(untilNextTide: Duration): String = when (val countdown = countdownFor(untilNextTide)) {
+    is TideCountdown.HoursMinutes -> stringResource(R.string.shore_countdown_hours_minutes, countdown.hours, countdown.minutes)
+    is TideCountdown.Minutes -> stringResource(R.string.shore_countdown_minutes, countdown.minutes)
+    TideCountdown.AnyMoment -> stringResource(R.string.shore_countdown_any_moment)
 }
 
 @NightDawnPreviews

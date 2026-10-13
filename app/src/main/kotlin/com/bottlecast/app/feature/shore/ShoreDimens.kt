@@ -17,9 +17,15 @@ internal object ShoreDimens {
     val streakPillPaddingEnd = 12.dp
     val shieldIcon = 14.dp
 
-    /** The bottle: the Lottie for now, slice 2's rig later (spec §3.3). */
-    val bottleWidth = 260.dp
-    val bottleHeight = 170.dp
+    /** The bottle rig (Main board): 188dp tall, leaning on the tide over 240dp of ripples. */
+    val bottleHeight = 188.dp
+    const val BOTTLE_TILT = -14f
+    val ripplesWidth = 240.dp
+    val ripplesUnderBottle = 12.dp
+
+    /** Its bob: up 6dp, and 5° more upright, at the top of the swell (the boards' float). */
+    val bobHeight = 6.dp
+    const val BOB_TILT = 5f
 
     /** Below this height the bottle drops out. */
     val bottleMinHeight = 96.dp
