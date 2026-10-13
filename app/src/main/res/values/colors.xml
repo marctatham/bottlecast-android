@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#FFFFFF</color>
+
+    <!-- The window and splash before Compose draws, so nothing flashes (spec §1.1). They mirror
+         the Kotlin palette in common/ui/Color.kt; WindowColoursTest keeps them in step. Dawn here,
+         Night in values-night. -->
+    <color name="window_background">#F6F4EE</color> <!-- background -->
+    <color name="splash_background">#D5E4E3</color> <!-- dome -->
+    <color name="splash_glyph">#006688</color> <!-- glass -->
 </resources>
