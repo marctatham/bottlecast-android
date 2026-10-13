@@ -37,14 +37,15 @@ class BreathingTide(
 }
 
 /**
- * The breathing tide. It runs while idle motion may ([rememberIdleMotionEnabled]); otherwise it
- * holds still where it is, and carries on from there, so nothing jumps when the screen comes back.
- * It's driven by infinite-animation frames, which Compose tests cancel, so tests see it at rest
- * and can still go idle.
+ * The breathing tide. It runs while [running]; otherwise it holds still where it is, and carries
+ * on from there, so nothing jumps when the screen comes back. It's driven by infinite-animation
+ * frames, which Compose tests cancel, so tests see it at rest and can still go idle.
+ *
+ * @param running whether the tide moves: by default, while idle motion may
+ *   ([rememberIdleMotionEnabled]).
  */
 @Composable
-fun rememberBreathingTide(): BreathingTide {
-    val running = rememberIdleMotionEnabled()
+fun rememberBreathingTide(running: Boolean = rememberIdleMotionEnabled()): BreathingTide {
     // the tide's own clock, which only moves while the tide runs
     val elapsedMillis = remember { mutableLongStateOf(0L) }
     LaunchedEffect(running) {

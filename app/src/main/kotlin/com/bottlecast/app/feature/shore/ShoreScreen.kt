@@ -18,7 +18,12 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -81,13 +86,13 @@ fun ShoreScreen(
 ) {
     val tracker = LocalTracker.current
     val uiState by viewModel.state.collectAsStateWithLifecycle()
-    val tide = rememberBreathingTide()
+    val reducedMotion = rememberReducedMotion()
+    val idleMotion = rememberIdleMotionEnabled(reducedMotion)
+    val tide = rememberBreathingTide(running = idleMotion)
 
     // the bottle bobs at 0.6× while it's drawn and the Shore is in front, and stands still under
-    // reduced motion; in state B, and at large text, there's no bottle to bob
-    val reducedMotion = rememberReducedMotion()
-    val idleMotion = rememberIdleMotionEnabled()
-    val bottleShown = uiState is ShoreUiState.BottleWaiting && !isLargeText()
+    // reduced motion
+    var bottleShown by remember { mutableStateOf(false) }
     val composition: LottieComposition? by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.message_in_bottle))
     val progress: Float by animateLottieCompositionAsState(
         composition = composition,
@@ -102,6 +107,7 @@ fun ShoreScreen(
         tide = tide,
         composition = composition,
         progress = { if (reducedMotion) STILL_FRAME else progress },
+        onBottleShown = { shown -> bottleShown = shown },
         // The Shore stays drawn while a screen opens over it. Taps can't reach it there, but a
         // keyboard, TalkBack or Switch Access still can, so it only acts while it's started, which
         // means on top.
@@ -126,6 +132,7 @@ fun ShoreScreen(
 /**
  * The stateless Shore. Previews and screenshot tests pass a still [tide], a fixed Lottie
  * [progress] and a composition loaded up front, so they never capture a running animation.
+ * [onBottleShown] reports whether the bottle is drawn, so the caller only animates it then.
  *
  * It draws edge to edge in a [DomeScaffold]: the dome reaches up under the status bar, while the
  * content keeps clear of [windowInsets]. The navigation bar's height arrives in [contentPadding].
@@ -146,6 +153,7 @@ internal fun ShoreScreen(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+    onBottleShown: (shown: Boolean) -> Unit = {},
 ) {
     val spacing = BottlingTheme.spacing
     val largeText = isLargeText()
@@ -184,7 +192,12 @@ internal fun ShoreScreen(
                 Banner(text = stringResource(R.string.shore_offline_banner), icon = R.drawable.ic_symbol_wifi_off)
             }
             when (uiState) {
-                is ShoreUiState.BottleWaiting -> BottleWaitingHero(composition = composition, progress = progress, largeText = largeText)
+                is ShoreUiState.BottleWaiting -> BottleWaitingHero(
+                    composition = composition,
+                    progress = progress,
+                    largeText = largeText,
+                    onBottleShown = onBottleShown,
+                )
                 is ShoreUiState.FoundToday -> FoundTodayHero(
                     state = uiState,
                     tide = tide,
@@ -237,8 +250,10 @@ private fun ColumnScope.BottleWaitingHero(
     composition: LottieComposition?,
     progress: () -> Float,
     largeText: Boolean,
+    onBottleShown: (shown: Boolean) -> Unit,
 ) {
     val bottleDescription = stringResource(R.string.shore_bottle_description)
+    val currentOnBottleShown by rememberUpdatedState(onBottleShown)
     // the bottle takes whatever room the text leaves; it steps aside for large text, and when
     // that room is too little, as in landscape
     BoxWithConstraints(
@@ -247,7 +262,12 @@ private fun ColumnScope.BottleWaitingHero(
             .fillMaxWidth(),
         contentAlignment = Alignment.Center,
     ) {
-        if (!largeText && maxHeight >= ShoreDimens.bottleMinHeight) {
+        val shown = !largeText && maxHeight >= ShoreDimens.bottleMinHeight
+        DisposableEffect(shown) {
+            currentOnBottleShown(shown)
+            onDispose { currentOnBottleShown(false) }
+        }
+        if (shown) {
             LottieAnimation(
                 composition = composition,
                 progress = progress,

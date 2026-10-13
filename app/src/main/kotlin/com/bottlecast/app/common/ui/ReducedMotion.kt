@@ -32,10 +32,11 @@ fun rememberReducedMotion(): Boolean {
 /**
  * True while idle loops, such as the breathing tide and the bottle's bob, may run: the screen is
  * resumed, so it's in front and not mid-transition, and motion isn't reduced.
+ *
+ * @param reducedMotion pass a screen's own [rememberReducedMotion] when it reads that too.
  */
 @Composable
-fun rememberIdleMotionEnabled(): Boolean {
-    val reducedMotion = rememberReducedMotion()
+fun rememberIdleMotionEnabled(reducedMotion: Boolean = rememberReducedMotion()): Boolean {
     val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
     return !reducedMotion && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
 }

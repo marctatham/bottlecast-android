@@ -43,7 +43,8 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
  * @param edge where the dome's edge sits.
  * @param contentPadding the navigation bar's height, which the content ends above.
  * @param windowInsets the status bar and cutouts the content keeps clear of. The navigation bar's
- *   height arrives in [contentPadding] instead, so it isn't counted twice.
+ *   height arrives in [contentPadding] instead, so it isn't counted twice. They're measured whole,
+ *   to place the arc, so no ancestor may consume them first.
  * @param scenery what sits on the dome, behind the content, such as the moon and stars. It gets
  *   [windowInsets] as padding, so it can keep clear of them too.
  * @param content a column inside the side gutters. It's given the distance from its top down to
