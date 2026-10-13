@@ -3,9 +3,11 @@ package com.bottlecast.app.common.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -27,24 +29,33 @@ fun MoonDisc(
     diameter: Dp = BottlingTheme.sizes.moonDisc,
     haloAlpha: () -> Float = { 1f },
 ) {
-    val halo = BottlingTheme.effects.moonHalo
-    // the halo is drawn with dropShadow, never a graphicsLayer alpha, which would clip it to the disc;
-    // the first shadow is outermost, so it's drawn first, underneath the rest
-    val haloModifier = halo.fold(Modifier as Modifier) { acc, shadow ->
-        acc.dropShadow(CircleShape) {
-            radius = shadow.radius.toPx()
-            spread = shadow.spread.toPx()
-            color = shadow.color
-            alpha = haloAlpha()
-        }
-    }
     Box(
         modifier = modifier
             .size(diameter)
-            .then(haloModifier)
-            .background(BottlingTheme.colors.moonDisc, CircleShape)
             .clearAndSetSemantics {},
-    )
+        contentAlignment = Alignment.Center,
+    ) {
+        // Each halo layer is its own circle grown by the shadow's spread: spreading the disc's own
+        // shadow would keep its corner radius and draw a rounded square. Layers are listed CSS-style,
+        // first on top, so they're drawn last to first. They use dropShadow rather than a
+        // graphicsLayer alpha, which would clip them to the disc.
+        BottlingTheme.effects.moonHalo.asReversed().forEach { shadow ->
+            Box(
+                modifier = Modifier
+                    .requiredSize(diameter + shadow.spread * 2)
+                    .dropShadow(CircleShape) {
+                        radius = shadow.radius.toPx()
+                        color = shadow.color
+                        alpha = haloAlpha()
+                    }
+            )
+        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(BottlingTheme.colors.moonDisc, CircleShape)
+        )
+    }
 }
 
 @NightDawnPreviews

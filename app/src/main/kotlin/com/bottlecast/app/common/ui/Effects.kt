@@ -18,7 +18,7 @@ data class BottlingEffects(
     val cardElevation: Dp,
     /** The glow drawn behind the parchment card, outside its edge. */
     val parchmentGlow: Shadow,
-    /** The moon's halo, drawn from the first shadow to the last. */
+    /** The moon's halo layers, listed like CSS box-shadows: the first is drawn on top. */
     val moonHalo: List<Shadow>,
 )
 
