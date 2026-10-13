@@ -7,10 +7,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.testing.captureThemed
 import com.github.takahirom.roborazzi.RobolectricDeviceQualifiers
-import com.github.takahirom.roborazzi.captureRoboImage
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -25,24 +26,31 @@ import org.robolectric.annotation.GraphicsMode
 @Config(sdk = [37], application = Application::class, qualifiers = RobolectricDeviceQualifiers.Pixel9)
 class UnbottledMessageCardScreenshotTest {
 
-    @Test
-    fun unreportedLight() = capture(isReported = false, darkTheme = false)
+    @get:Rule
+    val composeTestRule = createComposeRule()
 
     @Test
-    fun reportedDark() = capture(isReported = true, darkTheme = true)
+    fun unreportedNight() = capture(isReported = false, darkTheme = true)
+
+    @Test
+    fun unreportedDawn() = capture(isReported = false, darkTheme = false)
+
+    @Test
+    fun reportedNight() = capture(isReported = true, darkTheme = true)
+
+    @Test
+    fun reportedDawn() = capture(isReported = true, darkTheme = false)
 
     // the plain Application keeps Hilt out
     private fun capture(isReported: Boolean, darkTheme: Boolean) {
-        captureRoboImage {
-            BottlingTheme(darkTheme = darkTheme) {
-                Box(Modifier.background(MaterialTheme.colorScheme.background).padding(24.dp)) {
-                    UnbottledMessageCard(
-                        isReported = isReported,
-                        onReportHandler = {},
-                        unbottledMessage = "Hey, that's pretty cool",
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
+        composeTestRule.captureThemed(darkTheme = darkTheme) {
+            Box(Modifier.background(MaterialTheme.colorScheme.background).padding(BottlingTheme.spacing.l)) {
+                UnbottledMessageCard(
+                    isReported = isReported,
+                    onReportHandler = {},
+                    unbottledMessage = "Hey, that's pretty cool",
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }

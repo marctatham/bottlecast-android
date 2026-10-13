@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copy for the debug-only Foundations specimen (FoundationsSpecimen.kt), from the
+     Foundations-DesignSystem board. Never shipped. -->
+<resources>
+    <string name="foundations_title" translatable="false">Moonlit Shore</string>
+    <string name="foundations_subtitle" translatable="false">BottleCast\'s look: a night sea, sea-glass sage, moonlight and parchment.</string>
+    <string name="foundations_banner_title" translatable="false">Fixed brand palette</string>
+    <string name="foundations_banner_body" translatable="false">" — today the app borrows its colours from the phone's wallpaper (dynamic colour). This makes the look official."</string>
+
+    <string name="foundations_section_colour" translatable="false">Colour</string>
+    <string name="foundations_section_type" translatable="false">Type</string>
+    <string name="foundations_section_components" translatable="false">Components</string>
+    <string name="foundations_section_icons" translatable="false">Icons</string>
+
+    <string name="foundations_night" translatable="false">Night</string>
+    <string name="foundations_night_hint" translatable="false">" · dark"</string>
+    <string name="foundations_dawn" translatable="false">Dawn</string>
+    <string name="foundations_dawn_hint" translatable="false">" · light"</string>
+
+    <string name="foundations_font_sample" translatable="false">Aa</string>
+    <string name="foundations_font_slab" translatable="false">Roboto Slab</string>
+    <string name="foundations_font_slab_caption" translatable="false">The voice</string>
+    <string name="foundations_font_flex" translatable="false">Roboto Flex</string>
+    <string name="foundations_font_flex_caption" translatable="false">Reading</string>
+    <string name="foundations_font_mono" translatable="false">Roboto Mono</string>
+    <string name="foundations_font_mono_caption" translatable="false">On-chain facts</string>
+
+    <string name="foundations_role_headline_medium" translatable="false">headlineMedium · Slab 600 28/36</string>
+    <string name="foundations_role_title_large" translatable="false">titleLarge · Slab 700 22/30 · ink on parchment</string>
+    <string name="foundations_role_body_large" translatable="false">bodyLarge · Flex 400 16/24</string>
+    <string name="foundations_role_label_small" translatable="false">labelSmall · Flex 600 11/16 · +0.8 caps</string>
+    <string name="foundations_role_mono" translatable="false">mono · Roboto Mono 400 13/18</string>
+    <string name="foundations_role_extended" translatable="false">wordmark · countdown · statNumeral · titleLarge-long</string>
+
+    <string name="foundations_sample_hero" translatable="false">A bottle washed ashore</string>
+    <string name="foundations_sample_message" translatable="false">Hoy el mar me devolvió algo que creía perdido: la calma.</string>
+    <string name="foundations_sample_byline" translatable="false">— A stranger at sea</string>
+    <string name="foundations_sample_body" translatable="false">Today\'s bottle is waiting for you.</string>
+    <string name="foundations_sample_overline" translatable="false">Found today · Day 6</string>
+    <string name="foundations_sample_address" translatable="false">0x12…9aF</string>
+    <string name="foundations_sample_wordmark" translatable="false">BottleCast</string>
+    <string name="foundations_sample_countdown" translatable="false">3h 12m</string>
+    <string name="foundations_sample_stat" translatable="false">12</string>
+    <string name="foundations_sample_long_message" translatable="false">The tide brought me a reminder to drink some water and call my sister.</string>
+
+    <string name="foundations_pills_caption" translatable="false">Pills · primary / outlined / tonal</string>
+    <string name="foundations_pill_find" translatable="false">Find today\'s bottle</string>
+    <string name="foundations_pill_cast" translatable="false">Cast a bottle</string>
+    <string name="foundations_pill_keep" translatable="false">Keep it</string>
+    <string name="foundations_pill_focused" translatable="false">Focus ring · 2dp glass</string>
+    <string name="foundations_moon_caption" translatable="false">Moon · Night disc / Dawn sun-moon</string>
+
+    <string name="foundations_chips_caption" translatable="false">Status chips · 32 tall · always icon + text</string>
+    <string name="foundations_chip_drifting" translatable="false">Drifting</string>
+    <string name="foundations_chip_not_kept" translatable="false">Not kept · 5d left</string>
+    <string name="foundations_chip_kept" translatable="false">Kept</string>
+    <string name="foundations_chip_under_review" translatable="false">Under review</string>
+    <string name="foundations_chips_parchment_caption" translatable="false">On parchment · ink</string>
+    <string name="foundations_chip_not_kept_parchment" translatable="false">Not kept · 7d left</string>
+</resources>
