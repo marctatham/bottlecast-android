@@ -5,6 +5,7 @@ import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -81,6 +82,12 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
         exitTransition = { fadeOut(BottlingMotion.screen()) },
         popEnterTransition = { fadeIn(BottlingMotion.screen()) },
         popExitTransition = { fadeOut(BottlingMotion.screen()) },
+        // a back swipe uses these instead of the pop transitions: the screen underneath shows as it
+        // is, while a full-screen route shrinks away and a tab fades (spec §1.5)
+        predictivePopEnterTransition = { EnterTransition.None },
+        predictivePopExitTransition = {
+            if (initialState.destination.isTopLevel()) fadeOut(BottlingMotion.screen()) else PredictiveBackExit
+        },
     ) {
         // a tab root stays put under whatever opens over it, so it's already there, bar and all,
         // when a predictive back gesture reveals it
@@ -154,7 +161,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
 @Composable
 private fun AnimatedContentScope.ImmersiveScreen(content: @Composable () -> Unit) {
     val corner by transition.animateDp(
-        transitionSpec = { tween(BottlingMotion.SCREEN_MILLIS) },
+        transitionSpec = { PredictiveBackSpec() },
         label = "predictive back corner",
     ) { state -> if (state == EnterExitState.PostExit) PREDICTIVE_BACK_CORNER else 0.dp }
     Box(
@@ -213,12 +220,15 @@ private fun TrackScreens(navController: NavController, tracker: ITracker) {
 // a tab root stays fully visible for as long as the screen opening over it takes to fade in
 private val KeepTabRoot: ExitTransition = fadeOut(BottlingMotion.screen(), targetAlpha = 1f)
 
-// a full-screen route shrinks to 90% as back is swiped (spec §1.5), then fades as it lets go
+// a full-screen route shrinks to 90% as back is swiped (spec §1.5), following the finger, and
+// fades once it's let go
+private fun <T> PredictiveBackSpec() = tween<T>(BottlingMotion.SCREEN_MILLIS, easing = LinearEasing)
+
 private val PredictiveBackExit: ExitTransition =
-    scaleOut(targetScale = PREDICTIVE_BACK_SCALE, animationSpec = tween(BottlingMotion.SCREEN_MILLIS)) +
+    scaleOut(targetScale = PREDICTIVE_BACK_SCALE, animationSpec = PredictiveBackSpec()) +
         fadeOut(tween(PREDICTIVE_BACK_FADE_MILLIS, delayMillis = BottlingMotion.SCREEN_MILLIS - PREDICTIVE_BACK_FADE_MILLIS))
 
 private const val PREDICTIVE_BACK_SCALE = 0.9f
-private const val PREDICTIVE_BACK_FADE_MILLIS = 150
+private const val PREDICTIVE_BACK_FADE_MILLIS = 80
 private val PREDICTIVE_BACK_CORNER = 32.dp
 private const val NO_DESTINATION = 0

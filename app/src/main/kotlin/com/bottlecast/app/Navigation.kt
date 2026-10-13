@@ -74,6 +74,9 @@ val bottlingRoutes: List<BottlingRoute> = listOf(
     Moderation,
 )
 
+/** True for the tab roots, which show the navigation bar; every other route is immersive. */
+fun NavDestination.isTopLevel(): Boolean = TopLevelDestination.entries.any { hasRoute(it.route::class) }
+
 /** The analytics name of the route this destination was built from. */
 fun NavDestination.screenName(): String =
     bottlingRoutes.firstOrNull { hasRoute(it::class) }?.screenName ?: UNKNOWN_SCREEN_NAME
