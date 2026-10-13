@@ -21,8 +21,8 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - Shell: `MainActivity` → `BottlingTheme` → `MessageInABottleApp.kt`, the NavHost. The app draws edge to edge with transparent bars.
   - Routes are `@Serializable` objects in `Navigation.kt`, each with a stable `screenName` for analytics. `TopLevelDestination` lists the tabs.
   - Tab roots (Shore, Chest, Me) draw themselves in a `TabFrame`, which adds the navigation bar and hands its height to the screen as `contentPadding`. Every other route is immersive.
-  - Screens drawn under the status bar take `windowInsets = WindowInsets.safeDrawing.only(Top + Horizontal)` and pad their own content; the bottom comes only from `contentPadding`, so the navigation bar isn't counted twice.
-  - Screens from before the redesign sit in `ImmersiveScreen`, which keeps them inside the system bars over an opaque background.
+  - Screens under the dome (Shore, Chest, Me) are built on `DomeScaffold`. It draws the dome under the status bar and keeps the content inside `windowInsets = WindowInsets.safeDrawing.only(Top + Horizontal)`, scrolling below the see-through bar. The bottom comes only from `contentPadding`, so the navigation bar isn't counted twice.
+  - Every other route is registered with `immersive<T>`. Its frame rounds the corners on a back swipe and takes every tap, so none falls through to the screen still drawn underneath. Screens from before the redesign also sit in `LegacyScreen`, which keeps them inside the system bars over an opaque background.
 - `common/authentication/` and `common/messages/` split into:
   - `domain`: `I`-prefixed interfaces and entities
   - `data`: implementations, with Firestore models in `data/model/` and mappers in `data/mapper/`
@@ -30,8 +30,8 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 
   `common/analytics/`, `common/connectivity/` and `common/threading/` are flat, plus `di`.
 - `common/ui/` is the theme: `Theme.kt`, `Color.kt`, `Effects.kt`, `Typography.kt`, `Shapes.kt`, `Dimens.kt`, `Motion.kt`. Material's roles come from `MaterialTheme`; the brand tokens Material has no slot for come from `BottlingTheme.colors`, `.effects`, `.typography`, `.shapes`, `.spacing`, `.sizes` and `.motion`.
-- `common/components/` holds shared composables, including the design-system pieces: `BottlingButton` (pills), `BottlingBottomSheet`, `StatusChip`, `ParchmentCard`, `MoonDisc`, `OverlineText`, `Dome`, `BottlingNavigationBar`, `TabFrame`, `Banner`, `EmptyState` and `Avatar`. The debug-only `FoundationsSpecimen` (in `src/debug`) shows the whole design system.
-  - `common/ui/` also holds `rememberReducedMotion()` and `rememberBreathingTide()`, the Shore's idle motion; both go still under reduced motion and while the screen isn't resumed.
+- `common/components/` holds shared composables, including the design-system pieces: `BottlingButton` (pills), `BottlingBottomSheet`, `StatusChip`, `ParchmentCard`, `MoonDisc`, `OverlineText`, `Dome`, `DomeScaffold`, `BottlingNavigationBar`, `TabFrame`, `Banner`, `EmptyState` and `Avatar`. The debug-only `FoundationsSpecimen` (in `src/debug`) shows the whole design system.
+  - `common/ui/` also holds the motion policy. `rememberReducedMotion()` reads the system setting. `rememberIdleMotionEnabled()` is true while the screen is resumed and motion isn't reduced, and gates idle loops such as `rememberBreathingTide()`, which holds still where it is and carries on from there.
 - `feature/<name>/` holds a screen and its ViewModel (`postmessage` keeps them in `ui/`). Composables that only one feature uses go in its `components/`; use cases go in its `domain/`. Sizes only one feature uses go in its own tokens object, such as `ShoreDimens`.
   - `shore` is the home (states A and B, spec §3.3); `chest` and `me` are empty states until slice 4.
 
@@ -44,12 +44,12 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **Screens:**
   - A public `XScreen(on…Handler: () -> Unit, viewModel: XViewModel = hiltViewModel())` collects with `collectAsStateWithLifecycle()`.
   - It passes plain state to an `internal` stateless overload, which `@Preview`s and screenshot tests call.
-  - Tests can't see `private` functions, so make a stateless overload `internal` before testing it. `HomeScreen`, `GetMessageView` and `PostMessageSuccessView` already are, with their Lottie composition and progress hoisted.
+  - Tests can't see `private` functions, so make a stateless overload `internal` before testing it. `ShoreScreen`, `GetMessageView` and `PostMessageSuccessView` already are, with their Lottie composition and progress hoisted.
 - **UI text** lives in `res/values/strings.xml` (`stringResource`, `@StringRes` parameters). No hard-coded strings.
 - **Hilt and dispatchers:** modules use `@InstallIn(SingletonComponent::class)` with `@Provides @Singleton`; leaf classes use `@Inject constructor`. Inject dispatchers with the qualifiers in `common/threading/` (`@DispatcherIO` and the rest), and switch with `withContext` in repositories.
 - **Analytics:** add a case to the sealed `AnalyticsEvent` (snake_case name) and send it through `LocalTracker.current`. Tracker wiring is in two `AnalyticsModule`s, one in `src/debug` and one in `src/release`; change both.
 - **Logging:** Timber only. Never log tokens, emails or message text, because release builds forward info and above to Crashlytics.
-- **Redesign UI** takes colours, type, shapes and spacing from theme tokens: no literal hex or one-off sizes in composables. Use start/end, never left/right. The spec turns RTL on, though the manifest still sets `supportsRtl="false"`.
+- **Redesign UI** takes colours, type, shapes and spacing from theme tokens: no literal hex or one-off sizes in composables. Use start/end, never left/right: RTL is on (`supportsRtl="true"`).
   - Icons are the bundled `ic_symbol_*` (Material Symbols Rounded) and `ic_glyph_*` drawables, drawn with `painterResource`; there's no `Icons.*` dependency.
   - Overlines go through `OverlineText`, which uppercases at render time, since Compose has no text-transform.
   - Previews use `@NightDawnPreviews` and wrap their content in `BottlingPreview`; anything reading `BottlingTheme.colors` throws outside the theme.
@@ -95,7 +95,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **Instrumented tests** (`src/androidTest`):
   - `@HiltAndroidTest`, `HiltAndroidRule` at order 0, and `createAndroidComposeRule<MainActivity>()` from `androidx.compose.ui.test.junit4.v2`.
   - Fakes in `fakes/` replace real modules through `testdi/*Module` with `@TestInstallIn(replaces = […])`.
-  - A screen test without Hilt uses `ComponentActivity` and builds its ViewModel from fakes, as `HomeScreenTest` does.
+  - A screen test without Hilt uses `ComponentActivity` and builds its ViewModel from fakes, as `ShoreScreenTest` does.
   - Look text up with `activity.getString(R.string.…)`. Wait with `waitUntil`; never sleep or add delays to fakes.
 
 ## Environments and safety
