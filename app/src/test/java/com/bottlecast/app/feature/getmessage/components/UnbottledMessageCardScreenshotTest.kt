@@ -31,10 +31,10 @@ class UnbottledMessageCardScreenshotTest {
     @Test
     fun reportedDark() = capture(isReported = true, darkTheme = true)
 
-    // the plain Application keeps Hilt out, and dynamic colour off keeps the host's wallpaper palette out
+    // the plain Application keeps Hilt out
     private fun capture(isReported: Boolean, darkTheme: Boolean) {
         captureRoboImage {
-            BottlingTheme(darkTheme = darkTheme, dynamicColor = false) {
+            BottlingTheme(darkTheme = darkTheme) {
                 Box(Modifier.background(MaterialTheme.colorScheme.background).padding(24.dp)) {
                     UnbottledMessageCard(
                         isReported = isReported,
