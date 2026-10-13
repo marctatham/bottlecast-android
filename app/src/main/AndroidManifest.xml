@@ -22,6 +22,9 @@
         android:name="com.google.android.gms.permission.AD_ID"
         tools:node="remove" />
 
+    <!-- the offline banners follow the default network (common/connectivity) -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:name=".BottleCastApplication"
         android:allowBackup="true"

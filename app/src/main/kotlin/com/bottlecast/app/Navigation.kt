@@ -1,5 +1,6 @@
 package com.bottlecast.app
 
+import androidx.annotation.StringRes
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import kotlinx.serialization.Serializable
@@ -53,6 +54,13 @@ data object PostMessageLoginRequired : BottlingRoute {
 @Serializable
 data object Moderation : BottlingRoute {
     override val screenName: String get() = "view_messages"
+}
+
+/** The navigation bar's tabs, in order (spec §2). Other routes are immersive and hide the bar. */
+enum class TopLevelDestination(val route: BottlingRoute, @StringRes val label: Int) {
+    SHORE(Shore, R.string.nav_shore),
+    CHEST(Chest, R.string.nav_chest),
+    ME(Me, R.string.nav_me),
 }
 
 /** Every route, so a destination can be matched back to its route. */

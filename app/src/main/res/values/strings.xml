@@ -25,6 +25,10 @@
 
     <string name="button_back">Back</string>
 
+    <string name="nav_shore">Shore</string>
+    <string name="nav_chest">Chest</string>
+    <string name="nav_me">Me</string>
+
     <string name="login_required_title">Your guide to bottling messages</string>
     <string name="login_required_image_description">Safety First, sign in is required</string>
 
