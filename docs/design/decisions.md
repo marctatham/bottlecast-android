@@ -67,3 +67,28 @@ Spec v1.1 merged these. The italic line under each item names the spec sections 
 - **Workflow:** the redesign is built in slices (see README), one branch and PR into `develop` per slice, verified with Roborazzi screenshot tests against the boards.
 
   *Replaces spec §5 and `wallets.md` §9 with the slices in `README.md`.*
+
+## 2026-10-13 — Slice 1 planning
+
+The owner's answers while planning slice 1 (theme, navigation and Shore). The theme PR applies these; the navigation and Shore PR adds the rest of the slice's decisions below.
+
+- **Material3:** pin `material3` 1.5.0-beta01 ahead of the Compose BOM (which resolves 1.4.0), rather than the hand-written fallbacks. It needs Compose 1.12.0, compileSdk 37 and AGP 9.1 or later; the BOM already provides Compose 1.12.1. Drop the pin when the BOM ships 1.5. Resolves the open issue "Material3 1.5 beta or the spec's fallbacks".
+
+  *Changes spec: the header, §1.4 (badges), §1.5 (motion, the cork ring).*
+
+- **Icons:** Material Symbols Rounded (weight 400, fill 0, 24dp), bundled as `ic_symbol_*` vector drawables from google/material-design-icons, including the filled flag for a reported message. The Shore's house-with-waves and the bottle have no Symbol, so they're custom `ic_glyph_*` vectors drawn from the TEMPLATE.md paths.
+
+  *Changes spec: §1.6 (icons).*
+
+- **Fonts:** all three families are bundled; nothing downloads. Roboto Flex is the official variable font, with weights selected through its `wght` axis and `opsz` set per style; Roboto Mono is Regular only; Roboto Slab keeps its existing files, minus the weights the scale never uses. Sources and licences are in `licenses/`.
+
+  *Changes spec: §1.3 (fonts).*
+
+- **Look details:**
+  - The Dawn moon is the boards' pale sun-moon: a #F6E8CC disc (Dawn moonContainer) with a soft moon glow at 12%, not "moon at 30%".
+  - The outlined pill's stroke is 1dp `primary`, as the spec says; the boards' 1.5px is superseded.
+  - Avatars are plain circles, as the boards draw them; badges keep the MaterialShapes shapes.
+
+  *Changes spec: §1.4 (avatars), §1.6 (the Dawn moon).*
+
+- **Delivery:** slice 1 ships as two PRs. The first applies the theme to today's screens and is signed off from its screenshots; the second brings edge-to-edge, the splash, RTL, type-safe routes, the navigation bar, Chest, Me and the Shore.

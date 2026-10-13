@@ -2,7 +2,7 @@
 
 > Precedence: `docs/design/decisions.md` overrides this spec; this spec overrides the boards in `docs/design/boards/` except where §6 says otherwise. Build order: see `docs/design/README.md` (it replaces §5).
 
-Version 1.1 · 2026-10-12 · Owner decisions and review fixes merged (see "Owner decisions" in §0). Android (Kotlin, Compose, Material3 1.5: MotionScheme.expressive, the wavy progress indicators and MaterialShapes are not public in 1.4.0, which Compose BOM 2026.09.00 resolves to, so pin material3 to 1.5.x (1.5.0-beta01 as of 2026-10-07) or use the fallbacks named below) plus static web pages (Firebase Hosting, bottling-messages.web.app). All layouts use a 360×800dp reference frame with 16dp side gutters. The canvas boards are drawn at 390×844; where a board and this spec disagree, this spec wins (§6).
+Version 1.1 · 2026-10-12 · Owner decisions and review fixes merged (see "Owner decisions" in §0). Android (Kotlin, Compose, Material3 1.5.0-beta01, pinned ahead of the Compose BOM for MotionScheme.expressive, the wavy progress indicators and MaterialShapes; decisions.md, 2026-10-13) plus static web pages (Firebase Hosting, bottling-messages.web.app). All layouts use a 360×800dp reference frame with 16dp side gutters. The canvas boards are drawn at 390×844; where a board and this spec disagree, this spec wins (§6).
 
 ---
 
@@ -102,7 +102,7 @@ Version 1.1 · 2026-10-12 · Owner decisions and review fixes merged (see "Owner
 | onMoon | #2B241A | #FFFFFF | Text on a moon fill |
 | moonContainer | #3A3122 | #F6E8CC | Collected-badge fill, the "Waiting" chip, the debug-only "Test network" chip, wallet nudge banner |
 | onMoonContainer | #F0E0C4 | #4A3510 | Text on moonContainer |
-| parchment | #E9DFCB | #FFF9EC | The message card only. Night adds a 1dp moon rim at 20% plus a 24dp glass glow at 10%. Dawn adds a 1dp #E6DCC6 border plus a 2dp shadow |
+| parchment | #E9DFCB | #FFF9EC | The message card only. Night adds a 1dp moon rim at 20% (outside the edge) plus a 24dp glass glow at 10%. Dawn adds a 1dp `parchmentEdge` (#E6DCC6) border plus a 2dp shadow |
 | ink | #2B241A | #2B241A | Message text on parchment |
 | inkMuted | #645C4F | #6B6459 | **New.** Byline, placeholder (italic), counter on parchment |
 | inkLink | #006688 | #006688 | Links and cursor on parchment |
@@ -159,11 +159,11 @@ The dome-vs-background difference in Dawn is decorative (about 1.13:1). Nothing 
 
 ### 1.3 Typography
 Fonts:
-- **Roboto Slab** is the voice. It keeps the bundled TTF fallback.
+- **Roboto Slab** is the voice.
 - **Roboto Flex** is for reading.
 - **Roboto Mono** is for on-chain facts.
 
-All three load through ui-text-google-fonts.
+All three are bundled in `res/font/`; nothing downloads, so devices show what the screenshot tests capture. Roboto Flex is the variable font, with `wght` and `opsz` (the style's size, like CSS `font-optical-sizing: auto`) set per style. Licences are in `licenses/`.
 
 | Style | Family / weight | sp size / line | Used for |
 |---|---|---|---|
@@ -201,7 +201,7 @@ Rules:
 | 32dp | Sheet top corners, dialogs |
 | 4dp | Focus outlines |
 
-Badges and avatars use the MaterialShapes cookie/scallop. It needs Material3 1.5 and an experimental opt-in; the fallback is CircleShape.
+Badges use the MaterialShapes cookie/scallop (Material3 1.5, experimental opt-in). Avatars are plain circles (decisions.md, 2026-10-13).
 
 **The dome.** This is CustomBox: a circle of radius 0.5 × screen height. Its bottom edge sits at one of three heights:
 
@@ -220,7 +220,7 @@ Badges and avatars use the MaterialShapes cookie/scallop. It needs Material3 1.5
 - Sheets sit flat over the scrim.
 
 ### 1.5 Motion and haptics
-- Motion uses `MaterialTheme.motionScheme` = `MotionScheme.expressive()`, which needs Material3 1.5 (MotionScheme isn't public in 1.4.0). On 1.4, hand-write the same springs:
+- Motion uses `MaterialTheme.motionScheme` = `MotionScheme.expressive()` (Material3 1.5):
   - Spatial springs with bounce for physical objects (bottle, cork, seal, badges).
   - Effect springs with no bounce for colour and opacity.
 - Non-spring tweens: 200ms micro, 300ms component, 450ms screen.
@@ -234,7 +234,7 @@ Badges and avatars use the MaterialShapes cookie/scallop. It needs Material3 1.5
    - The bottle bobs at 0.6×.
    - Everything pauses when the screen isn't RESUMED.
 2. **Shake to uncork.**
-   - Each detected shake: the bottle springs to ±8° (damping 0.4, stiffness 400) and the cork ring advances by one third. The ring is a CircularWavyProgressIndicator; the fallback is the standard CircularProgressIndicator. **Progress never decays.**
+   - Each detected shake: the bottle springs to ±8° (damping 0.4, stiffness 400) and the cork ring advances by one third. The ring is a CircularWavyProgressIndicator. **Progress never decays.**
    - The pop:
      - The cork flies up and left (300ms, rotating 220°).
      - A 120ms moonlight flash (domeGlow 0 → 0.6 → 0).
@@ -299,7 +299,7 @@ The same function is ported to the contract's `tokenURI` SVG and to the web page
 **Scenery:**
 - Moon: a soft disc (moon at 85%) with a 64dp halo, top-right of the dome. Never a face.
 - Sea: the background colour plus glints and ripples only.
-- Dawn: the moon becomes a pale sun-moon (moon at 30%) and the dome becomes mist.
+- Dawn: the moon becomes a pale sun-moon, a #F6E8CC disc (Dawn moonContainer) with a soft moon glow at 12%, and the dome becomes mist (decisions.md, 2026-10-13).
 
 **Spot illustrations** (160dp, built from the rig):
 
@@ -317,7 +317,7 @@ The same function is ported to the contract's `tokenURI` SVG and to the web page
 
 **Badges:** a scallop shape filled with moonContainer, holding a moon-coloured glyph. Locked badges are a 2dp `outline` ring with the glyph at 50% and a progress line underneath.
 
-**Icons:** Material Symbols Rounded, weight 400, 24dp.
+**Icons:** Material Symbols Rounded, weight 400, fill 0, 24dp, bundled as `ic_symbol_*` vector drawables. The Shore (house-with-waves) and the bottle have no Symbol and are custom `ic_glyph_*` vectors drawn from the TEMPLATE.md paths.
 
 ### 1.7 Vocabulary and lifecycle
 Primary copy avoids crypto jargon. Detail rows name each technical term exactly once.

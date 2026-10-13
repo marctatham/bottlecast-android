@@ -12,7 +12,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 ## Stack and layout
 - One module, `:app`, package `com.bottlecast.app`.
   - Kotlin 2.4 via AGP 9.4's built-in Kotlin.
-  - Jetpack Compose with Material 3, Navigation Compose, Hilt (KSP).
+  - Jetpack Compose with Material 3 (material3 pinned to 1.5.0-beta01 ahead of the BOM), Navigation Compose, Hilt (KSP).
   - Firebase Auth/Firestore/Analytics/Crashlytics, and Google sign-in through Credential Manager.
   - Lottie, Timber.
   - minSdk 33, compileSdk/targetSdk 37, Java 11.
@@ -25,7 +25,8 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - `di`: Hilt modules
 
   `common/analytics/` and `common/threading/` are flat, plus `di`.
-- `common/ui/` is the theme: `Theme.kt`, `Color.kt`, `Typography.kt`, `Shapes.kt`. `common/components/` holds shared composables.
+- `common/ui/` is the theme: `Theme.kt`, `Color.kt`, `Effects.kt`, `Typography.kt`, `Shapes.kt`, `Dimens.kt`, `Motion.kt`. Material's roles come from `MaterialTheme`; the brand tokens Material has no slot for come from `BottlingTheme.colors`, `.effects`, `.typography`, `.shapes`, `.spacing`, `.sizes` and `.motion`.
+- `common/components/` holds shared composables, including the design-system pieces: `BottlingButton` (pills), `BottlingBottomSheet`, `StatusChip`, `ParchmentCard`, `MoonDisc` and `OverlineText`. The debug-only `FoundationsSpecimen` (in `src/debug`) shows the whole design system.
 - `feature/<name>/` holds a screen and its ViewModel (`postmessage` keeps them in `ui/`). Composables that only one feature uses go in its `components/`; use cases go in its `domain/`.
 
 ## Conventions
@@ -37,16 +38,19 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **Screens:**
   - A public `XScreen(on…Handler: () -> Unit, viewModel: XViewModel = hiltViewModel())` collects with `collectAsStateWithLifecycle()`.
   - It passes plain state to an `internal` stateless overload, which `@Preview`s and screenshot tests call.
-  - Tests can't see `private` functions. Today's screens use private ones (`HomeScreen`, `GetMessageView`), so make them `internal` before testing them.
+  - Tests can't see `private` functions, so make a stateless overload `internal` before testing it. `HomeScreen`, `GetMessageView` and `PostMessageSuccessView` already are, with their Lottie composition and progress hoisted.
 - **UI text** lives in `res/values/strings.xml` (`stringResource`, `@StringRes` parameters). No hard-coded strings.
 - **Hilt and dispatchers:** modules use `@InstallIn(SingletonComponent::class)` with `@Provides @Singleton`; leaf classes use `@Inject constructor`. Inject dispatchers with the qualifiers in `common/threading/` (`@DispatcherIO` and the rest), and switch with `withContext` in repositories.
 - **Analytics:** add a case to the sealed `AnalyticsEvent` (snake_case name) and send it through `LocalTracker.current`. Tracker wiring is in two `AnalyticsModule`s, one in `src/debug` and one in `src/release`; change both.
 - **Logging:** Timber only. Never log tokens, emails or message text, because release builds forward info and above to Crashlytics.
 - **Redesign UI** takes colours, type, shapes and spacing from theme tokens: no literal hex or one-off sizes in composables. Use start/end, never left/right. The spec turns RTL on, though the manifest still sets `supportsRtl="false"`.
+  - Icons are the bundled `ic_symbol_*` (Material Symbols Rounded) and `ic_glyph_*` drawables, drawn with `painterResource`; there's no `Icons.*` dependency.
+  - Overlines go through `OverlineText`, which uppercases at render time, since Compose has no text-transform.
+  - Previews use `@NightDawnPreviews` and wrap their content in `BottlingPreview`; anything reading `BottlingTheme.colors` throws outside the theme.
 
 ## Build and verify
 - Gradle runs on Android Studio's bundled JDK (JBR 25) through `JAVA_HOME`; the build sets no toolchain. There is no CI, so these commands are the only gate.
-- **Verify every change:** `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug`
+- **Verify every change:** `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug`, then `./gradlew :app:assembleDebugAndroidTest` in its own invocation, so instrumented tests keep compiling. In the same invocation as lint it trips the lint/Hilt race.
 - **Release bundle:** `./gradlew :app:bundleRelease`, in its own invocation. Never run lint and a release task in the same invocation (lint/Hilt race).
 - **Instrumented tests:** `./gradlew :app:connectedDebugAndroidTest`. Read "Environments and safety" first.
 - **Screenshot tests (Roborazzi on Robolectric):**
@@ -73,10 +77,11 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - Use `RobolectricTestRunner` and `@GraphicsMode(NATIVE)`.
   - Use `@Config(sdk = [37], application = Application::class, qualifiers = …)`. The plain `Application` keeps the Hilt `BottleCastApplication` out.
   - Full screens use `qualifiers = "w390dp-h844dp-xhdpi"`, the board size: PNG pixels ÷ 2 = board pixels.
-  - Inside `captureRoboImage { }`, wrap the stateless composable in `BottlingTheme(darkTheme = …, dynamicColor = false)`. Capture every state in Night and in Dawn.
+  - Capture with a compose rule and `composeTestRule.captureThemed(darkTheme) { … }` from `testing/Screenshots.kt`, which wraps the content in `BottlingTheme` and draws the window itself. Roborazzi's `captureRoboImage { }` and its node capture can come out blank depending on which tests ran before. Capture every state in Night and in Dawn.
+  - Sheets and dialogs are windows of their own: call `waitForIdle()`, then `captureScreenRoboImage()`. If something animates in, set `mainClock.autoAdvance = false` and advance past it first.
 - **Never capture a running animation.** Hoist Lottie `progress` (and any other animation state) into a parameter and pass a fixed value.
   - Pass the composition in too: `rememberLottieComposition` parses on a background thread, so a capture can come out blank.
-  - In tests, load it with `LottieCompositionFactory.fromRawResSync(context, R.raw.…).value`.
+  - In tests, load it with `loadLottieComposition(R.raw.…)` from `testing/LottieCompositions.kt`. It also decodes the images embedded as base64, which `fromRawResSync` leaves out, so the bottle draws.
 - **Re-recording goldens:** only for an intended change, and only after reading its `_compare.png`. Never re-record just to make the gate pass.
 - **Instrumented tests** (`src/androidTest`):
   - `@HiltAndroidTest`, `HiltAndroidRule` at order 0, and `createAndroidComposeRule<MainActivity>()` from `androidx.compose.ui.test.junit4.v2`.
@@ -139,13 +144,15 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - Keep crypto jargon out of primary copy. Detail rows name each technical term once (spec §1.7).
 
 ## Gotchas
-- **Dynamic colour:** `BottlingTheme` defaults to `dynamicColor = true`, so colours come from the wallpaper and `Color.kt` is never shown. Slice 1 turns it off.
-- **Material3:** Compose BOM 2026.09.00 resolves to Material3 1.4.0. There, `MotionScheme.expressive()` is internal, and the wavy progress indicators and `MaterialShapes` don't exist. Material3 1.5 is only in beta, so pinning it is the owner's call; otherwise use the spec's fallbacks.
+- **No dynamic colour:** `BottlingTheme(darkTheme)` is Night or Dawn and follows the system's dark mode until Settings offers a choice (slice 4). Every `ColorScheme` role is filled from the palette; `BottlingColorSchemeTest` fails if one isn't.
+- **Material3:** the version catalog pins material3 1.5.0-beta01 ahead of the Compose BOM (which resolves 1.4.0), for `MotionScheme.expressive()`, `MaterialShapes` and the wavy indicators. It needs compileSdk 37 and AGP 9.1 or later. `ModalBottomSheet` and `SheetState` still need `ExperimentalMaterial3Api`; use `rememberBottlingSheetState()`. Drop the pin when the BOM ships 1.5.
 - **Built-in Kotlin:** with AGP 9's built-in Kotlin, don't apply `org.jetbrains.kotlin.android`. Give Kotlin compiler plugins (compose, serialization) the `pluginKotlin` version.
 - **Analytics route names:** screen analytics send `destination.route` (`MessageInABottleApp`). Type-safe routes turn that into a qualified class name, so keep stable snake_case screen names when the routes change.
 - **Lottie race (b1d8a34):** never gate the bottle Lottie on `uiState`. The ~630 KB composition parses asynchronously, taking over 1 s on a cold start. Let it play its single iteration, reveal only when `progress == 1f` and the state is final, and make sure rotation can't freeze it.
 - **Firestore models and R8:** models must be `@Keep`, because release 1.0 wrote R8-obfuscated `a`/`b` fields. Mappers read named fields and skip malformed documents. R8 is on in release and `proguard-rules.pro` has no rules, so smoke-test a release build after adding libraries that rely on reflection.
 - **Robolectric setup:** it needs the `--add-opens` JVM flags set on the `Test` tasks in `app/build.gradle.kts` (JDK 17+). Keep unit-test Espresso at 3.7.0 or later: Roborazzi brings 3.5.1, which fails on SDK 37 with `InputManager.getInstance()`.
-- **Fonts under Robolectric:** downloadable Google Fonts don't load, so each weight falls back to the next `Font` in its family. Only Roboto Slab is bundled in `res/font/`. Bundle the Roboto Flex (400, 500, 600) and Roboto Mono (400, 500) weights the design uses, or screenshots won't match devices.
+- **Fonts:** all three families are bundled in `res/font/` and nothing downloads, because Robolectric can't load downloadable fonts. Roboto Flex is the variable font, with each weight selected through `FontVariation` and `opsz` pinned per size; `BottlingFontsTest` checks Robolectric still applies the axes. Sources and licences are in `licenses/`.
+- **Material Symbols:** upstream XML carries `android:tint="?attr/colorControlNormal"`, an AppCompat attribute. Remove it when adding a Symbol (Compose tints icons) and keep `android:autoMirrored`.
+- **mockk under Robolectric:** once a Robolectric NATIVE test has run in a test JVM, mockk can't attach its agent at runtime. The `Test` tasks preload ByteBuddy's agent with `-javaagent` (the `mockkAgent` configuration in `app/build.gradle.kts`); keep its version in step with mockk's.
 - **Debug Google sign-in failing with `[28444]` or `NoCredentialException`:** usually Firebase config drift (the debug Android OAuth client is missing), not app code. Check that `app/google-services.json` has an `oauth_client` with `client_type: 1`. Fixing it changes the Firebase project, so ask first.
 - **AppCompat:** `Theme.Bottling` extends `Theme.AppCompat.NoActionBar`, but AppCompat only arrives as a transitive dependency.
