@@ -1,5 +1,6 @@
 package com.bottlecast.app.common.ui
 
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 
 /**
@@ -45,4 +46,24 @@ object BottlingSizes {
     /** The moon on the Shore and compact domes, and Shore B's larger moon. */
     val moonDisc = 40.dp
     val moonDiscLarge = 56.dp
+
+    /** Avatars: the Me tab's in the navigation bar, and the profile's. Plain circles. */
+    val navAvatar = 24.dp
+    val navAvatarGlyph = 16.dp
+    val profileAvatar = 96.dp
+    val profileAvatarGlyph = 48.dp
+    val profileAvatarRim = 3.dp
+
+    /** The "something's new" dot on a navigation bar icon, on the icon's top-end corner. */
+    val badgeDot = 8.dp
+    val badgeDotOffset = DpOffset(4.dp, (-1).dp)
+
+    /** The leading icon of a banner (spec §3.18). */
+    val bannerIcon = 20.dp
+
+    /** An edge or empty state's spot illustration (spec §1.6, §3.18). */
+    val spotIllustration = 160.dp
+
+    /** The corners a full-screen route gains as a back swipe shrinks it away (spec §1.5). */
+    val predictiveBackCorner = 32.dp
 }

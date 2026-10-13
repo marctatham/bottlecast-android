@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Night's window and splash colours; see values/colors.xml. -->
+    <color name="window_background">#0D1214</color> <!-- background -->
+    <color name="splash_background">#20272A</color> <!-- dome -->
+    <color name="splash_glyph">#63D3FF</color> <!-- glass -->
+</resources>

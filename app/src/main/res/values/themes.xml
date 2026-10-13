@@ -17,7 +17,13 @@
 <resources>
 
     <!-- To see how these attributes are used, please visit https://material.io/develop/android/theming/color/ -->
-    <style name="Base.Theme.Bottling" parent="Theme.AppCompat.NoActionBar" />
+    <style name="Base.Theme.Bottling" parent="Theme.AppCompat.NoActionBar">
+        <!-- the theme's background, so there's no flash before Compose draws (spec §1.1) -->
+        <item name="android:windowBackground">@color/window_background</item>
+        <!-- the platform splash (API 31+, so no core-splashscreen): the dome with the bottle -->
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_bottle</item>
+    </style>
 
     <style name="Theme.Bottling" parent="Base.Theme.Bottling" />
 

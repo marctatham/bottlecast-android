@@ -76,7 +76,7 @@ Version 1.1 · 2026-10-12 · Owner decisions and review fixes merged (see "Owner
 - Ship the theme change on its own first, so the owner can sign off on the codified look.
 - Edge-to-edge with transparent status and navigation bars. Status-bar icons are light on Night and dark on Dawn. This fixes today's dark-icons-on-dark bug.
 - Set the window background in themes.xml to `background`, so there is no white flash.
-- Add the SplashScreen API: `dome` background with the monochrome bottle glyph.
+- Add the SplashScreen API: `dome` background with the bottle glyph in `glass` (decisions.md, 2026-10-13).
 
 ### 1.2 Colour tokens (hex)
 

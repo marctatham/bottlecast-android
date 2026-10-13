@@ -3,6 +3,7 @@ package com.bottlecast.app.common.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,12 +11,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.bottlecast.app.common.ui.BottlingPreview
 import com.bottlecast.app.common.ui.BottlingTheme
@@ -27,6 +31,8 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
  *
  * @param border replaces the theme's edge, e.g. with an `outline` border so an interactive card
  *   reaches 3:1 (spec §4).
+ * @param onClick makes the whole card a button, its ripple and focus ring following the card's
+ *   shape while the rim and glow stay outside it.
  */
 @Composable
 fun ParchmentCard(
@@ -34,6 +40,7 @@ fun ParchmentCard(
     shape: Shape = BottlingTheme.shapes.parchment,
     border: BorderStroke? = null,
     contentPadding: PaddingValues = PaddingValues(BottlingTheme.spacing.l),
+    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = BottlingTheme.colors
@@ -48,6 +55,20 @@ fun ParchmentCard(
                 // parchment, which has no contrast
                 if (colors.isNight && border == null) {
                     Modifier.dropShadow(shape, Shadow(radius = 0.dp, color = colors.parchmentEdge, spread = hairline))
+                } else {
+                    Modifier
+                }
+            )
+            .then(
+                if (onClick != null) {
+                    Modifier
+                        .clip(shape)
+                        .clickable(
+                            interactionSource = null,
+                            indication = ripple(focusRingShape = shape),
+                            role = Role.Button,
+                            onClick = onClick,
+                        )
                 } else {
                     Modifier
                 }

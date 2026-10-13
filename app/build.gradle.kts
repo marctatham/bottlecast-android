@@ -19,6 +19,7 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
 
     alias(libs.plugins.hilt.gradle)
     alias(libs.plugins.ksp)
@@ -112,10 +113,8 @@ roborazzi {
 val mockkAgent: Configuration by configurations.creating { isTransitive = false }
 
 tasks.withType<Test>().configureEach {
-    // PixelCopy renders shadows & elevation the way a device does; it's used by the screen captures
-    // (sheets, dialogs), while captureThemed draws the window in software (see testing/Screenshots.kt)
-    systemProperty("robolectric.pixelCopyRenderMode", "hardware")
     maxHeapSize = "2g"
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceIn(1, 4)
     // Robolectric reaches into JDK internals, which Java 17+ only allows when opened (robolectric.org/getting-started)
     jvmArgs(
         "--add-opens=java.base/java.lang=ALL-UNNAMED",
@@ -160,6 +159,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.kotlinx.serialization.core) // type-safe navigation routes
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
 
     // Compose
@@ -209,8 +209,9 @@ dependencies {
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.espresso.core)
 
-    // Instrumented tests: jUnit rules and runners
+    // Instrumented tests: jUnit rules and runners, and Espresso for pressing back
     androidTestImplementation(libs.androidx.test.core)
+    androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
 }

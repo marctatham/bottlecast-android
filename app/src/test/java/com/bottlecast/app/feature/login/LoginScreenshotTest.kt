@@ -10,8 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.bottlecast.app.common.components.rememberBottlingSheetState
 import com.bottlecast.app.common.ui.BottlingTheme
-import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
-import com.github.takahirom.roborazzi.captureScreenRoboImage
+import com.bottlecast.app.testing.captureScreenByDrawing
 import com.bottlecast.app.testing.captureThemed
 import org.junit.Rule
 import org.junit.Test
@@ -50,8 +49,8 @@ class LoginScreenshotTest {
     }
 
     // the sheet is its own window and animates open, so the clock is advanced past the animation
-    // and the whole screen, scrim included, is captured
-    @OptIn(ExperimentalRoborazziApi::class, ExperimentalMaterial3Api::class)
+    // and every window is drawn, scrim included
+    @OptIn(ExperimentalMaterial3Api::class)
     private fun captureSheet(darkTheme: Boolean) {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {
@@ -69,7 +68,7 @@ class LoginScreenshotTest {
         }
         composeTestRule.mainClock.advanceTimeBy(SETTLE_MILLIS)
         composeTestRule.waitForIdle()
-        captureScreenRoboImage()
+        composeTestRule.captureScreenByDrawing()
     }
 
     private companion object {

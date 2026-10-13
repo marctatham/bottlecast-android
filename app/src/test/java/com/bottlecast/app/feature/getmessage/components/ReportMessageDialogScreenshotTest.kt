@@ -8,8 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.bottlecast.app.common.ui.BottlingTheme
-import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
-import com.github.takahirom.roborazzi.captureScreenRoboImage
+import com.bottlecast.app.testing.captureScreenByDrawing
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,8 +33,7 @@ class ReportMessageDialogScreenshotTest {
     @Test
     fun dialogDawn() = capture(darkTheme = false)
 
-    // the dialog is its own window, so the whole screen is captured
-    @OptIn(ExperimentalRoborazziApi::class)
+    // the dialog is its own window, so every window is drawn, with the dialog's dim between them
     private fun capture(darkTheme: Boolean) {
         composeTestRule.setContent {
             BottlingTheme(darkTheme = darkTheme) {
@@ -44,6 +42,6 @@ class ReportMessageDialogScreenshotTest {
             }
         }
         composeTestRule.waitForIdle()
-        captureScreenRoboImage()
+        composeTestRule.captureScreenByDrawing()
     }
 }
