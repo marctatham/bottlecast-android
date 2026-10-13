@@ -66,6 +66,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - Report diffs without failing: `./gradlew :app:compareRoborazziDebug`
   - Gate before committing UI work: `./gradlew :app:verifyRoborazziDebug`
   - Goldens are committed at `app/src/test/screenshots/<package>.<Class>.<method>.png`.
+  - Roborazzi keeps a copy of every image in `app/build/intermediates/roborazzi/` and can copy it back into the goldens folder. After deleting a screenshot test, also delete its images there (or run `./gradlew clean`), and never commit goldens of tests that no longer exist.
   - After a failure, Read `app/build/outputs/roborazzi/*_compare.png`, which shows the reference, the diff and the new image side by side. The report is at `app/build/reports/roborazzi/index.html`.
 - Gradle skips up-to-date test tasks. When you need a fresh run as proof, add `--rerun-tasks`, or `--rerun` after a single task.
 - **Fresh clones and worktrees don't build as they are.** These files are gitignored:
