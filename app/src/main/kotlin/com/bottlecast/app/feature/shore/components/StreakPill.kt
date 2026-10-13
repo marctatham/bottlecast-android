@@ -3,7 +3,6 @@ package com.bottlecast.app.feature.shore.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
@@ -12,6 +11,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,41 +62,38 @@ internal fun StreakPill(
         ).joinToString(separator = ", ")
     }
 
-    Box(
+    // the touch target reaches 48dp around the pill, while the ripple and focus ring follow it
+    val shape = BottlingTheme.shapes.pill
+    Row(
         modifier = modifier
-            .heightIn(min = sizes.touchTarget)
-            .clickable(onClick = onClick)
+            .minimumInteractiveComponentSize()
+            .heightIn(min = ShoreDimens.streakPillHeight)
+            .clip(shape)
+            .clickable(interactionSource = null, indication = ripple(focusRingShape = shape), onClick = onClick)
             .clearAndSetSemantics {
                 contentDescription = description
                 role = Role.Button
                 onClick { onClick(); true }
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(
-            modifier = Modifier
-                .heightIn(min = ShoreDimens.streakPillHeight)
-                .clip(BottlingTheme.shapes.pill)
-                .background(colorScheme.primaryContainer)
-                .padding(start = ShoreDimens.streakPillPaddingStart, end = ShoreDimens.streakPillPaddingEnd),
-            horizontalArrangement = Arrangement.spacedBy(sizes.chipIconGap),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_symbol_waves),
-                contentDescription = null,
-                tint = colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(sizes.iconSmall),
-            )
-            Text(text = label, style = MaterialTheme.typography.labelLarge, color = colorScheme.onPrimaryContainer)
-            repeat(streak.shields.coerceAtMost(MAX_SHIELDS)) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_symbol_shield),
-                    contentDescription = null,
-                    tint = BottlingTheme.colors.moon,
-                    modifier = Modifier.size(ShoreDimens.shieldIcon),
-                )
             }
+            .background(colorScheme.primaryContainer)
+            .padding(start = ShoreDimens.streakPillPaddingStart, end = ShoreDimens.streakPillPaddingEnd),
+        horizontalArrangement = Arrangement.spacedBy(sizes.chipIconGap),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_symbol_waves),
+            contentDescription = null,
+            tint = colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(sizes.iconSmall),
+        )
+        Text(text = label, style = MaterialTheme.typography.labelLarge, color = colorScheme.onPrimaryContainer)
+        repeat(streak.shields.coerceAtMost(MAX_SHIELDS)) {
+            Icon(
+                painter = painterResource(R.drawable.ic_symbol_shield),
+                contentDescription = null,
+                tint = BottlingTheme.colors.moon,
+                modifier = Modifier.size(ShoreDimens.shieldIcon),
+            )
         }
     }
 }

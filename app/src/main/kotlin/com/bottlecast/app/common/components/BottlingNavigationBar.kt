@@ -88,17 +88,13 @@ private fun TabIcon(icon: Int, badge: Boolean = false) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = BADGE_OFFSET_X, y = BADGE_OFFSET_Y)
+                    .offset(x = sizes.badgeDotOffset.x, y = sizes.badgeDotOffset.y)
                     .size(sizes.badgeDot)
                     .background(BottlingTheme.colors.moon, CircleShape)
             )
         }
     }
 }
-
-// the Main board's dot sits on the icon's top-end corner
-private val BADGE_OFFSET_X = 4.dp
-private val BADGE_OFFSET_Y = (-1).dp
 
 @NightDawnPreviews
 @Composable
