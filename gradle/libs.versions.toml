@@ -20,6 +20,7 @@ androidxTestRunner = "1.7.0"
 androidxTestEspresso = "3.7.0"
 junit = "4.13.2"
 mockk = "1.14.11"
+byteBuddy = "1.18.2" # the version mockk resolves; its agent is preloaded in unit tests (app/build.gradle.kts)
 timber = "5.0.1"
 lottie = "6.7.1"
 googleId = "1.2.1"
@@ -66,6 +67,7 @@ firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleId" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
+byte-buddy-agent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byteBuddy" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
