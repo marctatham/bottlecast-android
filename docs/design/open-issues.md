@@ -6,22 +6,9 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
 
 ## Questions for the owner
 
-- [ ] **How much of the Worker comes forward to slice 2** (Slice 2)
-  - Blocking, the report threshold and a server-pinned daily bottle all need discovery to go through a Worker (`/discover`, `/report`, `/block`), which is planned for slice 6.
-  - Options: a minimal Worker in slice 2, or client-only reporting until slice 6.
-  - Also open: how many reports take a bottle out of the sea. Proposed: 3.
-
-- [ ] **Keeping it to one bottle a day** (Slice 2)
-  - Calendar-day tides fix the cooldown maths, but the daily rule still has to hold when someone peeks at a prefetched bottle and backs out, reinstalls as a guest, or changes the phone's time zone.
-  - Options: a server-pinned bottle per user per day; a time zone pinned to the account; accepting the guest-reinstall bypass, or requiring sign-in to keep a streak.
-
-- [ ] **Bottles that drift again** (Slice 2)
-  - Thrown-back and expired bottles drift back into the sea, and a reported one stays there for everyone but the reporter, so a bottle can be found more than once. The data model has a single `foundBy`/`foundAt`, and "Your bottle was found" and Cast success's journey row assume one finder.
-  - Options (from the review): a find count, with the writer told once.
-
-- [ ] **Board or spec where they differ** (Slices 2, 3, 6 and 7)
-  - Spec §6 lets the spec win for Reveal's button order (slice 2), the Compose and Preview wording and the three onboarding pages (slice 3), the three-step wallet sheet (slice 6) and Gift-Compose's own pen-name switch (slice 7). The owner may prefer a board in some of these.
-  - Proposed: the spec, unless the owner picks the board.
+- [ ] **Board or spec where they differ** (Slices 3, 6 and 7)
+  - Spec §6 lets the spec win for the Compose and Preview wording and the three onboarding pages (slice 3), the three-step wallet sheet (slice 6) and Gift-Compose's own pen-name switch (slice 7). The owner may prefer a board in some of these.
+  - Proposed: the spec, unless the owner picks the board. For slice 2 the owner chose the spec (2026-10-13, see [decisions.md](decisions.md)).
 
 - [ ] **Merging a guest into an existing Google account** (Slice 3)
   - The sign-in chip promises "Your 3-day streak and today's find come with you". If that Google account already exists, `linkWithCredential` fails, and moving the streak and the find between two uids needs a server-side merge.
@@ -68,17 +55,9 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
 
 ## Open review findings
 
-- [ ] **Accessibility timeouts left at fixed times** (Slices 2 and 8)
-  - Spec §4 says timed controls stay up for at least `AccessibilityManager.getRecommendedTimeoutMillis()`, and that snackbars with an action don't time out while TalkBack is on. But §3.7 still gives the "Reported" [Undo] bar 5 s, and §3.14 the achievement toast 4 s.
-  - Proposed: read 5 s and 4 s as minimums and follow §4.
-
-- [ ] **Old app versions after the data model changes** (Slice 2)
-  - Installs still on 1.1.1 keep reading and writing messages in the old shape after slice 2 adds fields and `firestore.rules`. No forced-update or migration state is designed.
-  - Options: a forced-update screen, or rules and mappers that accept both shapes for a while.
-
-- [ ] **Guest accounts removed by automatic clean-up** (Slice 2)
-  - If Identity Platform's automatic clean-up of anonymous accounts (after 30 days) is turned on, a guest loses their streak and finds without warning.
-  - Options: leave clean-up off, or design a state for a guest whose account was removed.
+- [ ] **Accessibility timeouts left at fixed times** (Slice 8)
+  - Spec §4 says timed controls stay up for at least `AccessibilityManager.getRecommendedTimeoutMillis()`, and that snackbars with an action don't time out while TalkBack is on. But §3.14 still gives the achievement toast 4 s.
+  - Proposed: read 4 s as a minimum and follow §4, as slice 2 did for its undo windows (5 s or the recommended timeout, with no timeout under TalkBack).
 
 - [ ] **Push for "found", "kept" and gift events** (Slices 4 and 7)
   - These need a push sender (the Worker calling FCM HTTP v1 with a service-account token). No slice builds it, and the spec doesn't describe it.
@@ -88,12 +67,9 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't. Still open: whether signing fits in 10 ms of CPU (a slice 5 spike), staying under 50 subrequests per invocation (cron runs included), and serialising the single minter's nonce.
   - Options for the nonce: cron-only minting, or a Durable Object that owns it. Someone also has to watch the minter's balance (the Base Sepolia faucet gives 0.1 ETH per rolling 24 hours).
 
-- [ ] **The Dawn dialog scrim** (Slice 2)
-  - The spec's Dawn scrim is #1A2320 at 40%, but an `AlertDialog`'s window dim comes from the platform and is always black (the Report dialog shows it).
-  - Options: a custom scrim behind Compose dialogs, or accept the platform dim.
-
-- [ ] **The Shore bottle's Lottie licence** (Slice 2)
-  - Spec §1.6 flags `message_in_bottle.json` (the Shore and cast-success bottle) for a licence check, or a redraw in the rig. Nothing records its source yet.
+- [ ] **The cast-success bottle's Lottie licence** (Slice 3)
+  - Spec §1.6 flags `message_in_bottle.json` for a licence check, or a redraw in the rig. Nothing records its source yet.
+  - Slice 2 drew the Shore's bottle in the rig, so only cast success still plays the Lottie, until slice 3 rebuilds it.
 
 - [ ] **In-app licences** (Slice 4)
   - Material Symbols and Roboto Slab are Apache 2.0, which asks for the licence text to reach people who get the app. The texts are in `licenses/`, but nothing in the app shows them.
@@ -120,6 +96,30 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - "Harbour closed" now covers the Firestore, Auth and Worker daily limits, and a low minter shows "Sealing · delayed". Not yet designed: Firebase Hosting's 360 MB a day running out (the gift and profile pages and `assetlinks.json` go down) and a Shore variant of Harbour closed.
 
 ## Resolved
+
+- [x] **How much of the Worker comes forward to slice 2** (Slice 2)
+  - Blocking, the report threshold and a server-pinned daily bottle all seemed to need discovery to go through a Worker, which is planned for slice 6.
+  - Answer (2026-10-13, slice 2 planning): rules only. Firestore rules enforce the create-only daily record, one report per finder and a threshold of 3; blocking happens on the phone. Slice 6's Worker takes over discovery and blocking. See [decisions.md](decisions.md).
+
+- [x] **Keeping it to one bottle a day** (Slice 2)
+  - The daily rule had to hold when someone peeks at a prefetched bottle and backs out, reinstalls as a guest, or changes the phone's time zone.
+  - Answer (2026-10-13, slice 2 planning): accept the small holes. The candidate is pinned for the account and day, the rules accept a date that's real somewhere on Earth at that moment, and a reinstall makes a fresh guest. See [decisions.md](decisions.md).
+
+- [x] **Bottles that drift again** (Slice 2)
+  - Thrown-back and expired bottles drift back, so a bottle can be found more than once, but the data model had a single `foundBy`/`foundAt`.
+  - Answer (2026-10-13, slice 2 planning): one finder at a time. A find holds the bottle for 7 days, `findCount` counts the finds, nobody finds the same bottle twice, and each find has its own `finds/{messageId}_{uid}` record. See [decisions.md](decisions.md).
+
+- [x] **Old app versions after the data model changes** (Slice 2)
+  - Installs on 1.1.1 would keep writing messages in the old shape once the rules and new fields arrive.
+  - Answer (2026-10-13, slice 2 planning): strict. The new rules and the production migration ship together at release, and 1.1.1 can't find or cast until it updates. See [decisions.md](decisions.md).
+
+- [x] **Guest accounts removed by automatic clean-up** (Slice 2)
+  - Automatic clean-up of anonymous accounts would remove a guest's finds without warning.
+  - Answer (2026-10-13, slice 2): leave clean-up off, and check it at release. See [decisions.md](decisions.md).
+
+- [x] **The Dawn dialog scrim** (Slice 2)
+  - A platform dialog's window dim is always black, but the spec's Dawn scrim is #1A2320 at 40%.
+  - Answer (2026-10-13, slice 2 planning): `BottlingDialog` turns the dim off and draws the theme's scrim. See [decisions.md](decisions.md).
 
 - [x] **What the Chest and Me tabs show before they're built** (Slice 1)
   - Slice 1 adds the Shore/Chest/Me navigation bar, but the Chest arrives in slice 4, and the streak pill and stats need data from slices 2 and 4.

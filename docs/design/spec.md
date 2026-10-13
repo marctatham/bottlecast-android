@@ -324,10 +324,10 @@ Primary copy avoids crypto jargon. Detail rows name each technical term exactly 
 
 | UI word | Meaning | Backend |
 |---|---|---|
-| Corked | Saved, not afloat yet (offline queue) | `messages/{id}.status = corked` |
-| Drifting | Afloat in the sea pool | `status = afloat`, `rand` set |
-| Found | Someone uncorked it | `status = found`, `foundBy`, `foundAt` |
-| Not kept · 5d left | The finder hasn't kept it; it drifts back after 7 days (G3) | `finds/{id}.expiresAt` |
+| Corked | Saved, not afloat yet (offline queue) | A cast still in Firestore's offline queue; nothing is stored as corked |
+| Drifting | Afloat in the sea pool | `status = afloat`, `rand` set, `reportCount` below 3 |
+| Found | Someone uncorked it. One finder at a time: the find holds it for 7 days | `status = found`, `foundAt` (when the hold began), `findCount`; the finder's `finds/{messageId}_{uid}` (`held`, `thrown_back` or `reported`) and the day's `daily/{uid}_{date}` |
+| Not kept · 5d left | The finder hasn't kept it; it drifts back after 7 days (G3) | Worked out as `foundAt` + 7 days, never stored; an expired hold is findable again |
 | Kept | Claimed. In your chest, not on-chain | `claims/{id}.status = pending_wallet` |
 | Waiting · 5h | Safety check: a bottle seals only once it's 24 hours old, counted from its cast (G1). An older bottle seals as soon as it's kept to a wallet | `claims.status = cooling`, `sealAfter = messages.createdAt + 24h` |
 | Sealing… | Mint transaction sent | `status = minting` |
@@ -720,12 +720,14 @@ Preview stays a separate route: it is where the writer consents to permanence.
 - Pop: haptic, shared transition to Reveal.
 - Data late: the scroll stays half-out with a shimmer for up to 4s.
 - Error: the bottle slipping-back art, "The bottle slipped back into the sea. Today's bottle is still waiting." [Try again]
-- Sea empty: see 3.18.
-- Already found: redirect to Shore B.
+- Sea empty: see 3.18, with the note "This didn't use up today's bottle."
+- Already found: redirect to Shore B, with the daily-limit snackbar (3.18).
 - Offline: "Fog rolled in" full state.
 - Gift mode: the caption "This one doesn't use up today's bottle."
 
 ### 3.7 Reveal: the message
+*Until slice 4 brings the Chest, Reveal has no Keep pill or helper, and Shore B's card no Kept or Not kept chip (decisions, 2026-10-13).*
+
 **Layout:**
 - Compact dome (edge at y≈230). No nav bar.
 - **Top bar (64dp):** back arrow on the left; on the right, a 48dp outlined flag button with the tooltip "Report".
@@ -1263,11 +1265,12 @@ Rules:
 - Primary "Back to the shore". Today's bottle stays used, so reporting can't be used to re-roll.
 
 **States:**
-- Submitting: the button shows a spinner.
+- Submitting: no spinner. The dialog closes at once, and the write waits out the undo window (§3.7).
 - Offline: queued through Firestore offline persistence; "Reported — we'll send it when you're back online".
 - Already reported: the flag is filled; tapping shows "You've reported this".
 - Blocked: none of that writer's bottles or gifts reach you again. Settings › Privacy › "Blocked writers" can undo it.
-- Writes: `reports/{id}` (one per reporter per bottle) and the reporter's hidden list, so it disappears for them at once. Others can still find it until N different people have reported it (N = 3 proposed) or an admin pulls it; only then `status = under_review` and it leaves the sea. Blocking goes through the Worker (`/block` with the messageId), which stores the writer server-side, so the reporter never learns who wrote it.
+- Writes: `reports/{messageId}_{uid}` (one per reporter per bottle), and the reporter's find marked `reported`, which is their hidden list, so it disappears for them at once. Only the bottle's current finder can report it, and the report keeps their 7-day hold. Others can find it again once the hold ends, until 3 different people have reported it or an admin pulls it (`status = under_review`). From the third report the discovery queries and the rules both leave it out of the sea.
+- Blocking writes `users/{uid}/blockedWriters/{writerUid}`, and the phone skips that writer's bottles by the writer id each one carries. Slice 6's Worker takes this over (`/block` with the messageId), storing the writer server-side so the reporter never learns who wrote it.
 - The admin reviews it in the hidden Moderation list.
 
 ---
