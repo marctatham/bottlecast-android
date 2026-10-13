@@ -92,3 +92,48 @@ The owner's answers while planning slice 1 (theme, navigation and Shore). The th
   *Changes spec: §1.4 (avatars), §1.6 (the Dawn moon).*
 
 - **Delivery:** slice 1 ships as two PRs. The first applies the theme to today's screens and is signed off from its screenshots; the second brings edge-to-edge, the splash, RTL, type-safe routes, the navigation bar, Chest, Me and the Shore.
+
+## 2026-10-13 — Slice 1 part 2
+
+The owner's answers while planning the navigation and Shore PR, which applies them.
+
+- **Order:** finish slice 1 before slice 2.
+- **Chest and Me before slice 4:** honest empty states.
+  - The Chest shows its compact dome header and the spec's own empty state: "Your chest is empty" / "Today's bottle is waiting on the shore." [Go to the shore] (spec §3.10).
+  - Me shows the avatar in its compact dome, then "Your profile is on its way" / "Your streak, badges and pen name will live here soon." [Go to the shore].
+  - Slice 4 replaces both. Resolves the open issue "What the Chest and Me tabs show before they're built".
+- **Streak pill and stats before slices 2 and 4:** the live Shore hides them until real data exists. The screen can draw both, and the screenshot tests use the boards' sample data so they compare with the boards.
+- **Splash:** the dome colour with the bottle glyph in `glass`. No board draws a splash.
+
+  *Changes spec: §1.1 (the splash glyph).*
+
+Choices made while building it, which the owner can revisit at review:
+
+- **The Me avatar** is a person glyph on moonContainer until slice 4 settles which name its initial comes from (open issue "Which name the Me tab shows").
+- **Analytics screen names** keep their old values, so the Shore still reports `home`; the new tabs report `chest` and `me`.
+- **Where the Shore's boards and the spec differ,** the spec wins:
+
+  | Spec value, taken | Board value, not taken |
+  |---|---|
+  | Stats 24dp apart in one 48dp target | Stats 40 apart, 56 tall |
+  | Glints drifting | Glints static |
+  | Only the moon's halo pulses | The whole disc fades |
+  | Moonpath at 25%, fading at both ends | Moonpath at 28%, no fade |
+  | Nav labels in `labelLarge` 14/20 | Nav labels 12/16 |
+  | "Not kept · 7d left" on Shore B | "5d left" |
+  | The bottle Lottie on Shore A | The SVG rig, which slice 2 brings |
+
+- **From the boards, where the spec is silent:**
+  - the stars
+  - the dome glow's centres
+  - "NEXT TIDE IN" in onSurfaceVariant
+  - the tide ring's end marker
+  - the today's-find card's padding and "TODAY'S FIND" overline
+  - the 8dp moon badge dot
+
+  The admin's "Moderation" menu, which no board draws, sits at the end of the top row.
+- **Large text:** from 175% text the bottle and the glints step aside, and the streak pill wraps under the wordmark (spec §3.3 hides the bottle at 200%).
+- **Landscape:** the dome's radius widens to three quarters of the screen's width, so the arc still spans it.
+- **No failure screen on the Shore:** if its inputs fail, it logs and still offers today's bottle.
+- **Predictive back:** full-screen routes shrink to 90% with 32dp corners over the screen underneath (spec §1.5), and tabs fade back to the Shore.
+

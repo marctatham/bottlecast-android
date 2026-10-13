@@ -6,10 +6,6 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
 
 ## Questions for the owner
 
-- [ ] **What the Chest and Me tabs show before they're built** (Slice 1)
-  - Slice 1 adds the Shore/Chest/Me navigation bar, but the Chest arrives in slice 4, and the streak pill and stats need data from slices 2 and 4.
-  - Options: hide them until their slice lands, or show placeholder states.
-
 - [ ] **How much of the Worker comes forward to slice 2** (Slice 2)
   - Blocking, the report threshold and a server-pinned daily bottle all need discovery to go through a Worker (`/discover`, `/report`, `/block`), which is planned for slice 6.
   - Options: a minimal Worker in slice 2, or client-only reporting until slice 6.
@@ -124,6 +120,10 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - "Harbour closed" now covers the Firestore, Auth and Worker daily limits, and a low minter shows "Sealing · delayed". Not yet designed: Firebase Hosting's 360 MB a day running out (the gift and profile pages and `assetlinks.json` go down) and a Shore variant of Harbour closed.
 
 ## Resolved
+
+- [x] **What the Chest and Me tabs show before they're built** (Slice 1)
+  - Slice 1 adds the Shore/Chest/Me navigation bar, but the Chest arrives in slice 4, and the streak pill and stats need data from slices 2 and 4.
+  - Answer (2026-10-13, slice 1 part 2): honest empty states for the Chest and Me, and the live Shore hides the streak pill and stats until slices 2 and 4 supply them. See [decisions.md](decisions.md).
 
 - [x] **Material3 1.5 beta or the spec's fallbacks** (Slice 1)
   - Expressive motion, the wavy progress indicators and MaterialShapes need Material3 1.5, which Compose BOM 2026.09.00 doesn't include.

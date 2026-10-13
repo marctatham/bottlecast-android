@@ -12,22 +12,28 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 ## Stack and layout
 - One module, `:app`, package `com.bottlecast.app`.
   - Kotlin 2.4 via AGP 9.4's built-in Kotlin.
-  - Jetpack Compose with Material 3 (material3 pinned to 1.5.0-beta01 ahead of the BOM), Navigation Compose, Hilt (KSP).
+  - Jetpack Compose with Material 3 (material3 pinned to 1.5.0-beta01 ahead of the BOM), Navigation Compose with type-safe routes (kotlinx-serialization), Hilt (KSP).
   - Firebase Auth/Firestore/Analytics/Crashlytics, and Google sign-in through Credential Manager.
   - Lottie, Timber.
   - minSdk 33, compileSdk/targetSdk 37, Java 11.
   - Gradle 9.8 with the configuration cache and build cache on. Versions live in `gradle/libs.versions.toml`.
 - Code is in `app/src/main/kotlin/com/bottlecast/app/`. Build-type code is in `app/src/debug/kotlin/` and `app/src/release/kotlin/`. Tests are in `app/src/test/java/` (JVM) and `app/src/androidTest/java/` (device); both hold Kotlin.
-- Shell: `MainActivity` → `BottlingTheme` → `MessageInABottleApp.kt`. That file is the NavHost; route strings are in `Navigation.kt`. `MessageInABottleApp` applies the system-bar, cutout and keyboard insets once for every screen, so screens must not add them again.
+- Shell: `MainActivity` → `BottlingTheme` → `MessageInABottleApp.kt`, the NavHost. The app draws edge to edge with transparent bars.
+  - Routes are `@Serializable` objects in `Navigation.kt`, each with a stable `screenName` for analytics. `TopLevelDestination` lists the tabs.
+  - Tab roots (Shore, Chest, Me) draw themselves in a `TabFrame`, which adds the navigation bar and hands its height to the screen as `contentPadding`. Every other route is immersive.
+  - Screens drawn under the status bar take `windowInsets = WindowInsets.safeDrawing.only(Top + Horizontal)` and pad their own content; the bottom comes only from `contentPadding`, so the navigation bar isn't counted twice.
+  - Screens from before the redesign sit in `ImmersiveScreen`, which keeps them inside the system bars over an opaque background.
 - `common/authentication/` and `common/messages/` split into:
   - `domain`: `I`-prefixed interfaces and entities
   - `data`: implementations, with Firestore models in `data/model/` and mappers in `data/mapper/`
   - `di`: Hilt modules
 
-  `common/analytics/` and `common/threading/` are flat, plus `di`.
+  `common/analytics/`, `common/connectivity/` and `common/threading/` are flat, plus `di`.
 - `common/ui/` is the theme: `Theme.kt`, `Color.kt`, `Effects.kt`, `Typography.kt`, `Shapes.kt`, `Dimens.kt`, `Motion.kt`. Material's roles come from `MaterialTheme`; the brand tokens Material has no slot for come from `BottlingTheme.colors`, `.effects`, `.typography`, `.shapes`, `.spacing`, `.sizes` and `.motion`.
-- `common/components/` holds shared composables, including the design-system pieces: `BottlingButton` (pills), `BottlingBottomSheet`, `StatusChip`, `ParchmentCard`, `MoonDisc` and `OverlineText`. The debug-only `FoundationsSpecimen` (in `src/debug`) shows the whole design system.
-- `feature/<name>/` holds a screen and its ViewModel (`postmessage` keeps them in `ui/`). Composables that only one feature uses go in its `components/`; use cases go in its `domain/`.
+- `common/components/` holds shared composables, including the design-system pieces: `BottlingButton` (pills), `BottlingBottomSheet`, `StatusChip`, `ParchmentCard`, `MoonDisc`, `OverlineText`, `Dome`, `BottlingNavigationBar`, `TabFrame`, `Banner`, `EmptyState` and `Avatar`. The debug-only `FoundationsSpecimen` (in `src/debug`) shows the whole design system.
+  - `common/ui/` also holds `rememberReducedMotion()` and `rememberBreathingTide()`, the Shore's idle motion; both go still under reduced motion and while the screen isn't resumed.
+- `feature/<name>/` holds a screen and its ViewModel (`postmessage` keeps them in `ui/`). Composables that only one feature uses go in its `components/`; use cases go in its `domain/`. Sizes only one feature uses go in its own tokens object, such as `ShoreDimens`.
+  - `shore` is the home (states A and B, spec §3.3); `chest` and `me` are empty states until slice 4.
 
 ## Conventions
 - **ViewModels:** `@HiltViewModel class XViewModel @Inject constructor(…)` with:
@@ -78,7 +84,10 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - Use `@Config(sdk = [37], application = Application::class, qualifiers = …)`. The plain `Application` keeps the Hilt `BottleCastApplication` out.
   - Full screens use `qualifiers = "w390dp-h844dp-xhdpi"`, the board size: PNG pixels ÷ 2 = board pixels.
   - Capture with a compose rule and `composeTestRule.captureThemed(darkTheme) { … }` from `testing/Screenshots.kt`, which wraps the content in `BottlingTheme` and draws the window itself. Roborazzi's `captureRoboImage { }` and its node capture can come out blank depending on which tests ran before. The software draw leaves out elevation shadows (Dawn's 1dp card shadow); `dropShadow` glows do render. Capture every state in Night and in Dawn.
-  - Sheets and dialogs are windows of their own: call `waitForIdle()`, then `captureScreenRoboImage()`. If something animates in, set `mainClock.autoAdvance = false` and advance past it first.
+  - Sheets, dialogs and popups (an open `DropdownMenu`) are windows of their own: call `waitForIdle()`, then `composeTestRule.captureScreenByDrawing()`, which draws every window where it sits, with a dialog's dim. Roborazzi's `captureScreenRoboImage()` leaves popups out and sometimes misses the content behind a dialog. If something animates in, set `mainClock.autoAdvance = false` and advance past it first.
+  - Screens drawn under the status bar take a `windowInsets` parameter: pass `WindowInsets(top = 44.dp)`, the boards' status bar, so the PNG lines up with the board. Render tab roots in a `TabFrame` with `navigationBarInsets = WindowInsets(0)`.
+  - For 200% text use `@Config(fontScale = 2f)`, which scales non-linearly as a device does; a `LocalDensity` override scales linearly.
+  - Each test class runs in its own JVM (`forkEvery = 1` in `app/build.gradle.kts`): Robolectric keeps native text-rendering state across classes, which otherwise shifts text in later classes' screenshots.
 - **Never capture a running animation.** Hoist Lottie `progress` (and any other animation state) into a parameter and pass a fixed value.
   - Pass the composition in too: `rememberLottieComposition` parses on a background thread, so a capture can come out blank.
   - In tests, load it with `loadLottieComposition(R.raw.…)` from `testing/LottieCompositions.kt`. It also decodes the images embedded as base64, which `fromRawResSync` leaves out, so the bottle draws.
@@ -146,8 +155,10 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 ## Gotchas
 - **No dynamic colour:** `BottlingTheme(darkTheme)` is Night or Dawn and follows the system's dark mode until Settings offers a choice (slice 4). Every `ColorScheme` role is filled from the palette; `BottlingColorSchemeTest` fails if one isn't.
 - **Material3:** the version catalog pins material3 1.5.0-beta01 ahead of the Compose BOM (which resolves 1.4.0), for `MotionScheme.expressive()`, `MaterialShapes` and the wavy indicators. It needs compileSdk 37 and AGP 9.1 or later. `ModalBottomSheet` and `SheetState` still need `ExperimentalMaterial3Api`; use `rememberBottlingSheetState()`. Drop the pin when the BOM ships 1.5.
-- **Built-in Kotlin:** with AGP 9's built-in Kotlin, don't apply `org.jetbrains.kotlin.android`. Give Kotlin compiler plugins (compose, serialization) the `pluginKotlin` version.
-- **Analytics route names:** screen analytics send `destination.route` (`MessageInABottleApp`). Type-safe routes turn that into a qualified class name, so keep stable snake_case screen names when the routes change.
+- **Built-in Kotlin:** with AGP 9's built-in Kotlin, don't apply `org.jetbrains.kotlin.android`. Give Kotlin compiler plugins (compose, serialization) the `pluginKotlin` version. Navigation only brings `kotlinx-serialization-core` transitively, so the catalog declares it at the version Firebase resolves.
+- **Analytics screen names:** screen analytics send each route's `screenName` (`Navigation.kt`), not `destination.route`, which type-safe routes turn into a qualified class name. The names predate the routes (the Shore is still `home`); `BottlingRouteTest` pins them, so never rename one.
+- **Predictive back:** the manifest's `enableOnBackInvokedCallback` turns it on for Android 13–15. Navigation 2.10 animates back swipes with NavHost's `predictivePopEnterTransition`/`predictivePopExitTransition`, not the pop transitions, so set both (`MessageInABottleApp`). Its defaults shrink the screen to 70% and fade the one underneath in.
+- **System bars:** `MainActivity` turns off the navigation bar's contrast scrim, which 3-button navigation would lay over the app's own bar. `MessageInABottleApp` sets the bar icons from the theme.
 - **Lottie race (b1d8a34):** never gate the bottle Lottie on `uiState`. The ~630 KB composition parses asynchronously, taking over 1 s on a cold start. Let it play its single iteration, reveal only when `progress == 1f` and the state is final, and make sure rotation can't freeze it.
 - **Firestore models and R8:** models must be `@Keep`, because release 1.0 wrote R8-obfuscated `a`/`b` fields. Mappers read named fields and skip malformed documents. R8 is on in release and `proguard-rules.pro` has no rules, so smoke-test a release build after adding libraries that rely on reflection.
 - **Robolectric setup:** it needs the `--add-opens` JVM flags set on the `Test` tasks in `app/build.gradle.kts` (JDK 17+). Keep unit-test Espresso at 3.7.0 or later: Roborazzi brings 3.5.1, which fails on SDK 37 with `InputManager.getInstance()`.
