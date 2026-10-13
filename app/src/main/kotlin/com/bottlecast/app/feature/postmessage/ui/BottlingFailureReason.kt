@@ -6,8 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import com.bottlecast.app.R
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.NightDawnPreviews
 import com.bottlecast.app.feature.postmessage.domain.MINIMUM_MESSAGE_LENGTH
 
 
@@ -31,9 +32,9 @@ fun BottlingFailureReason(
     )
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-private fun BottlingFailureReasonPreview() {
+private fun BottlingFailureReasonPreview() = BottlingPreview {
     BottlingFailureReason(
         PostMessageUiState.Failure(FailureReason.InsufficientLength)
     )

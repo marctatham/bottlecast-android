@@ -4,8 +4,6 @@ import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -16,11 +14,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.bottlecast.app.R
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.common.ui.NightDawnPreviews
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -33,7 +33,7 @@ fun BottlingAppBar(
         title = {
             if (title != Int.MIN_VALUE) {
                 Text(
-                    modifier = Modifier.padding(8.dp),
+                    modifier = Modifier.padding(BottlingTheme.spacing.xs),
                     text = stringResource(id = title),
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center,
@@ -48,25 +48,26 @@ fun BottlingAppBar(
         navigationIcon = {
             FilledIconButton(
                 onClick = onBackHandler,
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.padding(BottlingTheme.spacing.xs),
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface
                 )
             ) {
+                // auto-mirrored, so it points the right way in right-to-left layouts
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    painter = painterResource(R.drawable.ic_symbol_arrow_back),
                     contentDescription = stringResource(id = R.string.button_back),
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(BottlingTheme.sizes.icon)
                 )
             }
         },
     )
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-fun BottlingAppBarPreview() {
+private fun BottlingAppBarPreview() = BottlingPreview {
     BottlingAppBar(
         onBackHandler = {},
         modifier = Modifier.fillMaxWidth(),

@@ -56,7 +56,7 @@ fun EducationalScreen(
             text = stringResource(id = title),
             style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Start,
-            color = MaterialTheme.colorScheme.outline
+            color = MaterialTheme.colorScheme.onSurface
         )
 
         Text(
@@ -64,7 +64,7 @@ fun EducationalScreen(
             text = stringResource(id = description),
             style = MaterialTheme.typography.bodyMedium,
             textAlign = TextAlign.Start,
-            color = MaterialTheme.colorScheme.outline
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.weight(1f))

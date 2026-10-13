@@ -1,18 +1,19 @@
 package com.bottlecast.app.feature.login
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import com.bottlecast.app.R
 import com.bottlecast.app.common.components.EducationalScreen
+import com.bottlecast.app.common.components.rememberBottlingSheetState
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.NightDawnPreviews
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -23,7 +24,7 @@ fun LoginRequiredToPostScreen(
     onBackHandler: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val sheetState = rememberModalBottomSheetState()
+    val sheetState = rememberBottlingSheetState()
     var showBottomSheet: Boolean by remember { mutableStateOf(false) }
 
     val bottomSheetExpand: () -> Unit = { showBottomSheet = true }
@@ -36,7 +37,7 @@ fun LoginRequiredToPostScreen(
     }
 
     EducationalScreen(
-        image = Icons.Default.AccountCircle,
+        image = ImageVector.vectorResource(R.drawable.ic_symbol_account_circle),
         imageDescription = R.string.login_required_image_description,
         title = R.string.login_required_title,
         description = R.string.login_required_description,
@@ -56,9 +57,9 @@ fun LoginRequiredToPostScreen(
     }
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-private fun LoginRequiredToPostScreenPreview() {
+private fun LoginRequiredToPostScreenPreview() = BottlingPreview {
     LoginRequiredToPostScreen(
         onBackHandler = { },
         onProceedHandler = { },

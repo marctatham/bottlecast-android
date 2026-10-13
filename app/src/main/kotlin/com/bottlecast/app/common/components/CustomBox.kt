@@ -12,14 +12,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.common.ui.NightDawnPreviews
 import com.bottlecast.app.common.ui.fakeChildComposable
 
-@Preview
 @Composable
 fun CustomBox(
     canvasContent: @Composable () -> Unit = fakeChildComposable,
@@ -30,7 +30,7 @@ fun CustomBox(
     val radius: Dp = screenHeightDp * 0.5f  // Calculate the radius as 60% of screen height
     val yOffset: Dp =
         screenHeightDp * 0.1f  // push it up a bit so that top box = 60%, bottom box = 40%
-    val colorSurfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+    val domeColor = BottlingTheme.colors.dome
 
     Column(
         modifier = Modifier
@@ -39,7 +39,7 @@ fun CustomBox(
             .drawBehind {
                 drawCircle(
                     center = Offset(x = size.width / 2f, y = yOffset.toPx()),
-                    color = colorSurfaceVariant,
+                    color = domeColor,
                     radius = radius.toPx()
                 )
             },
@@ -63,9 +63,9 @@ fun CustomBox(
     }
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-fun CustomBoxPreview() {
+private fun CustomBoxPreview() = BottlingPreview {
     Box(modifier = Modifier.fillMaxSize()) {
         CustomBox(
             canvasContent = {
@@ -77,7 +77,7 @@ fun CustomBoxPreview() {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Red)
+                        .background(MaterialTheme.colorScheme.errorContainer)
                 )
             }
         )

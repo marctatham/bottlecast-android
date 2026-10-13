@@ -5,11 +5,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Flag
-import androidx.compose.material.icons.outlined.Flag
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -17,12 +14,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bottlecast.app.R
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.common.ui.NightDawnPreviews
 
 @Composable
 fun UnbottledMessageCard(
@@ -31,15 +30,18 @@ fun UnbottledMessageCard(
     unbottledMessage: String,
     modifier: Modifier = Modifier,
 ) {
-    val imageFlag: ImageVector = if (isReported) Icons.Filled.Flag else Icons.Outlined.Flag
+    val flagIcon: Int = if (isReported) R.drawable.ic_symbol_flag_filled else R.drawable.ic_symbol_flag
+    val spacing = BottlingTheme.spacing
 
-    ElevatedCard(
+    // flat on Night, which is tonal only; a 1dp shadow on Dawn (spec §1.4)
+    Card(
         modifier = modifier,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ),
-        shape = MaterialTheme.shapes.medium,
-        elevation = CardDefaults.cardElevation(defaultElevation = 20.dp),
+        shape = BottlingTheme.shapes.card,
+        elevation = CardDefaults.cardElevation(defaultElevation = BottlingTheme.effects.cardElevation),
     ) {
         Row(
             modifier = Modifier
@@ -50,22 +52,22 @@ fun UnbottledMessageCard(
 
             FilledIconButton(
                 onClick = onReportHandler,
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.padding(spacing.xs),
                 colors = IconButtonDefaults.filledIconButtonColors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface
                 )
             ) {
                 Icon(
-                    imageVector = imageFlag,
+                    painter = painterResource(flagIcon),
                     contentDescription = stringResource(id = R.string.get_message_report),
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(BottlingTheme.sizes.icon)
                 )
             }
         }
 
         Text(
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 32.dp),
+            modifier = Modifier.padding(start = spacing.m, end = spacing.m, bottom = spacing.xl),
             text = unbottledMessage,
             style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
@@ -74,10 +76,9 @@ fun UnbottledMessageCard(
     }
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-private fun UnbottledMessageCardPreview(
-) {
+private fun UnbottledMessageCardPreview() = BottlingPreview {
     UnbottledMessageCard(
         isReported = false,
         {},
