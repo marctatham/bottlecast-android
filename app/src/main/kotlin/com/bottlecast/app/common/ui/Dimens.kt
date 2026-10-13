@@ -48,7 +48,10 @@ object BottlingSizes {
 
     /** Avatars: the Me tab's in the navigation bar, and the profile's. Plain circles. */
     val navAvatar = 24.dp
+    val navAvatarGlyph = 16.dp
     val profileAvatar = 96.dp
+    val profileAvatarGlyph = 48.dp
+    val profileAvatarRim = 3.dp
 
     /** The "something's new" dot on a navigation bar icon. */
     val badgeDot = 8.dp

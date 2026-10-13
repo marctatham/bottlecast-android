@@ -29,6 +29,17 @@
     <string name="nav_chest">Chest</string>
     <string name="nav_me">Me</string>
 
+    <string name="go_to_shore">Go to the shore</string>
+
+    <!-- The Chest, until slice 4 fills it (spec §3.10) -->
+    <string name="chest_title">Your chest</string>
+    <string name="chest_empty_title">Your chest is empty</string>
+    <string name="chest_empty_body">Today\'s bottle is waiting on the shore.</string>
+
+    <!-- Me, until slice 4 brings the profile (spec §3.12) -->
+    <string name="me_placeholder_title">Your profile is on its way</string>
+    <string name="me_placeholder_body">Your streak, badges and pen name will live here soon.</string>
+
     <!-- The Shore (spec §3.3) -->
     <string name="shore_wordmark" translatable="false">BottleCast</string>
     <string name="shore_more_options">More options</string>

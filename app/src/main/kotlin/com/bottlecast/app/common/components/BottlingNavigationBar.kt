@@ -58,7 +58,10 @@ fun BottlingNavigationBar(
                     when (destination) {
                         TopLevelDestination.SHORE -> TabIcon(R.drawable.ic_glyph_shore)
                         TopLevelDestination.CHEST -> TabIcon(R.drawable.ic_symbol_inventory_2, badge = chestBadge)
-                        TopLevelDestination.ME -> NavAvatar()
+                        TopLevelDestination.ME -> Avatar(
+                            diameter = BottlingTheme.sizes.navAvatar,
+                            glyphSize = BottlingTheme.sizes.navAvatarGlyph,
+                        )
                     }
                 },
                 label = { Text(text = stringResource(destination.label), style = MaterialTheme.typography.labelLarge) },
@@ -93,32 +96,9 @@ private fun TabIcon(icon: Int, badge: Boolean = false) {
     }
 }
 
-/**
- * The Me tab's avatar: a plain moonContainer circle (decisions.md, 2026-10-13). It shows a person
- * glyph until slice 4 settles which name its initial comes from.
- */
-@Composable
-private fun NavAvatar() {
-    val colors = BottlingTheme.colors
-    Box(
-        modifier = Modifier
-            .size(BottlingTheme.sizes.navAvatar)
-            .background(colors.moonContainer, CircleShape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_symbol_person),
-            contentDescription = null,
-            tint = colors.onMoonContainer,
-            modifier = Modifier.size(AVATAR_GLYPH),
-        )
-    }
-}
-
 // the Main board's dot sits on the icon's top-end corner
 private val BADGE_OFFSET_X = 4.dp
 private val BADGE_OFFSET_Y = (-1).dp
-private val AVATAR_GLYPH = 16.dp
 
 @NightDawnPreviews
 @Composable
