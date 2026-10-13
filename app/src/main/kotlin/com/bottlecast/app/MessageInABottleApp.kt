@@ -21,19 +21,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -56,15 +56,24 @@ import com.bottlecast.app.feature.viewmessages.ViewMessagesScreen
 @Composable
 fun MessageInABottleApp(analyticsProvider: ITracker) {
     val navController = rememberNavController()
-    TrackScreens(navController, analyticsProvider)
+    val viewModel: AppNavigationStateViewModel = hiltViewModel()
+    TrackScreens(navController, analyticsProvider, viewModel)
     SystemBarAppearance()
 
-    val viewModel: AppNavigationStateViewModel = hiltViewModel()
-    val backHandler: () -> Unit = { navController.popBackStack() }
+    // a second tap while the screen is still closing would otherwise pop the Shore itself and
+    // leave nothing on screen
+    val backHandler: () -> Unit = {
+        if (navController.previousBackStackEntry != null) navController.popBackStack()
+    }
     // a pop rather than a fresh navigation, so the Shore keeps its state and the pop transitions run
     val homeHandler: () -> Unit = { navController.popBackStack<Shore>(inclusive = false) }
-    // tabs keep their own state, and back from any tab leads to the Shore, then out (spec §2)
+    // tabs keep their own state, and back from any tab leads to the Shore, then out (spec §2). A
+    // full-screen route belongs to no tab, so it's closed first rather than saved with one: saved,
+    // it would reopen the next time the Shore tab was chosen
     val tabHandler: (TopLevelDestination) -> Unit = { destination ->
+        while (navController.currentDestination?.isTopLevel() == false) {
+            if (!navController.popBackStack()) break
+        }
         navController.navigate(destination.route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
             launchSingleTop = true
@@ -79,19 +88,26 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
         enterTransition = { fadeIn(BottlingMotion.screen()) },
-        exitTransition = { fadeOut(BottlingMotion.screen()) },
-        popEnterTransition = { fadeIn(BottlingMotion.screen()) },
+        // a tab root stays put under whatever opens over it, so it's already in place, bar and
+        // all, when that screen closes again
+        exitTransition = {
+            if (initialState.destination.isTopLevel()) {
+                ExitTransition.KeepUntilTransitionsFinished
+            } else {
+                fadeOut(BottlingMotion.screen())
+            }
+        },
+        // closing a screen fades it away over the one already underneath
+        popEnterTransition = { EnterTransition.None },
         popExitTransition = { fadeOut(BottlingMotion.screen()) },
-        // a back swipe uses these instead of the pop transitions: the screen underneath shows as it
-        // is, while a full-screen route shrinks away and a tab fades (spec §1.5)
+        // a back swipe follows the finger: a full-screen route shrinks away with rounded corners
+        // (spec §1.5), while a tab fades back to the Shore
         predictivePopEnterTransition = { EnterTransition.None },
         predictivePopExitTransition = {
             if (initialState.destination.isTopLevel()) fadeOut(BottlingMotion.screen()) else PredictiveBackExit
         },
     ) {
-        // a tab root stays put under whatever opens over it, so it's already there, bar and all,
-        // when a predictive back gesture reveals it
-        composable<Shore>(exitTransition = { KeepTabRoot }, popEnterTransition = { EnterTransition.None }) {
+        composable<Shore> {
             TabFrame(selected = TopLevelDestination.SHORE, onSelect = tabHandler) { contentPadding ->
                 ShoreScreen(
                     onFindBottleHandler = { navController.navigate(GetMessage) },
@@ -103,7 +119,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                 )
             }
         }
-        composable<Chest>(exitTransition = { KeepTabRoot }, popEnterTransition = { EnterTransition.None }) {
+        composable<Chest> {
             TabFrame(selected = TopLevelDestination.CHEST, onSelect = tabHandler) { contentPadding ->
                 ChestScreen(
                     onGoToShoreHandler = { tabHandler(TopLevelDestination.SHORE) },
@@ -111,7 +127,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                 )
             }
         }
-        composable<Me>(exitTransition = { KeepTabRoot }, popEnterTransition = { EnterTransition.None }) {
+        composable<Me> {
             TabFrame(selected = TopLevelDestination.ME, onSelect = tabHandler) { contentPadding ->
                 MeScreen(
                     onGoToShoreHandler = { tabHandler(TopLevelDestination.SHORE) },
@@ -120,50 +136,60 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
             }
         }
 
-        composable<GetMessage>(popExitTransition = { PredictiveBackExit }) {
-            ImmersiveScreen { GetMessageScreen(homeHandler) }
+        immersive<GetMessage> {
+            LegacyScreen { GetMessageScreen(homeHandler) }
         }
-        composable<PostMessageLoginRequired>(
-            // its one way forward replaces it with PostMessage, which fades in over it
-            exitTransition = { ExitTransition.None },
-            popExitTransition = { PredictiveBackExit },
-        ) {
-            ImmersiveScreen {
+        immersive<PostMessageLoginRequired> {
+            LegacyScreen {
                 LoginRequiredToPostScreen(
+                    // one step, so the Shore never becomes current in between
                     onProceedHandler = {
-                        navController.popBackStack(PostMessageLoginRequired, inclusive = true)
-                        navController.navigate(PostMessage)
+                        navController.navigate(PostMessage) {
+                            popUpTo<PostMessageLoginRequired> { inclusive = true }
+                        }
                     },
                     onBackHandler = backHandler,
                     onCancelHandler = homeHandler
                 )
             }
         }
-        composable<PostMessage>(popExitTransition = { PredictiveBackExit }) {
-            ImmersiveScreen {
+        immersive<PostMessage> {
+            LegacyScreen {
                 PostMessageScreen(
                     onBackHandler = backHandler,
                     onHomeHandler = homeHandler,
                 )
             }
         }
-        composable<Moderation>(popExitTransition = { PredictiveBackExit }) {
-            ImmersiveScreen { ViewMessagesScreen() }
+        immersive<Moderation> {
+            LegacyScreen { ViewMessagesScreen() }
         }
     }
 }
 
+/** A full-screen route, which hides the navigation bar (spec §2), in an [ImmersiveFrame]. */
+private inline fun <reified T : Any> NavGraphBuilder.immersive(
+    noinline content: @Composable AnimatedContentScope.(NavBackStackEntry) -> Unit,
+) {
+    composable<T> { entry ->
+        val scope = this
+        ImmersiveFrame { scope.content(entry) }
+    }
+}
+
 /**
- * An immersive screen that predates the edge-to-edge redesign. It keeps its old layout by sitting
- * inside the system bars, cutouts and keyboard, over an opaque background, and it gains rounded
- * corners as a predictive back gesture shrinks it away (spec §1.5).
+ * A full-screen route's frame. It gains rounded corners as it closes, so a back swipe shrinks it
+ * away like a card (spec §1.5). It also takes every tap that lands on it: the screen underneath
+ * stays drawn while this one opens and closes over it, and a tap that fell through would act on
+ * that screen, such as opening a second screen or switching tabs.
  */
 @Composable
-private fun AnimatedContentScope.ImmersiveScreen(content: @Composable () -> Unit) {
+private fun AnimatedContentScope.ImmersiveFrame(content: @Composable () -> Unit) {
+    val cornerRadius = BottlingTheme.sizes.predictiveBackCorner
     val corner by transition.animateDp(
-        transitionSpec = { PredictiveBackSpec() },
+        transitionSpec = { tween(BottlingMotion.SCREEN_MILLIS, easing = LinearEasing) },
         label = "predictive back corner",
-    ) { state -> if (state == EnterExitState.PostExit) PREDICTIVE_BACK_CORNER else 0.dp }
+    ) { state -> if (state == EnterExitState.PostExit) cornerRadius else 0.dp }
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -171,6 +197,19 @@ private fun AnimatedContentScope.ImmersiveScreen(content: @Composable () -> Unit
                 shape = RoundedCornerShape(corner)
                 clip = true
             }
+            .pointerInput(Unit) {}
+    ) { content() }
+}
+
+/**
+ * A screen from before the edge-to-edge redesign. It keeps its old layout inside the system bars,
+ * cutouts and keyboard, over an opaque background.
+ */
+@Composable
+private fun LegacyScreen(content: @Composable () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .safeDrawingPadding()
             // stops oversized backgrounds (CustomBox's circle) painting into the system bars
@@ -202,13 +241,12 @@ private fun SystemBarAppearance() {
  * rotation, or re-selecting the current tab) isn't a new screen, so it's skipped.
  */
 @Composable
-private fun TrackScreens(navController: NavController, tracker: ITracker) {
+private fun TrackScreens(navController: NavController, tracker: ITracker, viewModel: AppNavigationStateViewModel) {
     val currentTracker by rememberUpdatedState(tracker)
-    var lastTrackedDestinationId by rememberSaveable { mutableIntStateOf(NO_DESTINATION) }
-    DisposableEffect(navController) {
+    DisposableEffect(navController, viewModel) {
         val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
-            if (destination.id != lastTrackedDestinationId) {
-                lastTrackedDestinationId = destination.id
+            if (destination.id != viewModel.lastTrackedDestinationId) {
+                viewModel.lastTrackedDestinationId = destination.id
                 currentTracker.trackScreen(destination.screenName())
             }
         }
@@ -217,18 +255,13 @@ private fun TrackScreens(navController: NavController, tracker: ITracker) {
     }
 }
 
-// a tab root stays fully visible for as long as the screen opening over it takes to fade in
-private val KeepTabRoot: ExitTransition = fadeOut(BottlingMotion.screen(), targetAlpha = 1f)
-
 // a full-screen route shrinks to 90% as back is swiped (spec §1.5), following the finger, and
-// fades once it's let go
-private fun <T> PredictiveBackSpec() = tween<T>(BottlingMotion.SCREEN_MILLIS, easing = LinearEasing)
-
+// fades in the last moment, once the gesture is let go
 private val PredictiveBackExit: ExitTransition =
-    scaleOut(targetScale = PREDICTIVE_BACK_SCALE, animationSpec = PredictiveBackSpec()) +
-        fadeOut(tween(PREDICTIVE_BACK_FADE_MILLIS, delayMillis = BottlingMotion.SCREEN_MILLIS - PREDICTIVE_BACK_FADE_MILLIS))
+    scaleOut(
+        targetScale = PREDICTIVE_BACK_SCALE,
+        animationSpec = tween(BottlingMotion.SCREEN_MILLIS, easing = LinearEasing),
+    ) + fadeOut(tween(PREDICTIVE_BACK_FADE_MILLIS, delayMillis = BottlingMotion.SCREEN_MILLIS - PREDICTIVE_BACK_FADE_MILLIS))
 
 private const val PREDICTIVE_BACK_SCALE = 0.9f
 private const val PREDICTIVE_BACK_FADE_MILLIS = 80
-private val PREDICTIVE_BACK_CORNER = 32.dp
-private const val NO_DESTINATION = 0

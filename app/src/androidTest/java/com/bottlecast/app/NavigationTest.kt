@@ -22,6 +22,9 @@ import org.junit.runner.RunWith
 // test clock still has to run its ~2.5s animation before the message is revealed
 private const val MESSAGE_REVEAL_TIMEOUT_MILLIS = 30_000L
 
+// well inside a screen transition (BottlingMotion.SCREEN_MILLIS)
+private const val MID_TRANSITION_MILLIS = 100L
+
 /**
  * Navigation tests for [MessageInABottleApp]: the Shore, its tabs and today's immersive screens,
  * backed by the fakes the testdi modules install.
@@ -67,6 +70,27 @@ class NavigationTest {
 
         composeTestRule.onNodeWithContentDescription(string(R.string.button_back)).performClick()
 
+        assertShoreIsShown()
+        composeTestRule.onNodeWithContentDescription(string(R.string.button_back)).assertDoesNotExist()
+    }
+
+    @Test
+    fun tabTappedAsAScreenOpens_isIgnored_thenTheShoreTabStillShowsTheShore() {
+        // the Shore stays drawn, bar and all, while the screen opening over it fades in
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.onNodeWithText(string(R.string.shore_find_bottle)).performClick()
+        composeTestRule.mainClock.advanceTimeBy(MID_TRANSITION_MILLIS)
+        composeTestRule.onNodeWithText(string(R.string.nav_chest)).performClick()
+        composeTestRule.mainClock.autoAdvance = true
+
+        // the tap landed on the opening screen, not on the bar beneath it
+        composeTestRule.onNodeWithContentDescription(string(R.string.button_back)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.nav_chest)).assertDoesNotExist()
+
+        // and that screen was never saved as part of the Shore tab, to reopen when it's chosen
+        composeTestRule.onNodeWithContentDescription(string(R.string.button_back)).performClick()
+        composeTestRule.onNodeWithText(string(R.string.nav_chest)).performClick()
+        composeTestRule.onNodeWithText(string(R.string.nav_shore)).performClick()
         assertShoreIsShown()
         composeTestRule.onNodeWithContentDescription(string(R.string.button_back)).assertDoesNotExist()
     }
