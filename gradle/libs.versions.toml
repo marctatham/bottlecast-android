@@ -13,6 +13,7 @@ androidxComposeBom = "2026.09.00"
 androidxComposeMaterial3 = "1.5.0-beta01" # ahead of the BOM's 1.4.0 for MotionScheme.expressive() and MaterialShapes (decisions.md, 2026-10-13); drop when the BOM ships 1.5
 androidxHilt = "1.4.0"
 androidxNavigation = "2.10.2"
+kotlinxSerialization = "1.8.1" # the version Firebase already resolves; navigation's type-safe routes need it at compile time
 androidxCredentials = "1.6.0"
 androidxTest = "1.7.0"
 androidxTestExt = "1.3.0"
@@ -46,6 +47,7 @@ androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidxLifecycle" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidxNavigation" }
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerialization" }
 androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTest" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "androidxTestExt" }
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
@@ -75,6 +77,7 @@ roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose"
 [plugins]
 android-application = { id = "com.android.application", version.ref = "pluginAndroidGradle" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "pluginKotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "pluginKotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "pluginKsp" }
 hilt-gradle = { id = "com.google.dagger.hilt.android", version.ref = "pluginHilt" }
 google-services = { id = "com.google.gms.google-services", version.ref = "pluginGoogleServices" }

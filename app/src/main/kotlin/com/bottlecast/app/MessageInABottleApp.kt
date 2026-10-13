@@ -13,12 +13,19 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -33,19 +40,12 @@ import com.bottlecast.app.feature.viewmessages.ViewMessagesScreen
 @Composable
 fun MessageInABottleApp(analyticsProvider: ITracker) {
     val navController = rememberNavController()
-    navController.addOnDestinationChangedListener { _, destination, _ ->
-        analyticsProvider.trackScreen(destination.route ?: "Unknown")
-    }
+    TrackScreens(navController, analyticsProvider)
 
     val viewModel: AppNavigationStateViewModel = hiltViewModel()
     val backHandler: () -> Unit = { navController.popBackStack() }
-    val homeHandler: () -> Unit = {
-        navController.navigate(Screen.HOME) {
-            popUpTo(Screen.HOME) {
-                inclusive = true // Pop up to the "home" destination, including "home" itself
-            }
-        }
-    }
+    // a pop rather than a fresh navigation, so the Shore keeps its state and the pop transitions run
+    val homeHandler: () -> Unit = { navController.popBackStack<Shore>(inclusive = false) }
 
     // the status bar's icons contrast with the primary strip painted below: dark on Night's pale
     // sage, light on Dawn's deep sage
@@ -74,7 +74,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
 
         NavHost(
             navController = navController,
-            startDestination = Screen.HOME,
+            startDestination = Shore,
             // keep content clear of the navigation bar, display cutouts & the keyboard,
             // and stop oversized backgrounds (e.g. CustomBox's circle) painting over the status bar
             modifier = Modifier
@@ -83,34 +83,53 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                 .consumeWindowInsets(WindowInsets.statusBars)
                 .safeDrawingPadding(),
         ) {
-            composable(Screen.HOME) {
+            composable<Shore> {
                 HomeScreen(
-                    onGetMessageHandler = { navController.navigate(Screen.GET_MESSAGES) },
-                    onPostMessageHandler = {
-                        val destination: String = viewModel.onNavigateToPostMessage()
-                        navController.navigate(destination)
-                    },
-                    onViewMessagesHandler = { navController.navigate(Screen.VIEW_MESSAGES) },
+                    onGetMessageHandler = { navController.navigate(GetMessage) },
+                    onPostMessageHandler = { navController.navigate(viewModel.onNavigateToPostMessage()) },
+                    onViewMessagesHandler = { navController.navigate(Moderation) },
                 )
             }
-            composable(Screen.GET_MESSAGES) { GetMessageScreen(homeHandler) }
-            composable(Screen.POST_MESSAGE_EDUCATIONAL) {
+            composable<GetMessage> { GetMessageScreen(homeHandler) }
+            composable<PostMessageLoginRequired> {
                 LoginRequiredToPostScreen(
                     onProceedHandler = {
-                        navController.popBackStack(Screen.POST_MESSAGE_EDUCATIONAL, inclusive = true)
-                        navController.navigate(Screen.POST_MESSAGE)
+                        navController.popBackStack(PostMessageLoginRequired, inclusive = true)
+                        navController.navigate(PostMessage)
                     },
                     onBackHandler = backHandler,
                     onCancelHandler = homeHandler
                 )
             }
-            composable(Screen.POST_MESSAGE) {
+            composable<PostMessage> {
                 PostMessageScreen(
                     onBackHandler = backHandler,
                     onHomeHandler = homeHandler,
                 )
             }
-            composable(Screen.VIEW_MESSAGES) { ViewMessagesScreen() }
+            composable<Moderation> { ViewMessagesScreen() }
         }
     }
 }
+
+/**
+ * Sends a screen view each time the destination changes. A repeat of the same destination (a
+ * rotation, or re-selecting the current tab) isn't a new screen, so it's skipped.
+ */
+@Composable
+private fun TrackScreens(navController: NavController, tracker: ITracker) {
+    val currentTracker by rememberUpdatedState(tracker)
+    var lastTrackedDestinationId by rememberSaveable { mutableIntStateOf(NO_DESTINATION) }
+    DisposableEffect(navController) {
+        val listener = NavController.OnDestinationChangedListener { _, destination, _ ->
+            if (destination.id != lastTrackedDestinationId) {
+                lastTrackedDestinationId = destination.id
+                currentTracker.trackScreen(destination.screenName())
+            }
+        }
+        navController.addOnDestinationChangedListener(listener)
+        onDispose { navController.removeOnDestinationChangedListener(listener) }
+    }
+}
+
+private const val NO_DESTINATION = 0

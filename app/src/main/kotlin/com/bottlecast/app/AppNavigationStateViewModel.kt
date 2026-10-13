@@ -11,11 +11,11 @@ class AppNavigationStateViewModel @Inject constructor(
     private val authenticationRepository: IAuthenticationRepository,
 ) : ViewModel() {
 
-    fun onNavigateToPostMessage(): String {
+    fun onNavigateToPostMessage(): BottlingRoute {
         return if (authenticationRepository.user.value is UserEntity.AuthenticatedUser) {
-            Screen.POST_MESSAGE
+            PostMessage
         } else {
-            Screen.POST_MESSAGE_EDUCATIONAL
+            PostMessageLoginRequired
         }
     }
 }
