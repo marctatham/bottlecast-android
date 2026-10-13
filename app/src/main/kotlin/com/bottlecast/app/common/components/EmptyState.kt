@@ -1,5 +1,6 @@
 package com.bottlecast.app.common.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,8 +21,8 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
 
 /**
  * The template for edge, empty and error states (spec §3.18): an optional 160dp spot
- * illustration, the title, up to three lines of body, then one pill. Copy never blames the user
- * and always says what to do next.
+ * illustration, the title, up to three lines of body, then one pill, and an optional reassuring
+ * [note] under it. Copy never blames the user and always says what to do next.
  */
 @Composable
 fun EmptyState(
@@ -30,6 +31,8 @@ fun EmptyState(
     actionLabel: String,
     onAction: () -> Unit,
     modifier: Modifier = Modifier,
+    @DrawableRes actionIcon: Int? = null,
+    note: String? = null,
     illustration: (@Composable () -> Unit)? = null,
 ) {
     val spacing = BottlingTheme.spacing
@@ -59,7 +62,16 @@ fun EmptyState(
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(spacing.l))
-        BottlingButton(text = actionLabel, onTapHandler = onAction)
+        BottlingButton(text = actionLabel, leadingIcon = actionIcon, onTapHandler = onAction)
+        if (note != null) {
+            Spacer(modifier = Modifier.height(spacing.s))
+            Text(
+                text = note,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 

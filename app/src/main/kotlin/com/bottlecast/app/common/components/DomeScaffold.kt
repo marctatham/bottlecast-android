@@ -41,6 +41,7 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
  * the see-through bar.
  *
  * @param edge where the dome's edge sits.
+ * @param flash moonlight washing over the dome, read at draw time (see [Dome]).
  * @param contentPadding the navigation bar's height, which the content ends above.
  * @param windowInsets the status bar and cutouts the content keeps clear of. The navigation bar's
  *   height arrives in [contentPadding] instead, so it isn't counted twice. They're measured whole,
@@ -58,6 +59,7 @@ fun DomeScaffold(
     windowInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     glowCenter: Offset = DomeGlowTopEnd,
     edgeOffset: () -> Dp = { 0.dp },
+    flash: () -> Float = { 0f },
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
     scenery: @Composable BoxScope.(insets: PaddingValues) -> Unit = {},
     content: @Composable ColumnScope.(toArc: Dp) -> Unit,
@@ -71,7 +73,7 @@ fun DomeScaffold(
         val topInset = insets.calculateTopPadding()
         val viewportHeight = maxHeight - topInset - insets.calculateBottomPadding()
         val toArc = maxHeight * edge.fraction - topInset
-        Dome(edge = edge, glowCenter = glowCenter, edgeOffset = edgeOffset)
+        Dome(edge = edge, glowCenter = glowCenter, edgeOffset = edgeOffset, flash = flash)
         scenery(insets)
         Column(
             modifier = Modifier

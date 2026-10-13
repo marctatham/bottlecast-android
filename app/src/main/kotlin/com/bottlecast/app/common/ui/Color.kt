@@ -76,6 +76,14 @@ private val BrandSeed = Color(0xFF00C2FF)
 private val TintAmber = Color(0xFFE8A93A)
 private val TintMoonglass = Color(0xFFE9E4D6)
 private val Black = Color(0xFF000000)
+private val White = Color(0xFFFFFFFF)
+
+// The bottle rig's own colours (TEMPLATE.md, bottle rig): illustration only, never text
+private val RigScroll = Color(0xFFF0E0D0)
+private val RigScrollEnds = Color(0xFFE0C0A0)
+private val RigCork = Color(0xFFC9A27A)
+private val RigCorkLines = Color(0xFFA9825A)
+private val RigAmberStroke = Color(0xFFF0C987)
 
 // Material's ColorScheme with every role filled from the palette, so its baseline purple never shows.
 // The spec has no secondary or tertiary colours: secondary repeats the sage primary (several
@@ -237,6 +245,47 @@ data class BottlingColors(
     val googleButtonContainer: Color,
     val googleButtonBorder: Color,
     val googleButtonContent: Color,
+    /** The bottle rig's parts. */
+    val rig: BottleRigColors,
+)
+
+/**
+ * The bottle rig's colours (spec §1.6, TEMPLATE.md's rig): a cream scroll with an amber ribbon, a
+ * tan cork and white highlights. The glass takes its fill from the bottle's tint.
+ */
+@Immutable
+data class BottleRigColors(
+    val scroll: Color,
+    val scrollEnds: Color,
+    val ribbon: Color,
+    val cork: Color,
+    val corkLines: Color,
+    val highlight: Color,
+    /** The lip of the neck, where the cork sits. */
+    val neckLip: Color,
+    /** The glass's edge for each tint. */
+    val seaGlassStroke: Color,
+    val amberStroke: Color,
+    val moonglassStroke: Color,
+    /**
+     * Dawn's 1dp outline in place of the tint's stroke: the glass is only 1.9:1 on the light sand,
+     * and a tappable bottle needs 3:1 (spec §4). Null on Night.
+     */
+    val outline: Color?,
+)
+
+private fun bottleRigColors(outline: Color?) = BottleRigColors(
+    scroll = RigScroll,
+    scrollEnds = RigScrollEnds,
+    ribbon = TintAmber,
+    cork = RigCork,
+    corkLines = RigCorkLines,
+    highlight = White,
+    neckLip = NightGlass,
+    seaGlassStroke = NightGlass,
+    amberStroke = RigAmberStroke,
+    moonglassStroke = White,
+    outline = outline,
 )
 
 internal val NightBottlingColors = BottlingColors(
@@ -267,6 +316,7 @@ internal val NightBottlingColors = BottlingColors(
     googleButtonContainer = NightGoogleButtonContainer,
     googleButtonBorder = NightGoogleButtonBorder,
     googleButtonContent = NightGoogleButtonContent,
+    rig = bottleRigColors(outline = null),
 )
 
 internal val DawnBottlingColors = BottlingColors(
@@ -297,6 +347,7 @@ internal val DawnBottlingColors = BottlingColors(
     googleButtonContainer = DawnGoogleButtonContainer,
     googleButtonBorder = DawnGoogleButtonBorder,
     googleButtonContent = DawnGoogleButtonContent,
+    rig = bottleRigColors(outline = DawnGlass),
 )
 
 internal val LocalBottlingColors = staticCompositionLocalOf<BottlingColors> {

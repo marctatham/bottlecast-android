@@ -38,6 +38,20 @@ class BreathingTideTest {
         Assert.assertEquals(BreathingTide.Still.edgeOffset(), tide.edgeOffset())
         Assert.assertEquals(BreathingTide.Still.glintPhase(), tide.glintPhase(), 0f)
         Assert.assertEquals(BreathingTide.Still.haloAlpha(), tide.haloAlpha(), 0f)
+        Assert.assertEquals(BreathingTide.Still.bob(), tide.bob(), 0f)
+    }
+
+    @Test
+    fun `bobs the bottle to the top of its swell halfway through, and back`() {
+        // given
+        // when
+        composeTestRule.mainClock.advanceTimeBy(HALF_A_BOB)
+        val top = tide.bob()
+        composeTestRule.mainClock.advanceTimeBy(HALF_A_BOB)
+
+        // then
+        Assert.assertEquals(1f, top, TOLERANCE)
+        Assert.assertEquals(0f, tide.bob(), TOLERANCE)
     }
 
     @Test
@@ -78,6 +92,9 @@ class BreathingTideTest {
         // the glints cross the sea every 12s
         const val QUARTER_OF_THE_GLINTS_LOOP = 3_000L
         const val EIGHTH_OF_THE_GLINTS_LOOP = 1_500L
+
+        // the bottle bobs once every 6.7s
+        const val HALF_A_BOB = 3_350L
 
         // a few frames
         const val TOLERANCE = 0.01f

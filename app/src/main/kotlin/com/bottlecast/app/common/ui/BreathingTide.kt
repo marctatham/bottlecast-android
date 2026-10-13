@@ -17,7 +17,8 @@ import kotlin.math.sin
  * The Shore's breathing tide (spec §1.5, signature moment 1):
  * - the dome's edge rises and falls ±2dp on an 8s sine;
  * - three moon glints drift across the sea over 12s;
- * - the moon's halo dims to 0.9 and brightens back to 1.0 over 6s.
+ * - the moon's halo dims to 0.9 and brightens back to 1.0 over 6s;
+ * - the bottle bobs up and back down over 6.7s (the Lottie's loop at 0.6×).
  *
  * Each value is a lambda read at draw time, so the tide redraws without recomposing.
  */
@@ -29,10 +30,12 @@ class BreathingTide(
     val glintPhase: () -> Float,
     /** The moon's halo opacity. */
     val haloAlpha: () -> Float,
+    /** How far up its bob the bottle is, from 0 (resting) to 1 (top), easing in and out. */
+    val bob: () -> Float = { 0f },
 ) {
     companion object {
         /** The tide at rest, where it starts: for previews and screenshot tests. */
-        val Still = BreathingTide(edgeOffset = { 0.dp }, glintPhase = { 0f }, haloAlpha = { 1f })
+        val Still = BreathingTide(edgeOffset = { 0.dp }, glintPhase = { 0f }, haloAlpha = { 1f }, bob = { 0f })
     }
 }
 
@@ -61,6 +64,8 @@ fun rememberBreathingTide(running: Boolean = rememberIdleMotionEnabled()): Breat
             glintPhase = { elapsedMillis.phase(GLINT_PERIOD_MILLIS) },
             // starts bright, as at rest, and dims halfway, like the boards' ease-in-out pulse
             haloAlpha = { HALO_MID + HALO_AMPLITUDE * cos(FULL_TURN * elapsedMillis.phase(HALO_PERIOD_MILLIS)) },
+            // starts at rest, at the bottom, as the boards' ease-in-out float does
+            bob = { (1f - cos(FULL_TURN * elapsedMillis.phase(BOB_PERIOD_MILLIS))) / 2f },
         )
     }
 }
@@ -71,6 +76,7 @@ private fun LongState.phase(periodMillis: Int): Float = (longValue % periodMilli
 private const val EDGE_PERIOD_MILLIS = 8_000
 private const val GLINT_PERIOD_MILLIS = 12_000
 private const val HALO_PERIOD_MILLIS = 6_000
+private const val BOB_PERIOD_MILLIS = 6_700
 private val EDGE_AMPLITUDE = 2.dp
 private const val HALO_MID = 0.95f
 private const val HALO_AMPLITUDE = 0.05f
