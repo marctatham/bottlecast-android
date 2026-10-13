@@ -2,8 +2,9 @@ package com.bottlecast.app.feature.getmessage
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bottlecast.app.common.messages.domain.IMessageRepository
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.sea.domain.FindResult
+import com.bottlecast.app.common.sea.domain.ISeaRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,7 +16,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class GetMessageViewModel @Inject constructor(
-    private val messageRepository: IMessageRepository
+    private val seaRepository: ISeaRepository
 ) : ViewModel() {
 
     private val _state: MutableStateFlow<MessageUiState> = MutableStateFlow(MessageUiState.PlayingAnimation)
@@ -34,9 +35,11 @@ class GetMessageViewModel @Inject constructor(
         viewModelScope.launch(exceptionHandler) {
             _state.value = MessageUiState.PlayingAnimation
 
-            val messageEntity = messageRepository.getMessage()
-
-            _state.value = MessageUiState.MessageReceived(messageEntity)
+            // Until Discover replaces this screen, it records today's find as soon as it opens.
+            _state.value = when (val result = seaRepository.findTodaysBottle()) {
+                is FindResult.Found -> MessageUiState.MessageReceived(result.message)
+                else -> MessageUiState.Failure
+            }
         }
     }
 }

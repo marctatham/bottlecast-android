@@ -180,7 +180,7 @@ internal fun GetMessageView(
 private fun GetMessageReceivedPreview() = BottlingPreview {
     GetMessageView(
         onHomeHandler = {},
-        uiState = MessageUiState.MessageReceived(MessageEntity(message = "Hello World", userId = "1")),
+        uiState = MessageUiState.MessageReceived(MessageEntity(id = "1", message = "Hello World", userId = "1")),
         composition = null,
         progress = { 1f },
     )

@@ -9,6 +9,29 @@ import javax.inject.Inject
 
 const val MINIMUM_MESSAGE_LENGTH: Int = 10
 
+/** The most text firestore.rules accepts in a bottle, in UTF-8 bytes. Slice 3's Compose lowers it. */
+const val MAXIMUM_MESSAGE_BYTES: Int = 1000
+
+/** The longest start of this text that fits in [MAXIMUM_MESSAGE_BYTES] of UTF-8. */
+fun String.fitToMessageLimit(): String {
+    if (encodeToByteArray().size <= MAXIMUM_MESSAGE_BYTES) return this
+    var bytes = 0
+    var end = 0
+    while (end < length) {
+        val codePoint = codePointAt(end)
+        val size = when {
+            codePoint < 0x80 -> 1
+            codePoint < 0x800 -> 2
+            codePoint < 0x10000 -> 3
+            else -> 4
+        }
+        if (bytes + size > MAXIMUM_MESSAGE_BYTES) break
+        bytes += size
+        end += Character.charCount(codePoint)
+    }
+    return substring(0, end)
+}
+
 class PostMessageUseCase @Inject constructor(
     private val authenticationRepository: IAuthenticationRepository,
     private val messageRepository: IMessageRepository
@@ -25,11 +48,9 @@ class PostMessageUseCase @Inject constructor(
 
         return when (val user: UserEntity = authenticationRepository.user.value) {
             is UserEntity.AuthenticatedUser -> {
-                val messageEntity = MessageEntity(trimmedMessage, user.userId)
-                messageRepository.postMessage(messageEntity)
+                val messageEntity = messageRepository.postMessage(trimmedMessage, user.userId)
                 Timber.i("[postMessage] Message posted successfully")
                 PostMessageResult.Success(messageEntity)
-
             }
 
             UserEntity.UnauthenticatedUser -> {

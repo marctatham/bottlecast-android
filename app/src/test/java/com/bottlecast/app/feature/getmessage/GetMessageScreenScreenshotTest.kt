@@ -47,6 +47,6 @@ class GetMessageScreenScreenshotTest {
     }
 
     private companion object {
-        val RECEIVED = MessageUiState.MessageReceived(MessageEntity(message = "Hey, that's pretty cool", userId = "1"))
+        val RECEIVED = MessageUiState.MessageReceived(MessageEntity(id = "1", message = "Hey, that's pretty cool", userId = "1"))
     }
 }

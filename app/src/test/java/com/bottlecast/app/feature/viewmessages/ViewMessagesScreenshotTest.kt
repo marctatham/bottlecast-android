@@ -3,6 +3,7 @@ package com.bottlecast.app.feature.viewmessages
 import android.app.Application
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.testing.captureThemed
 import org.junit.Rule
 import org.junit.Test
@@ -44,8 +45,14 @@ class ViewMessagesScreenshotTest {
 
     private companion object {
         val MESSAGES = listOf(
-            MessageEntity(message = "Hey, that's pretty cool", userId = "1"),
-            MessageEntity(message = "Hoy el mar me devolvió algo que creía perdido: la calma.", userId = "2"),
+            MessageEntity(id = "1", message = "Hey, that's pretty cool", userId = "1", reportCount = 3),
+            MessageEntity(
+                id = "2",
+                message = "Hoy el mar me devolvió algo que creía perdido: la calma.",
+                userId = "2",
+                status = MessageStatus.UnderReview,
+                reportCount = 1,
+            ),
         )
     }
 }

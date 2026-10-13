@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.bottlecast.app.R
 import com.bottlecast.app.feature.postmessage.domain.MINIMUM_MESSAGE_LENGTH
+import com.bottlecast.app.feature.postmessage.domain.fitToMessageLimit
 import com.bottlecast.app.common.components.BottlingAppBar
 import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.messages.domain.MessageEntity
@@ -56,7 +57,7 @@ fun PostMessageView(
                 .fillMaxWidth()
                 .weight(1f),
             value = textState,
-            onValueChange = { textState = it },
+            onValueChange = { textState = it.fitToMessageLimit() },
             enabled = isCurrentlyEditable,
             singleLine = false,
             textStyle = MaterialTheme.typography.bodyLarge,
@@ -145,5 +146,5 @@ private fun PostViewPreviewFailure() = BottlingPreview {
 @NightDawnPreviews
 @Composable
 private fun PostViewPreviewSuccess() = BottlingPreview {
-    PostMessageView({}, PostMessageUiState.Success(MessageEntity("", "")), onPostHandler = {})
+    PostMessageView({}, PostMessageUiState.Success(MessageEntity(id = "", message = "", userId = "")), onPostHandler = {})
 }

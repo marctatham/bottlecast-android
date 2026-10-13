@@ -4,6 +4,7 @@ import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.UserEntity
 import com.bottlecast.app.common.messages.domain.IMessageRepository
+import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.feature.postmessage.domain.PostMessageResult
 import com.bottlecast.app.feature.postmessage.domain.PostMessageUseCase
 import io.mockk.coEvery
@@ -49,14 +50,15 @@ class PostMessageUseCaseTest {
                 isAdmin = false
             )
         every { authRepo.user.value } returns authenticatedUser
-        coEvery { messageRepo.postMessage(any()) } returns Unit
+        val posted = MessageEntity(id = "new", message = "I should be allowed to post my message", userId = "myFakeUserId")
+        coEvery { messageRepo.postMessage(any(), any()) } returns posted
 
         // when
         val result: PostMessageResult =
-            useCase.postMessage("I should be allowed to post my message")
+            useCase.postMessage("  I should be allowed to post my message  ")
 
         // then
-        coVerify(exactly = 1) { messageRepo.postMessage(any()) }
-        Assert.assertTrue(result is PostMessageResult.Success)
+        coVerify(exactly = 1) { messageRepo.postMessage("I should be allowed to post my message", "myFakeUserId") }
+        Assert.assertEquals(PostMessageResult.Success(posted), result)
     }
 }

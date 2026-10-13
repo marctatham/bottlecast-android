@@ -2,6 +2,7 @@ package com.bottlecast.app.common.messages.data
 
 import com.bottlecast.app.common.messages.domain.IMessageRepository
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.messages.domain.ModerationAction
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -11,25 +12,25 @@ class MessageRepository(
     private val dispatcherNetwork: CoroutineDispatcher
 ) : IMessageRepository {
 
-    override suspend fun getMessage(): MessageEntity {
-        Timber.v("[getMessage] Retrieving message from datasource")
-        return withContext(dispatcherNetwork) {
-            return@withContext messageDataSource.getMessage()
-        }
-    }
-
-    override suspend fun getMessages(): List<MessageEntity> {
-        Timber.v("[getMessages] Retrieving ALL messages from datasource")
-        return withContext(dispatcherNetwork) {
-            return@withContext messageDataSource.getMessages()
-        }
-    }
-
-    override suspend fun postMessage(message: MessageEntity) {
+    override suspend fun postMessage(message: String, userId: String): MessageEntity {
         Timber.i("[postMessage] Posting message to datasource")
+        return withContext(dispatcherNetwork) {
+            messageDataSource.postMessage(message, userId).also {
+                Timber.i("[postMessage] Message posted successfully")
+            }
+        }
+    }
+
+    override suspend fun getReportedMessages(): List<MessageEntity> {
+        Timber.v("[getReportedMessages] Retrieving the messages to moderate")
+        return withContext(dispatcherNetwork) {
+            messageDataSource.getReportedMessages()
+        }
+    }
+
+    override suspend fun moderate(messageId: String, action: ModerationAction) {
         withContext(dispatcherNetwork) {
-            messageDataSource.postMessage(message)
-            Timber.i("[postMessage] Message posted successfully")
+            messageDataSource.moderate(messageId, action)
         }
     }
 }

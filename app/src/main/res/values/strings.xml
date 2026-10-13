@@ -111,6 +111,22 @@
 
     <string name="view_messages_error_get">There was a problem fetching messages</string>
 
+    <!-- Moderation, for admins (spec §3.19) -->
+    <string name="moderation_empty">No reported bottles are waiting for a look.</string>
+    <plurals name="moderation_reports">
+        <item quantity="one">%1$d report</item>
+        <item quantity="other">%1$d reports</item>
+    </plurals>
+    <string name="moderation_status_afloat">In the sea</string>
+    <string name="moderation_status_found">Held by a finder</string>
+    <string name="moderation_status_under_review">Pulled for a look</string>
+    <string name="moderation_status_removed">Removed</string>
+    <string name="moderation_summary">%1$s · %2$s</string>
+    <string name="moderation_pull">Pull</string>
+    <string name="moderation_remove">Remove</string>
+    <string name="moderation_restore">Restore</string>
+    <string name="moderation_failed">That didn\'t work. Try again.</string>
+
     <string name="get_message_report">Report message</string>
     <string name="get_message_report_dialog_title">Report offensive message</string>
     <string name="get_message_report_dialog_description">Are you sure you want to report this message as offensive? Our team will review it, and if it is found to be offensive, it will be removed from circulation to maintain a safe and enjoyable experience for all users.</string>

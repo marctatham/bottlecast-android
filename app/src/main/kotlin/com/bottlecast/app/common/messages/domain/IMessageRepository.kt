@@ -2,10 +2,11 @@ package com.bottlecast.app.common.messages.domain
 
 interface IMessageRepository {
 
-    suspend fun getMessage(): MessageEntity
+    /** Casts a bottle into the sea, and returns it. */
+    suspend fun postMessage(message: String, userId: String): MessageEntity
 
-    suspend fun getMessages(): List<MessageEntity>
+    /** The bottles a moderator should look at: reported, or pulled, most reported first. */
+    suspend fun getReportedMessages(): List<MessageEntity>
 
-    suspend fun postMessage(message: MessageEntity)
-
+    suspend fun moderate(messageId: String, action: ModerationAction)
 }
