@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ViewRootForTest
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.isRoot
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.onNodeWithTag
 import com.bottlecast.app.common.ui.BottlingTheme
@@ -54,3 +55,26 @@ internal fun SemanticsNodeInteraction.captureByDrawing() {
 }
 
 private const val CAPTURE_TAG = "screenshot"
+
+/**
+ * Captures the whole screen, popups included, by drawing each of the composition's windows where
+ * it sits on screen: the activity's first, then popups such as an open DropdownMenu, which
+ * Roborazzi's screen capture leaves out.
+ */
+internal fun ComposeContentTestRule.captureScreenByDrawing() {
+    val windows = onAllNodes(isRoot()).fetchSemanticsNodes()
+        .map { (it.root as ViewRootForTest).view.rootView }
+        .distinct()
+    val screen = windows.first()
+    val screenBitmap = Bitmap.createBitmap(screen.width, screen.height, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(screenBitmap)
+    val screenLocation = IntArray(2).also { screen.getLocationOnScreen(it) }
+    windows.forEach { window ->
+        val location = IntArray(2).also { window.getLocationOnScreen(it) }
+        canvas.save()
+        canvas.translate((location[0] - screenLocation[0]).toFloat(), (location[1] - screenLocation[1]).toFloat())
+        window.draw(canvas)
+        canvas.restore()
+    }
+    screenBitmap.captureRoboImage()
+}

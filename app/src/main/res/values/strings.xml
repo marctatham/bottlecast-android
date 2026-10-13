@@ -29,6 +29,68 @@
     <string name="nav_chest">Chest</string>
     <string name="nav_me">Me</string>
 
+    <!-- The Shore (spec §3.3) -->
+    <string name="shore_wordmark" translatable="false">BottleCast</string>
+    <string name="shore_more_options">More options</string>
+    <string name="shore_moderation">Moderation</string>
+    <string name="shore_offline_banner">You\'re offline — today\'s bottle will be here when you\'re back</string>
+    <string name="shore_streak_start">Start a streak</string>
+    <plurals name="shore_streak_days">
+        <item quantity="one">%1$d-day streak</item>
+        <item quantity="other">%1$d-day streak</item>
+    </plurals>
+    <plurals name="shore_streak_description">
+        <item quantity="one">Tide streak, %1$d day</item>
+        <item quantity="other">Tide streak, %1$d days</item>
+    </plurals>
+    <plurals name="shore_streak_shields_description">
+        <item quantity="one">%1$d calm-sea shield</item>
+        <item quantity="other">%1$d calm-sea shields</item>
+    </plurals>
+    <string name="shore_stat_bottled">Bottled</string>
+    <string name="shore_stat_found">Found</string>
+    <string name="shore_stat_kept">Kept</string>
+    <plurals name="shore_stat_bottled_description">
+        <item quantity="one">%1$d bottled</item>
+        <item quantity="other">%1$d bottled</item>
+    </plurals>
+    <plurals name="shore_stat_found_description">
+        <item quantity="one">%1$d found</item>
+        <item quantity="other">%1$d found</item>
+    </plurals>
+    <plurals name="shore_stat_kept_description">
+        <item quantity="one">%1$d kept</item>
+        <item quantity="other">%1$d kept</item>
+    </plurals>
+    <string name="shore_stats_description">%1$s. Open your profile</string>
+    <string name="shore_bottle_description">A glass bottle with a rolled message, bobbing on the tide</string>
+    <string name="shore_waiting_title">A bottle washed ashore</string>
+    <string name="shore_waiting_body">Today\'s bottle is waiting for you.</string>
+    <string name="shore_find_bottle">Find today\'s bottle</string>
+    <string name="shore_cast">Cast a bottle</string>
+    <string name="shore_open_chest">Open your chest</string>
+    <string name="shore_next_tide_in">Next tide in</string>
+    <string name="shore_countdown_hours_minutes">%1$dh %2$dm</string>
+    <string name="shore_countdown_minutes">%1$d min</string>
+    <string name="shore_countdown_any_moment">Any moment…</string>
+    <plurals name="shore_countdown_hours_description">
+        <item quantity="one">%1$d hour</item>
+        <item quantity="other">%1$d hours</item>
+    </plurals>
+    <plurals name="shore_countdown_minutes_description">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <string name="shore_countdown_description">Next tide in %1$s</string>
+    <string name="shore_countdown_any_moment_description">The next tide is due any moment</string>
+    <string name="shore_found_title">You found today\'s bottle</string>
+    <string name="shore_found_body">A new one washes up at midnight.</string>
+    <string name="shore_reminder">Remind me at %1$s</string>
+    <string name="shore_todays_find">Today\'s find</string>
+    <string name="shore_find_excerpt">“%1$s”</string>
+    <string name="shore_find_kept">Kept</string>
+    <string name="shore_find_not_kept">Not kept · %1$dd left</string>
+
     <string name="login_required_title">Your guide to bottling messages</string>
     <string name="login_required_image_description">Safety First, sign in is required</string>
 

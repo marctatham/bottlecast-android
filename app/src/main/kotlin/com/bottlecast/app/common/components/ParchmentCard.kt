@@ -3,6 +3,7 @@ package com.bottlecast.app.common.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,6 +14,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.shadow.Shadow
@@ -27,6 +29,8 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
  *
  * @param border replaces the theme's edge, e.g. with an `outline` border so an interactive card
  *   reaches 3:1 (spec §4).
+ * @param onClick makes the whole card a button, its ripple clipped to the card's shape while the
+ *   rim and glow stay outside it.
  */
 @Composable
 fun ParchmentCard(
@@ -34,6 +38,7 @@ fun ParchmentCard(
     shape: Shape = BottlingTheme.shapes.parchment,
     border: BorderStroke? = null,
     contentPadding: PaddingValues = PaddingValues(BottlingTheme.spacing.l),
+    onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val colors = BottlingTheme.colors
@@ -52,6 +57,7 @@ fun ParchmentCard(
                     Modifier
                 }
             )
+            .then(if (onClick != null) Modifier.clip(shape).clickable(onClick = onClick) else Modifier)
             .background(colors.parchment, shape)
             .then(if (edge != null) Modifier.border(edge, shape) else Modifier)
             .padding(contentPadding),
