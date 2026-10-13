@@ -2,6 +2,8 @@ package com.bottlecast.app.feature.shore.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -12,14 +14,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import com.bottlecast.app.common.components.Dome
 import com.bottlecast.app.common.components.DomeEdge
 import com.bottlecast.app.common.components.DomeGlowTopEnd
+import com.bottlecast.app.common.components.DomeScaffold
 import com.bottlecast.app.common.components.MoonDisc
 import com.bottlecast.app.common.ui.BottlingPreview
 import com.bottlecast.app.common.ui.BottlingTheme
@@ -27,41 +29,45 @@ import com.bottlecast.app.common.ui.BreathingTide
 import com.bottlecast.app.common.ui.NightDawnPreviews
 import com.bottlecast.app.feature.shore.ShoreDimens
 
-/** Which of the Shore's two scenes to draw (spec §3.3). */
-internal enum class ShoreScene {
-    /** State A: the moon sits top-end and glints drift on the sea. */
-    BottleWaiting,
+/**
+ * Which of the Shore's two scenes to draw (spec §3.3).
+ *
+ * @param glowCenter where the dome's moonlight is brightest.
+ */
+internal enum class ShoreScene(val glowCenter: Offset) {
+    /** State A: the moon sits top-end, with the moonlight behind it, and glints drift on the sea. */
+    BottleWaiting(DomeGlowTopEnd),
 
-    /** State B: the moon moves into the tide ring, so the scenery leaves it out. */
-    FoundToday,
+    /**
+     * State B: the moon moves into the tide ring, so the scenery leaves it out, and the moonlight
+     * sits behind the ring (Shore-B board).
+     */
+    FoundToday(Offset(0.5f, 0.6f)),
 }
 
 /**
- * The Shore's scenery, behind everything (spec §1.5, §1.6): the full dome breathing with the tide,
- * a few stars, and in state A the moon and three drifting glints. It's decorative, so TalkBack
- * skips it.
+ * The Shore's scenery on the dome (spec §1.5, §1.6): a few stars, and in state A the moon and
+ * three drifting glints. It's decorative, so TalkBack skips it.
  *
- * @param topInset the status bar's height; the boards place the moon from below it.
+ * @param insets the status bar and cutouts; the boards place the moon from below the status bar.
+ * @param largeText leaves the glints out, since they'd cross the stats once large text pushes them
+ *   up to the arc.
  */
 @Composable
 internal fun ShoreScenery(
     scene: ShoreScene,
     tide: BreathingTide,
-    topInset: Dp,
+    insets: PaddingValues,
+    largeText: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val colors = BottlingTheme.colors
-    val largeText = LocalDensity.current.fontScale >= ShoreDimens.LARGE_TEXT_SCALE
+    val layoutDirection = LocalLayoutDirection.current
     Box(
         modifier = modifier
             .fillMaxSize()
             .clearAndSetSemantics {}
     ) {
-        Dome(
-            edge = DomeEdge.Full,
-            glowCenter = if (scene == ShoreScene.BottleWaiting) DomeGlowTopEnd else GLOW_BEHIND_RING,
-            edgeOffset = tide.edgeOffset,
-        )
         Canvas(modifier = Modifier.fillMaxSize()) {
             val stars = if (scene == ShoreScene.BottleWaiting) WaitingStars else FoundStars
             stars.forEach { star ->
@@ -72,7 +78,6 @@ internal fun ShoreScenery(
                     center = Offset(startX(star.x * size.width), star.y.toPx()),
                 )
             }
-            // glints would cross the stats once large text pushes them up to the arc
             if (scene == ShoreScene.BottleWaiting && !largeText) {
                 val arcY = size.height * DomeEdge.Full.fraction
                 Glints.forEach { glint -> drawGlint(glint, arcY, tide.glintPhase(), colors.sceneryAccent) }
@@ -82,7 +87,10 @@ internal fun ShoreScenery(
             MoonDisc(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = topInset + ShoreDimens.moonInset, end = ShoreDimens.moonInset),
+                    .padding(
+                        top = insets.calculateTopPadding() + ShoreDimens.moonInset,
+                        end = insets.calculateEndPadding(layoutDirection) + ShoreDimens.moonInset,
+                    ),
                 haloAlpha = tide.haloAlpha,
             )
         }
@@ -145,11 +153,14 @@ private const val DAWN_STAR_DIMMING = 0.56f
 // the glints are moon at 40% (spec §1.5)
 private const val GLINT_ALPHA = 0.4f
 
-// Shore B's moonlight sits behind the moon in the tide ring (Shore-B board)
-private val GLOW_BEHIND_RING = Offset(0.5f, 0.6f)
-
 @NightDawnPreviews
 @Composable
 private fun ShoreSceneryPreview() = BottlingPreview {
-    ShoreScenery(scene = ShoreScene.BottleWaiting, tide = BreathingTide.Still, topInset = 24.dp)
+    DomeScaffold(
+        edge = DomeEdge.Full,
+        contentPadding = PaddingValues(),
+        scenery = { insets ->
+            ShoreScenery(scene = ShoreScene.BottleWaiting, tide = BreathingTide.Still, insets = insets, largeText = false)
+        },
+    ) {}
 }

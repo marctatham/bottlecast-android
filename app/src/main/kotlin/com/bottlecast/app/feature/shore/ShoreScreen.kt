@@ -1,6 +1,5 @@
 package com.bottlecast.app.feature.shore
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -10,23 +9,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -34,10 +28,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.min
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.compose.currentStateAsState
 import com.airbnb.lottie.LottieComposition
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -51,11 +42,13 @@ import com.bottlecast.app.common.components.Banner
 import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.components.BottlingButtonType
 import com.bottlecast.app.common.components.DomeEdge
+import com.bottlecast.app.common.components.DomeScaffold
 import com.bottlecast.app.common.ui.BottlingPreview
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.common.ui.BreathingTide
 import com.bottlecast.app.common.ui.NightDawnPreviews
 import com.bottlecast.app.common.ui.rememberBreathingTide
+import com.bottlecast.app.common.ui.rememberIdleMotionEnabled
 import com.bottlecast.app.common.ui.rememberReducedMotion
 import com.bottlecast.app.feature.shore.components.NextTide
 import com.bottlecast.app.feature.shore.components.ReminderChip
@@ -89,13 +82,15 @@ fun ShoreScreen(
     val uiState by viewModel.state.collectAsStateWithLifecycle()
     val tide = rememberBreathingTide()
 
-    // the bottle bobs at 0.6× while the Shore is in front, and stands still under reduced motion
+    // the bottle bobs at 0.6× while it's drawn and the Shore is in front, and stands still under
+    // reduced motion; in state B, and at large text, there's no bottle to bob
     val reducedMotion = rememberReducedMotion()
-    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+    val idleMotion = rememberIdleMotionEnabled()
+    val bottleShown = uiState is ShoreUiState.BottleWaiting && !isLargeText()
     val composition: LottieComposition? by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.message_in_bottle))
     val progress: Float by animateLottieCompositionAsState(
         composition = composition,
-        isPlaying = !reducedMotion && lifecycleState.isAtLeast(Lifecycle.State.RESUMED),
+        isPlaying = idleMotion && bottleShown,
         restartOnPlay = false,
         iterations = LottieConstants.IterateForever,
         speed = BOTTLE_SPEED,
@@ -128,9 +123,8 @@ fun ShoreScreen(
  * The stateless Shore. Previews and screenshot tests pass a still [tide], a fixed Lottie
  * [progress] and a composition loaded up front, so they never capture a running animation.
  *
- * It draws edge to edge: the dome reaches up under the status bar, while the content keeps clear
- * of it through [windowInsets]. The navigation bar's height arrives in [contentPadding] instead,
- * so it isn't counted twice.
+ * It draws edge to edge in a [DomeScaffold]: the dome reaches up under the status bar, while the
+ * content keeps clear of [windowInsets]. The navigation bar's height arrives in [contentPadding].
  */
 @Composable
 internal fun ShoreScreen(
@@ -150,100 +144,86 @@ internal fun ShoreScreen(
     windowInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
 ) {
     val spacing = BottlingTheme.spacing
-    val density = LocalDensity.current
-    val topInset = with(density) { windowInsets.getTop(density).toDp() }
+    val largeText = isLargeText()
+    val scene = if (uiState is ShoreUiState.FoundToday) ShoreScene.FoundToday else ShoreScene.BottleWaiting
 
-    BoxWithConstraints(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        val arcY = maxHeight * DomeEdge.Full.fraction
-        ShoreScenery(
-            scene = if (uiState is ShoreUiState.FoundToday) ShoreScene.FoundToday else ShoreScene.BottleWaiting,
-            tide = tide,
-            topInset = topInset,
-        )
-
-        // the content fills the screen and only scrolls when large text makes it taller (spec §4)
+    DomeScaffold(
+        edge = DomeEdge.Full,
+        contentPadding = contentPadding,
+        modifier = modifier,
+        windowInsets = windowInsets,
+        glowCenter = scene.glowCenter,
+        edgeOffset = tide.edgeOffset,
+        scenery = { insets -> ShoreScenery(scene = scene, tide = tide, insets = insets, largeText = largeText) },
+    ) { toArc ->
+        // everything above the arc, sized so state A's text ends just above it and state B's card
+        // straddles it
+        val aboveArc = when (uiState) {
+            is ShoreUiState.BottleWaiting -> ShoreDimens.textAboveArc
+            is ShoreUiState.FoundToday -> ShoreDimens.cardAboveArc
+        }
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .heightIn(min = maxHeight)
-                .windowInsetsPadding(windowInsets)
-                .padding(bottom = contentPadding.calculateBottomPadding())
-                .padding(horizontal = spacing.gutter),
+                .fillMaxWidth()
+                .heightIn(min = toArc - aboveArc),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // everything above the arc, sized so state A's text ends just above it and state B's
-            // card straddles it
-            val aboveArc = when (uiState) {
-                is ShoreUiState.BottleWaiting -> ShoreDimens.textAboveArc
-                is ShoreUiState.FoundToday -> ShoreDimens.cardAboveArc
-            }
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = arcY - aboveArc - topInset),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Spacer(modifier = Modifier.height(ShoreDimens.topRowOffset))
-                ShoreTopRow(
-                    streak = uiState.streak,
-                    isAdmin = uiState.isAdmin,
-                    onStreakHandler = onOpenMeHandler,
-                    onModerationHandler = onModerationHandler,
-                )
-                if (uiState.isOffline) {
-                    Spacer(modifier = Modifier.height(spacing.xs))
-                    Banner(text = stringResource(R.string.shore_offline_banner), icon = R.drawable.ic_symbol_wifi_off)
-                }
-                when (uiState) {
-                    is ShoreUiState.BottleWaiting -> BottleWaitingHero(composition = composition, progress = progress)
-                    is ShoreUiState.FoundToday -> FoundTodayHero(
-                        state = uiState,
-                        tide = tide,
-                        onReminderHandler = onReminderHandler,
-                    )
-                }
-            }
-            if (uiState is ShoreUiState.FoundToday) {
-                TodaysFindCard(find = uiState.todaysFind, onClick = onOpenTodaysFindHandler)
-            }
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            uiState.stats?.let { stats ->
-                ShoreStatsRow(stats = stats, onClick = onOpenMeHandler)
-                Spacer(modifier = Modifier.height(ShoreDimens.statsAbovePills))
+            Spacer(modifier = Modifier.height(ShoreDimens.topRowOffset))
+            ShoreTopRow(
+                streak = uiState.streak,
+                isAdmin = uiState.isAdmin,
+                onStreakHandler = onOpenMeHandler,
+                onModerationHandler = onModerationHandler,
+            )
+            if (uiState.isOffline) {
+                Spacer(modifier = Modifier.height(spacing.xs))
+                Banner(text = stringResource(R.string.shore_offline_banner), icon = R.drawable.ic_symbol_wifi_off)
             }
             when (uiState) {
-                is ShoreUiState.BottleWaiting -> {
-                    BottlingButton(
-                        text = R.string.shore_find_bottle,
-                        leadingIcon = R.drawable.ic_glyph_bottle,
-                        enabled = !uiState.isOffline,
-                        onTapHandler = onFindBottleHandler,
-                    )
-                    Spacer(modifier = Modifier.height(spacing.xs))
-                    BottlingButton(
-                        text = R.string.shore_cast,
-                        buttonType = BottlingButtonType.SECONDARY,
-                        onTapHandler = onCastHandler,
-                    )
-                }
-                is ShoreUiState.FoundToday -> {
-                    BottlingButton(text = R.string.shore_cast, onTapHandler = onCastHandler)
-                    Spacer(modifier = Modifier.height(spacing.xs))
-                    BottlingButton(
-                        text = R.string.shore_open_chest,
-                        buttonType = BottlingButtonType.SECONDARY,
-                        onTapHandler = onOpenChestHandler,
-                    )
-                }
+                is ShoreUiState.BottleWaiting -> BottleWaitingHero(composition = composition, progress = progress, largeText = largeText)
+                is ShoreUiState.FoundToday -> FoundTodayHero(
+                    state = uiState,
+                    tide = tide,
+                    onReminderHandler = onReminderHandler,
+                )
             }
-            Spacer(modifier = Modifier.height(ShoreDimens.pillsAboveBar))
         }
+        if (uiState is ShoreUiState.FoundToday) {
+            TodaysFindCard(find = uiState.todaysFind, onClick = onOpenTodaysFindHandler)
+        }
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        uiState.stats?.let { stats ->
+            ShoreStatsRow(stats = stats, onClick = onOpenMeHandler)
+            Spacer(modifier = Modifier.height(ShoreDimens.statsAbovePills))
+        }
+        when (uiState) {
+            is ShoreUiState.BottleWaiting -> {
+                BottlingButton(
+                    text = R.string.shore_find_bottle,
+                    leadingIcon = R.drawable.ic_glyph_bottle,
+                    enabled = !uiState.isOffline,
+                    onTapHandler = onFindBottleHandler,
+                )
+                Spacer(modifier = Modifier.height(spacing.xs))
+                BottlingButton(
+                    text = R.string.shore_cast,
+                    buttonType = BottlingButtonType.SECONDARY,
+                    onTapHandler = onCastHandler,
+                )
+            }
+            is ShoreUiState.FoundToday -> {
+                BottlingButton(text = R.string.shore_cast, onTapHandler = onCastHandler)
+                Spacer(modifier = Modifier.height(spacing.xs))
+                BottlingButton(
+                    text = R.string.shore_open_chest,
+                    buttonType = BottlingButtonType.SECONDARY,
+                    onTapHandler = onOpenChestHandler,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(ShoreDimens.pillsAboveBar))
     }
 }
 
@@ -252,11 +232,11 @@ internal fun ShoreScreen(
 private fun ColumnScope.BottleWaitingHero(
     composition: LottieComposition?,
     progress: () -> Float,
+    largeText: Boolean,
 ) {
     val bottleDescription = stringResource(R.string.shore_bottle_description)
     // the bottle takes whatever room the text leaves; it steps aside for large text, and when
     // that room is too little, as in landscape
-    val largeText = LocalDensity.current.fontScale >= ShoreDimens.LARGE_TEXT_SCALE
     BoxWithConstraints(
         modifier = Modifier
             .weight(1f)

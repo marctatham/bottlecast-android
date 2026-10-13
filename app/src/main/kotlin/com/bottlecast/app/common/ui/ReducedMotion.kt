@@ -6,7 +6,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 
 /**
  * True when the user has asked for less motion: the system's animator duration scale is 0
@@ -24,4 +27,15 @@ fun rememberReducedMotion(): Boolean {
         onPauseOrDispose {}
     }
     return reducedMotion
+}
+
+/**
+ * True while idle loops, such as the breathing tide and the bottle's bob, may run: the screen is
+ * resumed, so it's in front and not mid-transition, and motion isn't reduced.
+ */
+@Composable
+fun rememberIdleMotionEnabled(): Boolean {
+    val reducedMotion = rememberReducedMotion()
+    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+    return !reducedMotion && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
 }

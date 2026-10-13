@@ -1,5 +1,8 @@
 package com.bottlecast.app.feature.shore
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 
 /**
@@ -24,10 +27,7 @@ internal object ShoreDimens {
     /** Below this height the bottle drops out. */
     val bottleMinHeight = 96.dp
 
-    /**
-     * From 175% text up the bottle and the glints step aside for the words (spec §3.3: the bottle
-     * hides at 200%).
-     */
+    /** See [isLargeText]. */
     const val LARGE_TEXT_SCALE = 1.75f
 
     /** State A: from the body's last line down to the dome's edge. */
@@ -71,3 +71,11 @@ internal object ShoreDimens {
     val glintWidth = 24.dp
     val glintHeight = 2.dp
 }
+
+/**
+ * Whether the text is large enough, from 175%, for the bottle and the glints to step aside for the
+ * words (spec §3.3: the bottle hides at 200%).
+ */
+@Composable
+@ReadOnlyComposable
+internal fun isLargeText(): Boolean = LocalDensity.current.fontScale >= ShoreDimens.LARGE_TEXT_SCALE

@@ -5,16 +5,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.BottlingSizes
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.common.ui.NightDawnPreviews
 import kotlin.math.max
@@ -54,42 +56,45 @@ fun Dome(
     Spacer(
         modifier = modifier
             .fillMaxSize()
-            .drawBehind {
+            // the breathing tide moves the whole dome as a layer, so nothing is redrawn each frame
+            .graphicsLayer { translationY = edgeOffset().toPx() }
+            .drawWithCache {
                 val radius = max(size.height * HEIGHT_TO_RADIUS, size.width * WIDTH_TO_RADIUS)
-                val edgeY = size.height * edge.fraction + edgeOffset().toPx()
-                val center = Offset(size.width / 2f, edgeY - radius)
+                val center = Offset(size.width / 2f, size.height * edge.fraction - radius)
                 val square = Rect(center, radius)
 
                 // CSS's radial-gradient runs to the farthest corner of the square, and the boards
                 // reach plain dome 26% of the way along it
                 val glowX = if (layoutDirection == LayoutDirection.Ltr) glowCenter.x else 1f - glowCenter.x
                 val glow = Offset(square.left + square.width * glowX, square.top + square.height * glowCenter.y)
-                val farthestCorner = listOf(square.topLeft, square.topRight, square.bottomLeft, square.bottomRight)
-                    .maxOf { (it - glow).getDistance() }
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(colors.domeGlow, colors.dome),
-                        center = glow,
-                        radius = farthestCorner * GLOW_STOP,
-                    ),
-                    radius = radius,
-                    center = center,
+                val farthestCorner = maxOf(
+                    (square.topLeft - glow).getDistance(),
+                    (square.topRight - glow).getDistance(),
+                    (square.bottomLeft - glow).getDistance(),
+                    (square.bottomRight - glow).getDistance(),
+                )
+                val fill = Brush.radialGradient(
+                    colors = listOf(colors.domeGlow, colors.dome),
+                    center = glow,
+                    radius = farthestCorner * GLOW_STOP,
                 )
 
                 // the moonpath sits just outside the edge and fades out at both ends (spec §1.4)
-                drawCircle(
-                    brush = Brush.horizontalGradient(
-                        0f to Color.Transparent,
-                        MOONPATH_FADE to colors.moonpath,
-                        1f - MOONPATH_FADE to colors.moonpath,
-                        1f to Color.Transparent,
-                        startX = 0f,
-                        endX = size.width,
-                    ),
-                    radius = radius + MOONPATH_GAP.toPx(),
-                    center = center,
-                    style = Stroke(width = MOONPATH_WIDTH.toPx()),
+                val moonpath = Brush.horizontalGradient(
+                    0f to Color.Transparent,
+                    MOONPATH_FADE to colors.moonpath,
+                    1f - MOONPATH_FADE to colors.moonpath,
+                    1f to Color.Transparent,
+                    startX = 0f,
+                    endX = size.width,
                 )
+                val moonpathRadius = radius + MOONPATH_GAP.toPx()
+                val moonpathStroke = Stroke(width = BottlingSizes.hairline.toPx())
+
+                onDrawBehind {
+                    drawCircle(brush = fill, radius = radius, center = center)
+                    drawCircle(brush = moonpath, radius = moonpathRadius, center = center, style = moonpathStroke)
+                }
             }
     )
 }
@@ -102,7 +107,6 @@ private const val WIDTH_TO_RADIUS = 0.75f
 private const val GLOW_STOP = 0.26f
 private const val MOONPATH_FADE = 0.15f
 private val MOONPATH_GAP = 1.5.dp
-private val MOONPATH_WIDTH = 1.dp
 
 @NightDawnPreviews
 @Composable
