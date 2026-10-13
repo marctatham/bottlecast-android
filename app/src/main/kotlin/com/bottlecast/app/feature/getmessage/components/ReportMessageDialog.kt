@@ -7,8 +7,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import com.bottlecast.app.R
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.NightDawnPreviews
 
 @Composable
 fun ReportMessageDialog(
@@ -36,8 +37,8 @@ fun ReportMessageDialog(
         text = { Text(text = stringResource(id = R.string.get_message_report_dialog_description)) })
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-private fun ReportMessageDialogPreview() {
+private fun ReportMessageDialogPreview() = BottlingPreview {
     ReportMessageDialog(onReportConfirmed = {}, onDismiss = {})
 }

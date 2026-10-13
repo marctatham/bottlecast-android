@@ -17,46 +17,46 @@
 <resources>
     <string name="home_title">BottleCast</string>
     <string name="home_description">Ready for a virtual adventure filled with serendipitous discoveries? Find a hidden message in a virtual bottle or cast your own into the digital sea for others to uncover.</string>
-    <string name="home_button_get_message">Discover a Message 🏝️</string>
-    <string name="home_button_put_message">Send Your Own 🌊</string>
-    <string name="home_button_view_messages">View ALL 👻</string>
+    <string name="home_button_get_message">Discover a message</string>
+    <string name="home_button_put_message">Send your own</string>
+    <string name="home_button_view_messages">View all</string>
 
-    <string name="get_message_button_acknowledge">Message Explored! 🌟</string>
+    <string name="get_message_button_acknowledge">Message explored</string>
 
-    <string name="button_back">Back</string>>
+    <string name="button_back">Back</string>
 
-    <string name="login_required_title">Your Guide to Bottling Messages</string>
+    <string name="login_required_title">Your guide to bottling messages</string>
     <string name="login_required_image_description">Safety First, sign in is required</string>
 
     <string name="login_required_description">Ready to cast your message adrift in a virtual bottle? 🌊 You’ll need to be signed in to set sail on this adventure. It’s not just about keeping the high seas clean; it’s also about making sure our virtual beach stays family-friendly!\n\nDon’t worry though, your secrets are safe with us! 🤐 We’ve got your back on privacy, and we’ll never spill your personally identifiable info into the message. Even if you choose to go incognito, your identity will remain as elusive as a message in a real bottle lost at sea! 🏴‍☠️⚓</string>
-    <string name="login_required_button_primary">Agree and Set Sail</string>
-    <string name="login_required_button_secondary">No Thanks, I\'ll Stay Dry</string>
+    <string name="login_required_button_primary">Agree and set sail</string>
+    <string name="login_required_button_secondary">No thanks, I\'ll stay dry</string>
 
     <string name="loginBottomSheet_title">Log in to continue</string>
     <string name="loginBottomSheet_subtext">By continuing, you agree to our User Agreement and acknowledge that you understand the Privacy Policy.</string>
     <string name="loginBottomSheet_error">There was a problem signing you in, please try an alternative sign-in method.</string>
     <string name="btnSignInWithGoogle">Sign in with Google</string>
-    <string name="btnSignInAnonymously">Sign in Anonymously</string>
+    <string name="btnSignInAnonymously">Sign in anonymously</string>
 
-    <string name="view_messages_error_get">"There was a problem fetching messages</string>
+    <string name="view_messages_error_get">There was a problem fetching messages</string>
 
-    <string name="get_message_report">Report Message</string>
-    <string name="get_message_report_dialog_title">Report Offensive Message</string>
+    <string name="get_message_report">Report message</string>
+    <string name="get_message_report_dialog_title">Report offensive message</string>
     <string name="get_message_report_dialog_description">Are you sure you want to report this message as offensive? Our team will review it, and if it is found to be offensive, it will be removed from circulation to maintain a safe and enjoyable experience for all users.</string>
-    <string name="get_message_report_dialog_confirm">Report Message</string>
+    <string name="get_message_report_dialog_confirm">Report message</string>
     <string name="get_message_report_dialog_cancel">Cancel</string>
 
-    <string name="snack_post_message_failed">Failed to post your message!"</string>
-    <string name="snack_post_message_requires_auth">You must be logged in to post!"</string>
-    <string name="snack_post_message_insufficient_length">Your message must be at least %1$s characters long"</string>
-    <string name="post_message_char_count">%1$s/%2$s"</string>
+    <string name="snack_post_message_failed">Failed to post your message!</string>
+    <string name="snack_post_message_requires_auth">You must be logged in to post!</string>
+    <string name="snack_post_message_insufficient_length">Your message must be at least %1$s characters long</string>
+    <string name="post_message_char_count">%1$s/%2$s</string>
 
-    <string name="post_completion_title">Message Bottled!</string>
+    <string name="post_completion_title">Message bottled!</string>
     <string name="post_completion_description">Your message has been bottled up and is ready to set sail!</string>
     <string name="btn_post_complete">Back to adventure</string>
 
     <string name="title_post_message">Your BottleCast</string>
-    <string name="post_message_hint">🌟 Need a nudge to start? How about this: \nIf you could send a message to anyone, anywhere, what would it say?</string>
-    <string name="btnPostMessage">Cast Away!</string>
+    <string name="post_message_hint">Need a nudge to start? How about this: \nIf you could send a message to anyone, anywhere, what would it say?</string>
+    <string name="btnPostMessage">Cast away</string>
 
 </resources>

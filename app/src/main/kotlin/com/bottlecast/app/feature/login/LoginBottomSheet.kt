@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
@@ -37,6 +34,10 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingExcept
 import com.bottlecast.app.R
 import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.components.BottlingButtonType
+import com.bottlecast.app.common.components.BottlingBottomSheet
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.common.ui.NightDawnPreviews
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
@@ -46,6 +47,7 @@ fun LoginBottomSheet(
     onSignInCompleteHandler: () -> Unit,
     onDismissRequest: () -> Unit,
     sheetState: SheetState,
+    showAnonymousOption: Boolean = true,
     viewModel: LoginViewModel = hiltViewModel(),
 ) {
     // Create a scope that is automatically cancelled  if the
@@ -70,19 +72,21 @@ fun LoginBottomSheet(
         onDismissRequest = onDismissRequest,
         onSignInCompleteHandler = onSignInCompleteHandler,
         bottomSheetState = sheetState,
-        uiState = uiState
+        uiState = uiState,
+        showAnonymousOption = showAnonymousOption,
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun LoginBottomSheet(
+internal fun LoginBottomSheet(
     signInWithGoogleHandler: () -> Unit,
     signInAnonymouslyHandler: () -> Unit,
     onDismissRequest: () -> Unit,
     onSignInCompleteHandler: () -> Unit,
     bottomSheetState: SheetState,
     uiState: State,
+    showAnonymousOption: Boolean = true,
 ) {
     if (uiState is State.AuthenticatedUser) {
         LaunchedEffect(Unit) {
@@ -90,120 +94,105 @@ private fun LoginBottomSheet(
         }
     }
 
-    ModalBottomSheet(
+    BottlingBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = bottomSheetState,
     ) {
-        val isLoading = uiState is State.Loading
-        val areLoginOptionsEnabled: Boolean = isLoading.not()
+        LoginSheetContent(
+            signInWithGoogleHandler = signInWithGoogleHandler,
+            signInAnonymouslyHandler = signInAnonymouslyHandler,
+            uiState = uiState,
+            showAnonymousOption = showAnonymousOption,
+        )
+    }
+}
 
-        Box {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 0.dp, bottom = 32.dp)
-            ) {
-                Text(
-                    text = stringResource(id = R.string.loginBottomSheet_title),
-                    style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
+/** The sheet's content, without the sheet window, so previews can show it. */
+@Composable
+internal fun LoginSheetContent(
+    signInWithGoogleHandler: () -> Unit,
+    signInAnonymouslyHandler: () -> Unit,
+    uiState: State,
+    showAnonymousOption: Boolean = true,
+) {
+    val isLoading = uiState is State.Loading
+    val areLoginOptionsEnabled: Boolean = isLoading.not()
+    val spacing = BottlingTheme.spacing
 
-                BottlingButton(
-                    text = R.string.btnSignInWithGoogle,
-                    buttonType = BottlingButtonType.PRIMARY,
-                    enabled = areLoginOptionsEnabled,
-                    onTapHandler = signInWithGoogleHandler,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+    Box {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(start = spacing.m, end = spacing.m, top = 0.dp, bottom = spacing.xl)
+        ) {
+            Text(
+                text = stringResource(id = R.string.loginBottomSheet_title),
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            BottlingButton(
+                text = R.string.btnSignInWithGoogle,
+                buttonType = BottlingButtonType.PRIMARY,
+                enabled = areLoginOptionsEnabled,
+                onTapHandler = signInWithGoogleHandler,
+                modifier = Modifier.padding(top = spacing.xs)
+            )
+            if (showAnonymousOption) {
                 BottlingButton(
                     text = R.string.btnSignInAnonymously,
                     buttonType = BottlingButtonType.SECONDARY,
                     enabled = areLoginOptionsEnabled,
                     onTapHandler = signInAnonymouslyHandler,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = spacing.xs)
                 )
+            }
 
-                if (uiState is State.Failure) {
-                    Text(
-                        modifier = Modifier.padding(8.dp),
-                        text = stringResource(id = R.string.loginBottomSheet_error),
-                        style = MaterialTheme.typography.bodySmall,
-                        textAlign = TextAlign.Center,
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-
+            if (uiState is State.Failure) {
                 Text(
-                    modifier = Modifier.padding(
-                        start = 16.dp,
-                        end = 16.dp,
-                        top = 8.dp,
-                        bottom = 0.dp
-                    ),
-                    text = stringResource(id = R.string.loginBottomSheet_subtext),
+                    modifier = Modifier.padding(spacing.xs),
+                    text = stringResource(id = R.string.loginBottomSheet_error),
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center,
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.error,
                 )
             }
 
-            if (isLoading) {
-                CircularProgressIndicator(
-                    strokeWidth = 4.dp,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .align(Alignment.Center),
-                )
-            }
+            Text(
+                modifier = Modifier.padding(
+                    start = spacing.m,
+                    end = spacing.m,
+                    top = spacing.xs,
+                    bottom = 0.dp
+                ),
+                text = stringResource(id = R.string.loginBottomSheet_subtext),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        if (isLoading) {
+            CircularProgressIndicator(
+                color = BottlingTheme.colors.glass,
+                modifier = Modifier
+                    .size(BottlingTheme.sizes.touchTarget)
+                    .align(Alignment.Center),
+            )
         }
     }
 }
 
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview
+@NightDawnPreviews
 @Composable
-private fun FailureContentPreview(
-) {
-
-
-//    LoginBottomSheet(
-//        signInWithGoogleHandler = {},
-//        signInAnonymouslyHandler = {},
-//        onDismissRequest = {},
-//        onSignInCompleteHandler = { },
-//        bottomSheetState = SheetState(true, SheetValue.Expanded, { true }),
-//        uiState = State.Loading,
-//    )
-    // TODO: Fix
-    Text(
-        text = "TODO: Fix the bottom sheet implementation",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onBackground
-    )
+private fun FailureContentPreview() = BottlingPreview {
+    LoginSheetContent(signInWithGoogleHandler = {}, signInAnonymouslyHandler = {}, uiState = State.Failure)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Preview
+@NightDawnPreviews
 @Composable
-private fun LoadingContentPreview(
-) {
-//    LoginBottomSheet(
-//        signInWithGoogleHandler = {},
-//        signInAnonymouslyHandler = {},
-//        onDismissRequest = {},
-//        onSignInCompleteHandler = { },
-//        bottomSheetState = SheetState(true, SheetValue.Expanded, { true }),
-//        uiState = State.Failure,
-//    )
-
-    // TODO: Fix
-    Text(
-        text = "TODO: Fix the bottom sheet implementation",
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onBackground
-    )
+private fun AnonymousContentPreview() = BottlingPreview {
+    LoginSheetContent(signInWithGoogleHandler = {}, signInAnonymouslyHandler = {}, uiState = State.Anonymous)
 }
 
 /**

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -22,10 +23,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.airbnb.lottie.LottieComposition
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
@@ -35,6 +36,8 @@ import com.bottlecast.app.common.components.BottlingAppBar
 import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.components.BottlingButtonType
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.NightDawnPreviews
 import com.bottlecast.app.feature.getmessage.components.ReportMessageDialog
 import com.bottlecast.app.feature.getmessage.components.UnbottledMessageCard
 
@@ -44,14 +47,34 @@ fun GetMessageScreen(
     viewModel: GetMessageViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
-    GetMessageView(onHomeHandler = onHomeHandler, uiState = uiState)
+
+    // the bottle always plays through once, independent of uiState, as the composition is parsed
+    // asynchronously & may only be ready after the message has arrived (b1d8a34)
+    val composition: LottieComposition? by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.message_from_bottle))
+    val progress: Float by animateLottieCompositionAsState(
+        composition = composition,
+        speed = 1f,
+        iterations = 1,
+    )
+    GetMessageView(
+        onHomeHandler = onHomeHandler,
+        uiState = uiState,
+        composition = composition,
+        progress = { progress },
+    )
 }
 
+/**
+ * The stateless Discover screen: previews and screenshot tests pass a fixed Lottie [progress], so
+ * they never capture a running animation.
+ */
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun GetMessageView(
+internal fun GetMessageView(
     onHomeHandler: () -> Unit,
     uiState: MessageUiState,
+    composition: LottieComposition?,
+    progress: () -> Float,
 ) {
     // report message functionality
     var showAlertDialog by remember { mutableStateOf(false) }
@@ -62,20 +85,14 @@ private fun GetMessageView(
         handlerDismissReportDialog()
     }
 
-    // animation control: the bottle always plays through once, independent of uiState, as the
-    // composition is parsed asynchronously & may only be ready after the message has arrived
-    val composition by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.message_from_bottle))
-    val progress: Float by animateLottieCompositionAsState(
-        composition = composition,
-        speed = 1f,
-        iterations = 1,
-    )
-
     val transitionEnterFade = fadeIn(animationSpec = tween(2000, 0, FastOutSlowInEasing))
     val transitionExitFade = fadeOut(animationSpec = tween(2000, 0, FastOutSlowInEasing))
 
     // determined by both the animation progress and the uiState being in a final state
-    val isMessageVisible = progress == 1f // is animation complete?
+    // read through derivedStateOf, so the screen recomposes once the animation completes rather
+    // than on every frame of it
+    val isAnimationComplete by remember(progress) { derivedStateOf { progress() == 1f } }
+    val isMessageVisible = isAnimationComplete
             && (uiState is MessageUiState.PlayingAnimation).not() // is in either success or failure state?
     val lottieVisible = !isMessageVisible
 
@@ -96,7 +113,7 @@ private fun GetMessageView(
         ) {
             LottieAnimation(
                 composition = composition,
-                progress = { progress },
+                progress = progress,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -158,32 +175,24 @@ private fun GetMessageView(
     }
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-private fun GetMessageReceivedPreview(
-) {
+private fun GetMessageReceivedPreview() = BottlingPreview {
     GetMessageView(
         onHomeHandler = {},
-        uiState = MessageUiState.MessageReceived(MessageEntity(message = "Hello World", userId = "1"))
+        uiState = MessageUiState.MessageReceived(MessageEntity(message = "Hello World", userId = "1")),
+        composition = null,
+        progress = { 1f },
     )
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-private fun GetMessageAnimatingPreview(
-) {
+private fun GetMessageFailedPreview() = BottlingPreview {
     GetMessageView(
         onHomeHandler = {},
-        uiState = MessageUiState.PlayingAnimation,
-    )
-}
-
-@Preview
-@Composable
-private fun GetMessageFailedPreview(
-) {
-    GetMessageView(
-        onHomeHandler = {},
-        uiState = MessageUiState.Failure
+        uiState = MessageUiState.Failure,
+        composition = null,
+        progress = { 1f },
     )
 }

@@ -10,6 +10,7 @@ androidxCore = "1.19.1"
 androidxLifecycle = "2.11.0"
 androidxActivity = "1.13.0"
 androidxComposeBom = "2026.09.00"
+androidxComposeMaterial3 = "1.5.0-beta01" # ahead of the BOM's 1.4.0 for MotionScheme.expressive() and MaterialShapes (decisions.md, 2026-10-13); drop when the BOM ships 1.5
 androidxHilt = "1.4.0"
 androidxNavigation = "2.10.2"
 androidxCredentials = "1.6.0"
@@ -19,6 +20,7 @@ androidxTestRunner = "1.7.0"
 androidxTestEspresso = "3.7.0"
 junit = "4.13.2"
 mockk = "1.14.11"
+byteBuddy = "1.18.2" # the version mockk resolves; its agent is preloaded in unit tests (app/build.gradle.kts)
 timber = "5.0.1"
 lottie = "6.7.1"
 googleId = "1.2.1"
@@ -31,7 +33,7 @@ kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", v
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "androidxComposeBom" }
-androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "androidxComposeMaterial3" }
 androidx-compose-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
@@ -65,8 +67,7 @@ firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleId" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
-androidx-compose-material-iconsExtended = { module = "androidx.compose.material:material-icons-extended" }
-androidx-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts" }
+byte-buddy-agent = { module = "net.bytebuddy:byte-buddy-agent", version.ref = "byteBuddy" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
 roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }

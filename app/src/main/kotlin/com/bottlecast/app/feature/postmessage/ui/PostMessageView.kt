@@ -20,13 +20,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.bottlecast.app.R
 import com.bottlecast.app.feature.postmessage.domain.MINIMUM_MESSAGE_LENGTH
 import com.bottlecast.app.common.components.BottlingAppBar
 import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.NightDawnPreviews
 
 @Composable
 fun PostMessageView(
@@ -62,7 +63,7 @@ fun PostMessageView(
             placeholder = {
                 Text(
                     text = stringResource(R.string.post_message_hint),
-                    color = MaterialTheme.colorScheme.outline,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             },
             colors = TextFieldDefaults.colors(
@@ -126,23 +127,23 @@ private fun isCurrentlyEditable(uiState: PostMessageUiState): Boolean = when (ui
     is PostMessageUiState.Success -> false
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-fun PostViewPreviewIdle() {
+private fun PostViewPreviewIdle() = BottlingPreview {
     PostMessageView({}, PostMessageUiState.Idle, onPostHandler = {})
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-fun PostViewPreviewFailure() {
+private fun PostViewPreviewFailure() = BottlingPreview {
     PostMessageView(
         {},
         PostMessageUiState.Failure(FailureReason.NotAuthenticated),
         onPostHandler = {})
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-fun PostViewPreviewSuccess() {
+private fun PostViewPreviewSuccess() = BottlingPreview {
     PostMessageView({}, PostMessageUiState.Success(MessageEntity("", "")), onPostHandler = {})
 }

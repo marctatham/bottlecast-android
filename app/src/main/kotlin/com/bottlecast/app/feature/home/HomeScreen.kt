@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,6 +21,7 @@ import com.airbnb.lottie.LottieComposition
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.bottlecast.app.R
 import com.bottlecast.app.common.analytics.AnalyticsEvent
@@ -30,6 +30,8 @@ import com.bottlecast.app.common.analytics.LocalTracker
 import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.components.BottlingButtonType
 import com.bottlecast.app.common.components.CustomBox
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.NightDawnPreviews
 
 
 @Composable
@@ -43,6 +45,11 @@ fun HomeScreen(
 
     val homeUiState: HomeUiState by viewModel.state.collectAsStateWithLifecycle()
     val composition: LottieComposition? by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.message_in_bottle))
+    val progress: Float by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever,
+        speed = 0.6f,
+    )
     HomeScreen(
         onGetMessageHandler = {
             tracker.trackEvent(AnalyticsEvent.GetMessageTapped)
@@ -54,17 +61,23 @@ fun HomeScreen(
         },
         onViewMessagesHandler = onViewMessagesHandler,
         homeUiState = homeUiState,
-        composition = composition
+        composition = composition,
+        progress = { progress },
     )
 }
 
+/**
+ * The stateless Home: previews and screenshot tests pass a fixed Lottie [progress] (and a
+ * composition loaded up front), so they never capture a running animation.
+ */
 @Composable
-private fun HomeScreen(
+internal fun HomeScreen(
     onGetMessageHandler: () -> Unit,
     onPostMessageHandler: () -> Unit,
     onViewMessagesHandler: () -> Unit,
     homeUiState: HomeUiState,
-    composition: LottieComposition?
+    composition: LottieComposition?,
+    progress: () -> Float,
 ) {
 
     CustomBox(
@@ -77,8 +90,7 @@ private fun HomeScreen(
 
                 LottieAnimation(
                     composition = composition,
-                    iterations = LottieConstants.IterateForever,
-                    speed = 0.6f,
+                    progress = progress,
                     modifier = Modifier.fillMaxSize(0.6f)
                 )
 
@@ -151,15 +163,16 @@ private fun HomeScreen(
     )
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-private fun HomeScreenPreview() {
+private fun HomeScreenPreview() = BottlingPreview {
     val composition: LottieComposition? by rememberLottieComposition(LottieCompositionSpec.RawRes(R.raw.message_in_bottle))
     HomeScreen(
         onGetMessageHandler = {},
         onPostMessageHandler = {},
         onViewMessagesHandler = {},
         homeUiState = HomeUiState.Normal,
-        composition = composition
+        composition = composition,
+        progress = { 0f },
     )
 }

@@ -10,11 +10,6 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - Slice 1 adds the Shore/Chest/Me navigation bar, but the Chest arrives in slice 4, and the streak pill and stats need data from slices 2 and 4.
   - Options: hide them until their slice lands, or show placeholder states.
 
-- [ ] **Material3 1.5 beta or the spec's fallbacks** (Slice 1)
-  - Expressive motion, the wavy progress indicators and MaterialShapes need Material3 1.5. Compose BOM 2026.09.00 resolves to 1.4.0, and 1.5 is only in beta (1.5.0-beta01).
-  - Options: pin material3 1.5.0-beta01, or stay on 1.4.0 with the fallbacks (hand-written springs, the standard CircularProgressIndicator, CircleShape).
-  - Proposed: the fallbacks, until 1.5 is stable.
-
 - [ ] **How much of the Worker comes forward to slice 2** (Slice 2)
   - Blocking, the report threshold and a server-pinned daily bottle all need discovery to go through a Worker (`/discover`, `/report`, `/block`), which is planned for slice 6.
   - Options: a minimal Worker in slice 2, or client-only reporting until slice 6.
@@ -97,6 +92,17 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't. Still open: whether signing fits in 10 ms of CPU (a slice 5 spike), staying under 50 subrequests per invocation (cron runs included), and serialising the single minter's nonce.
   - Options for the nonce: cron-only minting, or a Durable Object that owns it. Someone also has to watch the minter's balance (the Base Sepolia faucet gives 0.1 ETH per rolling 24 hours).
 
+- [ ] **The Dawn dialog scrim** (Slice 2)
+  - The spec's Dawn scrim is #1A2320 at 40%, but an `AlertDialog`'s window dim comes from the platform and is always black (the Report dialog shows it).
+  - Options: a custom scrim behind Compose dialogs, or accept the platform dim.
+
+- [ ] **The Shore bottle's Lottie licence** (Slice 2)
+  - Spec §1.6 flags `message_in_bottle.json` (the Shore and cast-success bottle) for a licence check, or a redraw in the rig. Nothing records its source yet.
+
+- [ ] **In-app licences** (Slice 4)
+  - Material Symbols and Roboto Slab are Apache 2.0, which asks for the licence text to reach people who get the app. The texts are in `licenses/`, but nothing in the app shows them.
+  - Proposed: an open-source licences row in Settings.
+
 - [ ] **"Create one with Google"** (Slices 5 and 6)
   - The embedded-wallet option on Add a wallet stays "Coming soon" behind a remote flag until a free embedded-wallet tier is confirmed, so linking an existing wallet is the only path for now.
   - It hangs on the slice 5 spike: does Privy's free plan accept a Firebase custom JWT?
@@ -118,6 +124,10 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - "Harbour closed" now covers the Firestore, Auth and Worker daily limits, and a low minter shows "Sealing · delayed". Not yet designed: Firebase Hosting's 360 MB a day running out (the gift and profile pages and `assetlinks.json` go down) and a Shore variant of Harbour closed.
 
 ## Resolved
+
+- [x] **Material3 1.5 beta or the spec's fallbacks** (Slice 1)
+  - Expressive motion, the wavy progress indicators and MaterialShapes need Material3 1.5, which Compose BOM 2026.09.00 doesn't include.
+  - Answer (2026-10-13, slice 1 planning): pin material3 1.5.0-beta01 ahead of the BOM. See [decisions.md](decisions.md).
 
 - [x] **What the verified mark hashes** (Slice 6)
   - The plan's "HMAC of the uid" would give every keepsake from one writer the same value, so anyone could group them on-chain, and one bottle signed with a pen name would name the rest.

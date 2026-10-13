@@ -21,15 +21,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bottlecast.app.R
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.ui.BottlingPreview
+import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.common.ui.NightDawnPreviews
 
 @Composable
 fun ViewMessagesScreen(
@@ -44,26 +44,24 @@ fun ViewMessagesScreen(
     }
 }
 
-@Preview
 @Composable
-fun ViewMessagesLoading() {
+internal fun ViewMessagesLoading() {
     Box(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.background)
             .fillMaxSize()
     ) {
         CircularProgressIndicator(
-            strokeWidth = 4.dp,
+            color = BottlingTheme.colors.glass,
             modifier = Modifier
-                .size(48.dp)
+                .size(BottlingTheme.sizes.touchTarget)
                 .align(Alignment.Center),
         )
     }
 }
 
-@Preview
 @Composable
-fun ViewMessagesError() {
+internal fun ViewMessagesError() {
     Box(
         modifier = Modifier
             .background(MaterialTheme.colorScheme.background)
@@ -71,8 +69,7 @@ fun ViewMessagesError() {
     ) {
         Text(
             text = stringResource(R.string.view_messages_error_get),
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.error,
             modifier = Modifier
                 .padding(16.dp)
@@ -120,16 +117,16 @@ fun MessageView(messageEntity: MessageEntity) {
     }
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-fun MessageViewPreview() {
+private fun MessageViewPreview() = BottlingPreview {
     val fakeMessage = MessageEntity(message = "Hello World", userId = "my fake user ID")
     MessageView(fakeMessage)
 }
 
-@Preview
+@NightDawnPreviews
 @Composable
-fun MessageListViewPreview() {
+private fun MessageListViewPreview() = BottlingPreview {
     val fakeUserId = "myFakeUserId"
     MessageListView(
         listOf(
@@ -141,3 +138,11 @@ fun MessageListViewPreview() {
         )
     )
 }
+
+@NightDawnPreviews
+@Composable
+private fun ViewMessagesLoadingPreview() = BottlingPreview { ViewMessagesLoading() }
+
+@NightDawnPreviews
+@Composable
+private fun ViewMessagesErrorPreview() = BottlingPreview { ViewMessagesError() }

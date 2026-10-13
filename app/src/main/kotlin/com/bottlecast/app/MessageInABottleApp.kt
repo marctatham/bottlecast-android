@@ -1,6 +1,6 @@
 package com.bottlecast.app
 
-
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -13,13 +13,17 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.bottlecast.app.common.analytics.ITracker
+import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.feature.getmessage.GetMessageScreen
 import com.bottlecast.app.feature.home.HomeScreen
 import com.bottlecast.app.feature.login.LoginRequiredToPostScreen
@@ -40,6 +44,17 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
             popUpTo(Screen.HOME) {
                 inclusive = true // Pop up to the "home" destination, including "home" itself
             }
+        }
+    }
+
+    // the status bar's icons contrast with the primary strip painted below: dark on Night's pale
+    // sage, light on Dawn's deep sage
+    val isNight = BottlingTheme.colors.isNight
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = isNight
         }
     }
 

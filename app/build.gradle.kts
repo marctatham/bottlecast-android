@@ -108,8 +108,12 @@ roborazzi {
     outputDir.set(file("src/test/screenshots"))
 }
 
+// ByteBuddy's agent, preloaded into unit-test JVMs for mockk (see the Test tasks below)
+val mockkAgent: Configuration by configurations.creating { isTransitive = false }
+
 tasks.withType<Test>().configureEach {
-    // renders shadows & elevation the way a device does
+    // PixelCopy renders shadows & elevation the way a device does; it's used by the screen captures
+    // (sheets, dialogs), while captureThemed draws the window in software (see testing/Screenshots.kt)
     systemProperty("robolectric.pixelCopyRenderMode", "hardware")
     maxHeapSize = "2g"
     // Robolectric reaches into JDK internals, which Java 17+ only allows when opened (robolectric.org/getting-started)
@@ -124,6 +128,11 @@ tasks.withType<Test>().configureEach {
         "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED",
         "--add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
     )
+    // mockk attaches ByteBuddy's agent to the running JVM, which fails once a Robolectric NATIVE
+    // test has run in the same worker; loading the agent at startup means it never has to attach
+    val agent: FileCollection = mockkAgent
+    inputs.files(agent).withPropertyName("mockkAgent").withNormalizer(ClasspathNormalizer::class.java)
+    jvmArgumentProviders.add(CommandLineArgumentProvider { listOf("-javaagent:${agent.singleFile.absolutePath}") })
 }
 
 dependencies {
@@ -156,8 +165,7 @@ dependencies {
     // Compose
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material.iconsExtended)
+    implementation(libs.androidx.compose.material3) // pinned ahead of the BOM in the version catalog
 
     // logging
     implementation(libs.timber)
@@ -178,9 +186,6 @@ dependencies {
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.googleid)
 
-    // ui bits (worth revisiting & replacing with jetpack compose for the most part)
-    implementation(libs.androidx.ui.text.google.fonts)
-
     // Tooling
     debugImplementation(libs.androidx.compose.ui.tooling)
 
@@ -192,6 +197,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
+    mockkAgent(libs.byte.buddy.agent)
     testImplementation(libs.kotlinx.test)
 
     // Local tests: screenshot tests (Roborazzi on Robolectric)
