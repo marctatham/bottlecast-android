@@ -117,6 +117,10 @@ tasks.withType<Test>().configureEach {
     // (sheets, dialogs), while captureThemed draws the window in software (see testing/Screenshots.kt)
     systemProperty("robolectric.pixelCopyRenderMode", "hardware")
     maxHeapSize = "2g"
+    // each test class starts in a fresh JVM: Robolectric's native text rendering keeps state across
+    // classes, which otherwise lets one class's text shift another's screenshots
+    forkEvery = 1
+    maxParallelForks = (Runtime.getRuntime().availableProcessors() / 2).coerceIn(1, 4)
     // Robolectric reaches into JDK internals, which Java 17+ only allows when opened (robolectric.org/getting-started)
     jvmArgs(
         "--add-opens=java.base/java.lang=ALL-UNNAMED",

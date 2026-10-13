@@ -2,6 +2,10 @@ package com.bottlecast.app.testing
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Rect
+import android.view.Gravity
+import android.view.WindowManager
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -57,9 +61,10 @@ internal fun SemanticsNodeInteraction.captureByDrawing() {
 private const val CAPTURE_TAG = "screenshot"
 
 /**
- * Captures the whole screen, popups included, by drawing each of the composition's windows where
- * it sits on screen: the activity's first, then popups such as an open DropdownMenu, which
- * Roborazzi's screen capture leaves out.
+ * Captures the whole screen by drawing each of the composition's windows where it sits: the
+ * activity's first, then any dialog, sheet or popup over it, with the dim a dialog's window asks
+ * the system to lay behind it. Roborazzi's screen capture copies the screen with PixelCopy, which
+ * leaves popups out and sometimes misses the content behind a dialog; drawing is deterministic.
  */
 internal fun ComposeContentTestRule.captureScreenByDrawing() {
     val windows = onAllNodes(isRoot()).fetchSemanticsNodes()
@@ -68,13 +73,23 @@ internal fun ComposeContentTestRule.captureScreenByDrawing() {
     val screen = windows.first()
     val screenBitmap = Bitmap.createBitmap(screen.width, screen.height, Bitmap.Config.ARGB_8888)
     val canvas = Canvas(screenBitmap)
-    val screenLocation = IntArray(2).also { screen.getLocationOnScreen(it) }
     windows.forEach { window ->
-        val location = IntArray(2).also { window.getLocationOnScreen(it) }
+        val params = window.layoutParams as? WindowManager.LayoutParams
+        val frame = Rect(0, 0, window.width, window.height)
+        if (window != screen && params != null) {
+            if (params.flags and WindowManager.LayoutParams.FLAG_DIM_BEHIND != 0) {
+                canvas.drawColor(Color.argb((params.dimAmount * OPAQUE).roundToInt(), 0, 0, 0))
+            }
+            // placed by its gravity, as the window manager would; Robolectric reports a centred
+            // dialog at the top-left
+            Gravity.apply(params.gravity, window.width, window.height, Rect(0, 0, screen.width, screen.height), params.x, params.y, frame)
+        }
         canvas.save()
-        canvas.translate((location[0] - screenLocation[0]).toFloat(), (location[1] - screenLocation[1]).toFloat())
+        canvas.translate(frame.left.toFloat(), frame.top.toFloat())
         window.draw(canvas)
         canvas.restore()
     }
     screenBitmap.captureRoboImage()
 }
+
+private const val OPAQUE = 255
