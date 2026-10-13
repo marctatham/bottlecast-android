@@ -29,6 +29,11 @@ internal val RobotoSlab = FontFamily(
  * Roboto Flex, for reading. It ships only as a variable font, so each weight is a variation of
  * the same file. The boards render it with CSS `font-optical-sizing: auto`, so each family pins
  * the optical size (`opsz`) to the text size it's used at.
+ *
+ * The optical size is the style's size in sp as a plain number. `FontVariation.opticalSizing`
+ * would scale it by the font scale when the typeface first loads, and Compose caches typefaces
+ * process-wide without the font scale in the key: whichever scale loaded first would then stick,
+ * on a device after the user changes the text size, and between screenshot tests.
  */
 internal fun robotoFlex(opticalSize: TextUnit): FontFamily = FontFamily(
     listOf(FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold).map { weight ->
@@ -38,11 +43,13 @@ internal fun robotoFlex(opticalSize: TextUnit): FontFamily = FontFamily(
             variationSettings = FontVariation.Settings(
                 weight,
                 FontStyle.Normal,
-                FontVariation.opticalSizing(opticalSize),
+                FontVariation.Setting(OPTICAL_SIZE_AXIS, opticalSize.value),
             ),
         )
     }
 )
+
+private const val OPTICAL_SIZE_AXIS = "opsz"
 
 private val RobotoFlex11 = robotoFlex(11.sp)
 private val RobotoFlex12 = robotoFlex(12.sp)

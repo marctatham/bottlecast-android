@@ -5,7 +5,9 @@ import android.content.Context
 import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontListFontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.ResourceFont
 import androidx.compose.ui.text.font.createFontFamilyResolver
 import androidx.compose.ui.unit.sp
 import androidx.test.core.app.ApplicationProvider
@@ -51,6 +53,20 @@ class BottlingFontsTest {
 
         // then
         Assert.assertNotEquals("opsz 11 and 16 should measure differently", small, large, 0.01f)
+    }
+
+    @Test
+    fun `roboto flex's axes don't depend on the font scale`() {
+        // given
+        val fonts = (robotoFlex(11.sp) as FontListFontFamily).fonts
+
+        // when
+        val settings = fonts.flatMap { font -> (font as ResourceFont).variationSettings.settings }
+
+        // then: Compose caches typefaces without the font scale, so an axis that read it would keep
+        // whichever scale loaded first, for the rest of the process
+        Assert.assertTrue(settings.isNotEmpty())
+        settings.forEach { setting -> Assert.assertFalse("${setting.axisName} reads the font scale", setting.needsDensity) }
     }
 
     @Test
