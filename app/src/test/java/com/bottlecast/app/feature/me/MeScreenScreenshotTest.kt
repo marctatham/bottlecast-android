@@ -1,11 +1,10 @@
 package com.bottlecast.app.feature.me
 
 import android.app.Application
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.ui.test.junit4.v2.createComposeRule
-import androidx.compose.ui.unit.dp
 import com.bottlecast.app.TopLevelDestination
-import com.bottlecast.app.common.components.TabFrame
+import com.bottlecast.app.testing.BoardStatusBar
+import com.bottlecast.app.testing.BoardTabFrame
 import com.bottlecast.app.testing.captureThemed
 import org.junit.Rule
 import org.junit.Test
@@ -34,16 +33,8 @@ class MeScreenScreenshotTest {
 
     private fun capture(darkTheme: Boolean) {
         composeTestRule.captureThemed(darkTheme = darkTheme) {
-            TabFrame(
-                selected = TopLevelDestination.ME,
-                onSelect = {},
-                navigationBarInsets = WindowInsets(0),
-            ) { contentPadding ->
-                MeScreen(
-                    onGoToShoreHandler = {},
-                    contentPadding = contentPadding,
-                    windowInsets = WindowInsets(top = 44.dp),
-                )
+            BoardTabFrame(selected = TopLevelDestination.ME) { contentPadding ->
+                MeScreen(onGoToShoreHandler = {}, contentPadding = contentPadding, windowInsets = BoardStatusBar)
             }
         }
     }

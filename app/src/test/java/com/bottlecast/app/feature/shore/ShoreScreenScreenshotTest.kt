@@ -5,18 +5,22 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.bottlecast.app.R
 import com.bottlecast.app.TopLevelDestination
-import com.bottlecast.app.common.components.TabFrame
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.common.ui.BreathingTide
 import com.bottlecast.app.feature.shore.domain.Tide
+import com.bottlecast.app.testing.BoardStatusBar
+import com.bottlecast.app.testing.BoardTabFrame
 import com.bottlecast.app.testing.captureScreenByDrawing
 import com.bottlecast.app.testing.captureThemed
 import com.bottlecast.app.testing.loadLottieComposition
@@ -84,12 +88,28 @@ class ShoreScreenScreenshotTest {
     @Config(fontScale = 2f)
     fun largeTextDawn() = capture(SampleWaiting, darkTheme = false)
 
+    // 200% text on a shorter screen, scrolled to the end: the content scrolls below the status bar
+    // rather than passing under it
+    @Test
+    @Config(fontScale = 2f, qualifiers = SHORT_SCREEN)
+    fun largeTextScrolledNight() = captureScrolledToEnd(darkTheme = true)
+
+    @Test
+    @Config(fontScale = 2f, qualifiers = SHORT_SCREEN)
+    fun largeTextScrolledDawn() = captureScrolledToEnd(darkTheme = false)
+
     @Test
     fun rtlNight() = capture(SampleWaiting, darkTheme = true, layoutDirection = LayoutDirection.Rtl)
+
+    @Test
+    fun rtlDawn() = capture(SampleWaiting, darkTheme = false, layoutDirection = LayoutDirection.Rtl)
 
     // a 3-button navigation bar under the app's: the pills still sit 32dp above the app's bar
     @Test
     fun navigationBarInsetNight() = capture(SampleWaiting, darkTheme = true, navigationBarInsets = WindowInsets(bottom = 48.dp))
+
+    @Test
+    fun navigationBarInsetDawn() = capture(SampleWaiting, darkTheme = false, navigationBarInsets = WindowInsets(bottom = 48.dp))
 
     @Test
     fun adminMenuOpenNight() = captureAdminMenu(darkTheme = true)
@@ -110,6 +130,20 @@ class ShoreScreenScreenshotTest {
         }
     }
 
+    private fun captureScrolledToEnd(darkTheme: Boolean) {
+        composeTestRule.setContent {
+            BottlingTheme(darkTheme = darkTheme) {
+                ShoreFrame(uiState = SampleWaiting, navigationBarInsets = WindowInsets(0))
+            }
+        }
+        // further than the content reaches, so the scroll stops at its end
+        composeTestRule.onNode(hasScrollAction()).performSemanticsAction(SemanticsActions.ScrollBy) { scrollBy ->
+            scrollBy(0f, Float.MAX_VALUE)
+        }
+        composeTestRule.waitForIdle()
+        composeTestRule.captureScreenByDrawing()
+    }
+
     // the menu is a popup, its own window, which Roborazzi's screen capture leaves out, so every
     // window is drawn once the menu has finished opening
     private fun captureAdminMenu(darkTheme: Boolean) {
@@ -126,11 +160,7 @@ class ShoreScreenScreenshotTest {
 
     @Composable
     private fun ShoreFrame(uiState: ShoreUiState, navigationBarInsets: WindowInsets) {
-        TabFrame(
-            selected = TopLevelDestination.SHORE,
-            onSelect = {},
-            navigationBarInsets = navigationBarInsets,
-        ) { contentPadding ->
+        BoardTabFrame(selected = TopLevelDestination.SHORE, navigationBarInsets = navigationBarInsets) { contentPadding ->
             ShoreScreen(
                 uiState = uiState,
                 tide = BreathingTide.Still,
@@ -144,14 +174,14 @@ class ShoreScreenScreenshotTest {
                 onOpenTodaysFindHandler = {},
                 onReminderHandler = {},
                 contentPadding = contentPadding,
-                windowInsets = WindowInsets(top = STATUS_BAR),
+                windowInsets = BoardStatusBar,
             )
         }
     }
 
     private companion object {
         const val BOTTLE_PROGRESS = 0f
-        val STATUS_BAR = 44.dp
+        const val SHORT_SCREEN = "w390dp-h640dp-xhdpi"
 
         val SampleWaiting = ShoreUiState.BottleWaiting(
             streak = ShoreStreak(days = 6, shields = 1),
