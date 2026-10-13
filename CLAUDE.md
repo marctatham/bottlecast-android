@@ -23,6 +23,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - Tab roots (Shore, Chest, Me) draw themselves in a `TabFrame`, which adds the navigation bar and hands its height to the screen as `contentPadding`. Every other route is immersive.
   - Screens under the dome (Shore, Chest, Me) are built on `DomeScaffold`. It draws the dome under the status bar and keeps the content inside `windowInsets = WindowInsets.safeDrawing.only(Top + Horizontal)`, scrolling below the see-through bar. The bottom comes only from `contentPadding`, so the navigation bar isn't counted twice.
   - Every other route is registered with `immersive<T>`. Its frame rounds the corners on a back swipe and takes every tap, so none falls through to the screen still drawn underneath. Screens from before the redesign also sit in `LegacyScreen`, which keeps them inside the system bars over an opaque background.
+  - A tab root stays drawn while a screen opens over it. A keyboard, TalkBack or Switch Access can still reach it there, so its actions go through `dropUnlessStarted`, and `TabFrame` guards the bar the same way.
 - `common/authentication/` and `common/messages/` split into:
   - `domain`: `I`-prefixed interfaces and entities
   - `data`: implementations, with Firestore models in `data/model/` and mappers in `data/mapper/`
@@ -94,7 +95,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **Re-recording goldens:** only for an intended change, and only after reading its `_compare.png`. Never re-record just to make the gate pass.
 - **Instrumented tests** (`src/androidTest`):
   - `@HiltAndroidTest`, `HiltAndroidRule` at order 0, and `createAndroidComposeRule<MainActivity>()` from `androidx.compose.ui.test.junit4.v2`.
-  - Fakes in `fakes/` replace real modules through `testdi/*Module` with `@TestInstallIn(replaces = […])`.
+  - Fakes in `fakes/` replace real modules through `testdi/*Module` with `@TestInstallIn(replaces = […])`. `FakeTracker` records screen views and events. Inject it with `@Inject` and `hiltRule.inject()`.
   - A screen test without Hilt uses `ComponentActivity` and builds its ViewModel from fakes, as `ShoreScreenTest` does.
   - Look text up with `activity.getString(R.string.…)`. Wait with `waitUntil`; never sleep or add delays to fakes.
 

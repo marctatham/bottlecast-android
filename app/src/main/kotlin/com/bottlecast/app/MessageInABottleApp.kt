@@ -68,14 +68,13 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
     // a pop rather than a fresh navigation, so the Shore keeps its state and the pop transitions run
     val homeHandler: () -> Unit = { navController.popBackStack<Shore>(inclusive = false) }
     // tabs keep their own state, and back from any tab leads to the Shore, then out (spec §2). A
-    // full-screen route belongs to no tab, so it's closed first rather than saved with one: saved,
-    // it would reopen the next time the Shore tab was chosen
+    // full-screen route belongs to no tab, so leaving one for a tab drops it rather than saving it
+    // with the Shore's: saved, it would reopen the next time the Shore tab was chosen. It's one
+    // navigation either way, so only the chosen tab is counted as a screen view
     val tabHandler: (TopLevelDestination) -> Unit = { destination ->
-        while (navController.currentDestination?.isTopLevel() == false) {
-            if (!navController.popBackStack()) break
-        }
+        val fromTabRoot = navController.currentDestination?.isTopLevel() == true
         navController.navigate(destination.route) {
-            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+            popUpTo(navController.graph.findStartDestination().id) { saveState = fromTabRoot }
             launchSingleTop = true
             restoreState = true
         }

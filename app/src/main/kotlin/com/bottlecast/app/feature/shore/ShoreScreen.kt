@@ -29,6 +29,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.min
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.dropUnlessStarted
 import com.airbnb.lottie.LottieComposition
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -101,17 +102,20 @@ fun ShoreScreen(
         tide = tide,
         composition = composition,
         progress = { if (reducedMotion) STILL_FRAME else progress },
-        onFindBottleHandler = {
+        // The Shore stays drawn while a screen opens over it. Taps can't reach it there, but a
+        // keyboard, TalkBack or Switch Access still can, so it only acts while it's started, which
+        // means on top.
+        onFindBottleHandler = dropUnlessStarted {
             tracker.trackEvent(AnalyticsEvent.GetMessageTapped)
             onFindBottleHandler()
         },
-        onCastHandler = {
+        onCastHandler = dropUnlessStarted {
             tracker.trackEvent(AnalyticsEvent.PostMessageTapped)
             onCastHandler()
         },
-        onModerationHandler = onModerationHandler,
-        onOpenChestHandler = onOpenChestHandler,
-        onOpenMeHandler = onOpenMeHandler,
+        onModerationHandler = dropUnlessStarted(block = onModerationHandler),
+        onOpenChestHandler = dropUnlessStarted(block = onOpenChestHandler),
+        onOpenMeHandler = dropUnlessStarted(block = onOpenMeHandler),
         // reopening today's bottle comes with Reveal (slice 2), the reminder sheet with slice 4
         onOpenTodaysFindHandler = {},
         onReminderHandler = {},
