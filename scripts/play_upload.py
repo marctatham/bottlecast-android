@@ -19,6 +19,8 @@ import json
 import os
 import subprocess
 
+from firebase_rest import run_quietly
+
 PACKAGE = "com.bottlecast.app"
 SERVICE_ACCOUNT = "play-publisher@bottlecast-prod.iam.gserviceaccount.com"
 QUOTA_PROJECT = "bottlecast-prod"
@@ -43,7 +45,7 @@ def call(method, url, token, json_body=None, bundle=None, headers=()):
         cmd += ["-H", "Content-Type: application/octet-stream", "--data-binary", f"@{bundle}"]
     cmd.append(url)
 
-    out = subprocess.run(cmd, input=stdin, capture_output=True, text=True, check=True).stdout
+    out = run_quietly(cmd, f"{method} {url.split('?')[0]}", stdin=stdin)
     body, _, status = out.rpartition("\n")
     payload = json.loads(body) if body.strip() else {}
     if not status.startswith("2"):
@@ -55,7 +57,8 @@ def call(method, url, token, json_body=None, bundle=None, headers=()):
 def mint_token():
     account = os.environ.get("PLAY_UPLOAD_ACCOUNT")
     gcloud = ["gcloud", "auth", "print-access-token"] + ([f"--account={account}"] if account else [])
-    user_token = subprocess.run(gcloud, capture_output=True, text=True, check=True).stdout.strip()
+    # gcloud's errors can name the account, so they aren't repeated
+    user_token = run_quietly(gcloud, "Getting an access token from gcloud (try `gcloud auth login`)", echo_error=False).strip()
     response = call(
         "POST", TOKEN_API, user_token,
         json_body={"scope": ["https://www.googleapis.com/auth/androidpublisher"], "lifetime": "3600s"},

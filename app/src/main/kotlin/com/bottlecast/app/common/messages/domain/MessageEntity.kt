@@ -10,7 +10,8 @@ const val LANG_UNDETERMINED = "und"
  * A bottle: its text, who cast it, and where it is in the sea.
  *
  * [foundAt] is when its current hold began. A find holds a bottle for [HOLD_DAYS] days, after which
- * it drifts back to the sea; the end is worked out from [foundAt], never stored.
+ * it drifts back to the sea; the end is worked out from [foundAt], never stored. [rand] is its place
+ * in the sea's random order, which a look at the sea reads through.
  */
 data class MessageEntity(
     val id: String,
@@ -24,6 +25,7 @@ data class MessageEntity(
     val reportCount: Int = 0,
     val findCount: Int = 0,
     val foundAt: Instant? = null,
+    val rand: Double? = null,
 )
 
 /** How long a find holds a bottle before it drifts back to the sea (owner decision, 2026-10-13). */
@@ -63,6 +65,6 @@ enum class ModerationAction {
     /** Takes the bottle out of the sea for good. */
     Remove,
 
-    /** Puts the bottle back in the sea, with its reports cleared. */
+    /** Clears its reports and puts it back in the sea, or back to its finder while their hold runs. */
     Restore,
 }

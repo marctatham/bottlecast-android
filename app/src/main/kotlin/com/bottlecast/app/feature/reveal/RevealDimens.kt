@@ -27,6 +27,16 @@ internal object RevealDimens {
     const val DRIFTING_BOTTLE_ALPHA = 0.7f
     val driftingRipplesWidth = 240.dp
 
+    /** The ripples sit this far below the bottle's middle, where it meets the water. */
+    val driftingRipplesDrop = 24.dp
+
+    /** The moon, from the status bar and the end edge (Reveal board). */
+    val moonTop = 18.dp
+    val moonEnd = 78.dp
+
+    /** A radio button or checkbox with no click handler of its own fills a 24dp slot (Report-Dialog board). */
+    val choiceControl = 24.dp
+
     /** The outlined flag: a 40dp circle in its 48dp target, with a 20dp icon (Reveal board). */
     val flagIcon = 20.dp
 

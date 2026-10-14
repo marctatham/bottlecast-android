@@ -68,6 +68,7 @@ fun BottleRig(
 ) {
     val colors = BottlingTheme.colors
     val rig = colors.rig
+    val hairline = BottlingTheme.sizes.hairline
     val glassFill = remember(look, colors) { look.tint.fill(colors).rotateHue(look.hueJitter).copy(alpha = GLASS_ALPHA) }
     val glassStroke = rig.outline ?: look.tint.stroke(rig)
     Spacer(
@@ -79,7 +80,7 @@ fun BottleRig(
                 val body = BottleRigPaths.body(look.silhouette)
                 val highlight = BottleRigPaths.highlight(look.silhouette)
                 // Dawn's outline is 1dp at any size; the tint's own edge scales with the bottle
-                val glassStrokeStyle = Stroke(width = if (rig.outline != null) 1.dp.toPx() / scale else GLASS_STROKE)
+                val glassStrokeStyle = Stroke(width = if (rig.outline != null) hairline.toPx() / scale else GLASS_STROKE)
                 val bodyHighlightStyle = Stroke(width = BODY_HIGHLIGHT_WIDTH, cap = StrokeCap.Round)
                 val neckHighlightStyle = Stroke(width = NECK_HIGHLIGHT_WIDTH, cap = StrokeCap.Round)
                 val corkLineStyle = Stroke(width = CORK_LINE_WIDTH, cap = StrokeCap.Round)

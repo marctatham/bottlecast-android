@@ -2,22 +2,26 @@ package com.bottlecast.app.common.messages.data
 
 import com.bottlecast.app.common.messages.data.mapper.MessageDataModelMapper
 import com.bottlecast.app.common.messages.data.model.MessageFields
+import com.bottlecast.app.common.messages.domain.HOLD_DAYS
 import com.bottlecast.app.common.messages.domain.LANG_UNDETERMINED
 import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.messages.domain.ModerationAction
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import timber.log.Timber
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 import kotlin.random.Random
 
 class MessageFirestoreSource @Inject constructor(
-    firestore: FirebaseFirestore,
+    private val firestore: FirebaseFirestore,
     private val mapper: MessageDataModelMapper,
 ) : IMessageDataSource {
 
@@ -44,17 +48,34 @@ class MessageFirestoreSource @Inject constructor(
     }
 
     override suspend fun moderate(messageId: String, action: ModerationAction) {
-        val changes: Map<String, Any?> = when (action) {
-            ModerationAction.Pull -> mapOf(MessageFields.STATUS to MessageStatus.UnderReview.value)
-            ModerationAction.Remove -> mapOf(MessageFields.STATUS to MessageStatus.Removed.value)
-            ModerationAction.Restore -> mapOf(
-                MessageFields.STATUS to MessageStatus.Afloat.value,
-                MessageFields.FOUND_AT to null,
-                MessageFields.REPORT_COUNT to 0,
-            )
+        val document = messages.document(messageId)
+        when (action) {
+            ModerationAction.Pull -> Tasks.await(document.update(MessageFields.STATUS, MessageStatus.UnderReview.value))
+            ModerationAction.Remove -> Tasks.await(document.update(MessageFields.STATUS, MessageStatus.Removed.value))
+            ModerationAction.Restore -> restore(document)
         }
-        Tasks.await(messages.document(messageId).update(changes))
         Timber.i("Moderated a message: $action")
+    }
+
+    // Back to the sea with its reports cleared, unless a finder's hold still runs: then back to that
+    // finder for the rest of it, so the bottle never has two holders (firestore.rules insists).
+    private fun restore(document: DocumentReference) {
+        Tasks.await(
+            firestore.runTransaction { transaction ->
+                val holdStarted = transaction.get(document).getTimestamp(MessageFields.FOUND_AT)?.toInstant()
+                val holdRunning = holdStarted != null && Instant.now().isBefore(holdStarted.plus(HOLD_DAYS, ChronoUnit.DAYS))
+                val changes: Map<String, Any?> = if (holdRunning) {
+                    mapOf(MessageFields.STATUS to MessageStatus.Found.value, MessageFields.REPORT_COUNT to 0)
+                } else {
+                    mapOf(
+                        MessageFields.STATUS to MessageStatus.Afloat.value,
+                        MessageFields.FOUND_AT to null,
+                        MessageFields.REPORT_COUNT to 0,
+                    )
+                }
+                transaction.update(document, changes)
+            }
+        )
     }
 
     private fun mapMessage(document: DocumentSnapshot): MessageEntity? {

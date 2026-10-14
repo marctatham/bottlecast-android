@@ -13,6 +13,7 @@ import com.bottlecast.app.feature.discover.domain.UncorkEffect
 import com.bottlecast.app.feature.discover.domain.UncorkMachine
 import com.bottlecast.app.feature.discover.domain.UncorkMethod
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
@@ -102,8 +103,17 @@ class DiscoverViewModel @Inject constructor(
                 }
             }
         }
-        // the Shore has usually picked it already, and then this costs nothing
-        viewModelScope.launch(exceptionHandler) { seaRepository.prefetchCandidate() }
+        // The Shore has usually picked it already, and then this costs nothing. A look that fails isn't
+        // the find failing: the pop looks again for itself.
+        viewModelScope.launch {
+            try {
+                seaRepository.prefetchCandidate()
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: Exception) {
+                Timber.w(exception, "Couldn't look at the sea ahead of the pop")
+            }
+        }
         viewModelScope.launch {
             connectivityMonitor.isOnline.collect { online -> update { it.copy(online = online) } }
         }
@@ -117,6 +127,9 @@ class DiscoverViewModel @Inject constructor(
     }
 
     fun onBottleReleased() = apply(machine.release(now()))
+
+    /** The press ended off the bottle, or a scroll took it: the ring drains, and it's no tap. */
+    fun onBottleCancelled() = apply(machine.cancel(now()))
 
     /** Moves a hold on by a frame; the screen calls it each frame while the ring is moving. */
     fun onFrame() = apply(machine.frame(now()))
@@ -160,7 +173,7 @@ class DiscoverViewModel @Inject constructor(
             finding = false
             update { current ->
                 when (outcome) {
-                    is FindResult.Found -> current.copy(pop = PopPhase.Revealed(outcome.message.id))
+                    is FindResult.Found -> current.copy(pop = PopPhase.Revealed(outcome.message.id), outcome = null)
                     is FindResult.AlreadyFound -> current.copy(outcome = DiscoverUiState.AlreadyFound)
                     FindResult.SeaCalm -> current.copy(outcome = DiscoverUiState.SeaCalm)
                     FindResult.Offline -> current.copy(outcome = DiscoverUiState.Offline)

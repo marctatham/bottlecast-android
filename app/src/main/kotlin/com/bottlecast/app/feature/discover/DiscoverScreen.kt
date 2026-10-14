@@ -224,6 +224,7 @@ fun DiscoverScreen(
         },
         onBottlePressed = viewModel::onBottlePressed,
         onBottleReleased = viewModel::onBottleReleased,
+        onBottleCancelled = viewModel::onBottleCancelled,
         onUncorkHandler = viewModel::onUncork,
         onTryAgainHandler = viewModel::onTryAgain,
         onCastHandler = onCastHandler,
@@ -262,6 +263,7 @@ internal fun DiscoverScreen(
     onHelpHandler: () -> Unit,
     onBottlePressed: () -> Unit,
     onBottleReleased: () -> Unit,
+    onBottleCancelled: () -> Unit,
     onUncorkHandler: (UncorkMethod) -> Unit,
     onTryAgainHandler: () -> Unit,
     onCastHandler: () -> Unit,
@@ -282,6 +284,7 @@ internal fun DiscoverScreen(
             onHelpHandler = onHelpHandler,
             onBottlePressed = onBottlePressed,
             onBottleReleased = onBottleReleased,
+            onBottleCancelled = onBottleCancelled,
             onUncorkHandler = onUncorkHandler,
             modifier = modifier,
             windowInsets = windowInsets,
@@ -339,6 +342,7 @@ private fun BottleOnTheShore(
     onHelpHandler: () -> Unit,
     onBottlePressed: () -> Unit,
     onBottleReleased: () -> Unit,
+    onBottleCancelled: () -> Unit,
     onUncorkHandler: (UncorkMethod) -> Unit,
     modifier: Modifier,
     windowInsets: WindowInsets,
@@ -389,6 +393,7 @@ private fun BottleOnTheShore(
                     waveSpeed = waveSpeed,
                     onPressed = onBottlePressed,
                     onReleased = onBottleReleased,
+                    onCancelled = onBottleCancelled,
                     onActivate = { onUncorkHandler(UncorkMethod.Accessibility) },
                     modifier = Modifier.padding(vertical = spacing.m),
                 )
@@ -532,6 +537,8 @@ private fun EdgeState(
             actionIcon = actionIcon,
             note = note?.let { stringResource(it) },
             onAction = onAction,
+            // each takes the bottle's place, often after the pop, so TalkBack says what happened
+            announce = true,
             illustration = illustration,
         )
         Spacer(modifier = Modifier.height(BottlingTheme.spacing.xxl))
@@ -562,6 +569,7 @@ private fun DiscoverScreenPreview() = BottlingPreview {
         onHelpHandler = {},
         onBottlePressed = {},
         onBottleReleased = {},
+        onBottleCancelled = {},
         onUncorkHandler = {},
         onTryAgainHandler = {},
         onCastHandler = {},

@@ -54,6 +54,7 @@ class MessageDataModelMapperTest {
             reportCount = 1,
             findCount = 2,
             foundAt = found,
+            rand = 0.42,
         )
         Assert.assertEquals(expected, result)
     }

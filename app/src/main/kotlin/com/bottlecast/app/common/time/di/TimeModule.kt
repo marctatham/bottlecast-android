@@ -1,12 +1,11 @@
 package com.bottlecast.app.common.time.di
 
+import com.bottlecast.app.common.time.SystemZoneClock
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import java.time.Clock
-import java.time.Instant
-import java.time.ZoneId
 import kotlin.time.TimeSource
 
 @Module
@@ -20,16 +19,4 @@ object TimeModule {
     /** A monotonic clock, for durations such as how long the bottle has been held. */
     @Provides
     fun providesTimeSource(): TimeSource = TimeSource.Monotonic
-}
-
-/**
- * The system clock in whatever time zone the phone is in now. `Clock.systemDefaultZone()` keeps the zone
- * it was created in, so the tide would miss a time-zone change while the app runs.
- */
-object SystemZoneClock : Clock() {
-    override fun getZone(): ZoneId = ZoneId.systemDefault()
-
-    override fun withZone(zone: ZoneId): Clock = system(zone)
-
-    override fun instant(): Instant = Instant.now()
 }

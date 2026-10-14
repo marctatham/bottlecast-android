@@ -7,20 +7,32 @@ import kotlinx.coroutines.flow.Flow
 import java.time.Instant
 import java.time.LocalDate
 
-/** How many drifting bottles one look at the sea reads, so a short page means the range ran out. */
+/** How many drifting bottles one page of the sea holds, so a short page means the range ran out. */
 const val SEA_BATCH_SIZE = 10
 
-/** Firestore reads and writes for the sea. The blocking calls run on the caller's dispatcher. */
+/** How many drifted-back holds one page holds. */
+const val EXPIRED_BATCH_SIZE = 5
+
+/**
+ * Firestore reads and writes for the sea. The blocking calls run on the caller's dispatcher.
+ *
+ * A look at the sea reads from the server, never the cache: offline, a cached page can be empty while
+ * bottles drift, and that would read as a calm sea.
+ */
 interface ISeaDataSource {
 
-    /** Drifting bottles with fewer than 3 reports, from [fromRand] up, or below it when [wrap] is set. */
-    fun querySea(fromRand: Double, wrap: Boolean): List<MessageEntity>
+    /**
+     * A page of drifting bottles with fewer than 3 reports and a rand in [from, until), in rand order,
+     * or only those past [after] when reading on from the page before.
+     */
+    fun querySea(from: Double, until: Double, after: Double? = null): List<MessageEntity>
 
-    /** Found bottles whose hold began before [before], so they've drifted back. */
-    fun queryExpiredHolds(before: Instant): List<MessageEntity>
+    /** A page of found bottles whose hold began before [before], so they've drifted back, oldest first. */
+    fun queryExpiredHolds(before: Instant, after: Instant? = null): List<MessageEntity>
 
     fun hasFound(messageId: String, uid: String): Boolean
 
+    /** The writers this account blocked, including any block still waiting to reach the server. */
     fun blockedWriters(uid: String): Set<String>
 
     /** One transaction: holds the bottle and creates the finder's find and today's daily record. */

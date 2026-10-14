@@ -168,6 +168,29 @@ class DiscoverViewModelTest {
     }
 
     @Test
+    fun `a look at the sea that fails while the find waits doesn't hide the find`() = runTest {
+        // given
+        coEvery { seaRepository.prefetchCandidate() } coAnswers {
+            delay(100)
+            throw IllegalStateException("unavailable")
+        }
+        coEvery { seaRepository.findTodaysBottle() } coAnswers {
+            delay(200)
+            FindResult.Found(bottle)
+        }
+        val viewModel = discover()
+
+        // when
+        viewModel.onUncork(UncorkMethod.Button)
+        advanceTimeBy(300)
+        runCurrent()
+
+        // then
+        Assert.assertEquals(ready(pop = PopPhase.Revealed("abc")), viewModel.state.value)
+        close(viewModel)
+    }
+
+    @Test
     fun `a slow find leaves the scroll half out, then the bottle slips back, and trying again finds it`() = runTest {
         // given
         coEvery { seaRepository.findTodaysBottle() } coAnswers {

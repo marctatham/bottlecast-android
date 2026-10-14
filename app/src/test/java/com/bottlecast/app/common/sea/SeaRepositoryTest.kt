@@ -120,7 +120,7 @@ class SeaRepositoryTest {
     }
 
     @Test
-    fun `a new day, or another account, picks again`() = runTest {
+    fun `a new day, or another account, picks again with a fresh look at the blocked writers`() = runTest {
         // given
         source.drifting = listOf(bottle("first"))
         val repository = repository()
@@ -137,7 +137,102 @@ class SeaRepositoryTest {
         // then
         Assert.assertEquals("tomorrow", (nextDay as CandidateState.Available).message.id)
         Assert.assertEquals("theirs", (otherAccount as CandidateState.Available).message.id)
-        Assert.assertEquals(2, source.blockedReads)
+        Assert.assertEquals(3, source.blockedReads)
+    }
+
+    @Test
+    fun `a writer blocked today is left out of tomorrow's look`() = runTest {
+        // given
+        source.drifting = listOf(bottle("first"))
+        val repository = repository()
+        repository.prefetchCandidate()
+
+        // when
+        source.blocked = setOf("troll")
+        source.drifting = listOf(bottle("theirs", writer = "troll"), bottle("ok"))
+        clock.advance(Duration.ofDays(1))
+        val state = repository.prefetchCandidate()
+
+        // then
+        Assert.assertEquals("ok", (state as CandidateState.Available).message.id)
+    }
+
+    @Test
+    fun `a page of bottles found before reads on to the next`() = runTest {
+        // given
+        source.drifting = (1..12).map { bottle("b$it", rand = it / 100.0) }
+        (1..10).forEach { source.foundBefore += "b$it" to "finn" }
+        val repository = repository()
+
+        // when
+        val state = repository.prefetchCandidate()
+
+        // then
+        Assert.assertEquals("b11", (state as CandidateState.Available).message.id)
+    }
+
+    @Test
+    fun `nothing this account could find above the random point, so it looks round from the bottom`() = runTest {
+        // given
+        source.drifting = listOf(bottle("above", rand = 0.9), bottle("below", rand = 0.2))
+        source.foundBefore += "above" to "finn"
+        val repository = repository(fromRand = 0.5)
+
+        // when
+        val state = repository.prefetchCandidate()
+
+        // then
+        Assert.assertEquals("below", (state as CandidateState.Available).message.id)
+    }
+
+    @Test
+    fun `when everything drifting was found before, a hold that has ended is found`() = runTest {
+        // given
+        source.drifting = listOf(bottle("seen"), bottle("also seen"))
+        source.foundBefore += "seen" to "finn"
+        source.foundBefore += "also seen" to "finn"
+        source.expired = listOf(bottle("drifted back", status = MessageStatus.Found, foundAt = clock.instant().minus(Duration.ofDays(8))))
+        val repository = repository()
+
+        // when
+        val state = repository.prefetchCandidate()
+
+        // then
+        Assert.assertEquals("drifted back", (state as CandidateState.Available).message.id)
+    }
+
+    @Test
+    fun `a bottle found before is remembered, so a later look doesn't read it again`() = runTest {
+        // given
+        source.drifting = listOf(bottle("seen"))
+        source.foundBefore += "seen" to "finn"
+        val repository = repository()
+        repository.prefetchCandidate()
+        val reads = source.hasFoundReads
+
+        // when
+        clock.advance(Duration.ofMinutes(10))
+        val state = repository.prefetchCandidate()
+
+        // then
+        Assert.assertEquals(CandidateState.SeaCalm, state)
+        Assert.assertEquals(reads, source.hasFoundReads)
+    }
+
+    @Test
+    fun `yesterday's candidate is forgotten when today's look begins, even if it fails`() = runTest {
+        // given
+        val repository = repository()
+        repository.prefetchCandidate()
+        source.unreachable = true
+
+        // when
+        clock.advance(Duration.ofDays(1))
+        val failure = runCatching { repository.prefetchCandidate() }.exceptionOrNull()
+
+        // then
+        Assert.assertTrue(failure is SeaUnavailableException)
+        Assert.assertEquals(CandidateState.Unknown, repository.candidate.value)
     }
 
     @Test
@@ -169,9 +264,9 @@ class SeaRepositoryTest {
         val result = repository.findTodaysBottle()
 
         // then
-        Assert.assertEquals(FindResult.Found(bottle("today")), result)
+        Assert.assertEquals(FindResult.Found(held(bottle("today"))), result)
         Assert.assertEquals(listOf("today"), source.findAttempts)
-        Assert.assertEquals(bottle("today"), repository.cachedMessage("today"))
+        Assert.assertEquals(held(bottle("today")), repository.cachedMessage("today"))
     }
 
     @Test
@@ -186,7 +281,24 @@ class SeaRepositoryTest {
         val result = repository.findTodaysBottle()
 
         // then
-        Assert.assertEquals(FindResult.Found(bottle("next")), result)
+        Assert.assertEquals(FindResult.Found(held(bottle("next"))), result)
+        Assert.assertEquals(listOf("taken", "next"), source.findAttempts)
+    }
+
+    @Test
+    fun `bottles found before aren't kept to fall back on`() = runTest {
+        // given
+        source.drifting = listOf(bottle("taken"), bottle("seen"), bottle("also seen"), bottle("next"))
+        source.foundBefore += "seen" to "finn"
+        source.foundBefore += "also seen" to "finn"
+        source.findOutcomes["taken"] = { FindOutcome.Taken }
+        val repository = repository()
+
+        // when
+        val result = repository.findTodaysBottle()
+
+        // then
+        Assert.assertEquals(FindResult.Found(held(bottle("next"))), result)
         Assert.assertEquals(listOf("taken", "next"), source.findAttempts)
     }
 
@@ -201,11 +313,12 @@ class SeaRepositoryTest {
         val result = repository.findTodaysBottle()
 
         // then
-        Assert.assertEquals(FindResult.Found(bottle("next")), result)
+        Assert.assertEquals(FindResult.Found(held(bottle("next"))), result)
     }
 
+    // an earlier attempt went through though its answer was lost
     @Test
-    fun `when today already has a find of the same bottle, it's found again`() = runTest {
+    fun `when today already has a find of the same bottle, it's found again, held from now`() = runTest {
         // given
         source.drifting = listOf(bottle("today"))
         source.findOutcomes["today"] = { FindOutcome.AlreadyFound("today") }
@@ -215,7 +328,8 @@ class SeaRepositoryTest {
         val result = repository.findTodaysBottle()
 
         // then
-        Assert.assertEquals(FindResult.Found(bottle("today")), result)
+        Assert.assertEquals(FindResult.Found(held(bottle("today"))), result)
+        Assert.assertEquals(held(bottle("today")), repository.cachedMessage("today"))
     }
 
     @Test
@@ -278,6 +392,24 @@ class SeaRepositoryTest {
     }
 
     @Test
+    fun `a bottle that can't be read any more is gone from today's find and from memory`() = runTest {
+        // given
+        source.drifting = listOf(bottle("today"))
+        val repository = repository()
+        repository.findTodaysBottle()
+        source.daily.value = "today"
+        source.findStatus.value = FindStatus.Held
+
+        // when
+        source.message.value = null
+        val today = repository.observeToday(LocalDate.of(2026, 10, 13)).first()
+
+        // then
+        Assert.assertNull(today?.message)
+        Assert.assertNull(repository.cachedMessage("today"))
+    }
+
+    @Test
     fun `there's no find while nobody is signed in`() = runTest {
         // given
         user.value = UserEntity.UnauthenticatedUser
@@ -306,8 +438,18 @@ class SeaRepositoryTest {
         Assert.assertEquals(listOf(bottle("ok")), candidates)
     }
 
-    private fun TestScope.repository() =
-        SeaRepository(source, auth, connectivity, clock, Random(7), StandardTestDispatcher(testScheduler))
+    // fromRand is where the look at the sea starts; from 0 it reads every bottle upwards
+    private fun TestScope.repository(fromRand: Double = 0.0) =
+        SeaRepository(source, auth, connectivity, clock, fixedRandom(fromRand), StandardTestDispatcher(testScheduler))
+
+    private fun fixedRandom(value: Double) = object : Random() {
+        override fun nextBits(bitCount: Int): Int = 0
+        override fun nextDouble(): Double = value
+    }
+
+    // a bottle as its find leaves it
+    private fun held(bottle: MessageEntity) =
+        bottle.copy(status = MessageStatus.Found, findCount = bottle.findCount + 1, foundAt = clock.instant())
 
     private fun guest(uid: String) = UserEntity.AuthenticatedUser(AuthProviderType.Anonymous, "token", uid, isAdmin = false)
 
@@ -317,5 +459,14 @@ class SeaRepositoryTest {
         status: MessageStatus = MessageStatus.Afloat,
         foundAt: Instant? = null,
         reportCount: Int = 0,
-    ) = MessageEntity(id = id, message = "Message $id", userId = writer, status = status, foundAt = foundAt, reportCount = reportCount)
+        rand: Double = 0.5,
+    ) = MessageEntity(
+        id = id,
+        message = "Message $id",
+        userId = writer,
+        status = status,
+        foundAt = foundAt,
+        reportCount = reportCount,
+        rand = rand,
+    )
 }

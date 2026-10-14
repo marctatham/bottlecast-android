@@ -118,10 +118,13 @@ fun RevealScreen(
             sheenPlayed = true
         }
     }
-    // a fresh find's dome settles from Discover's expanded edge down to Reveal's compact one
-    val domeSettle = remember { Animatable(if (fresh) 1f else 0f) }
+    // A fresh find's dome settles from Discover's expanded edge down to Reveal's compact one, once:
+    // a rotation or theme change while reading doesn't drop it back to Discover's.
+    var domeSettled by rememberSaveable { mutableStateOf(!fresh) }
+    val domeSettle = remember { Animatable(if (domeSettled) 0f else 1f) }
     LaunchedEffect(Unit) {
         domeSettle.animateTo(0f, tween(BottlingMotion.SCREEN_MILLIS, easing = BottlingMotion.EmphasizedDecelerate))
+        domeSettled = true
     }
     val screenHeight = screenHeight()
 
@@ -130,13 +133,8 @@ fun RevealScreen(
         sheen = { if (!sheenPlayed && sheen.isRunning) sheen.value else null },
         domeOffset = { screenHeight * ((DomeEdge.Expanded.fraction - RevealDimens.dome.fraction) * domeSettle.value) },
         onBackHandler = onBackHandler,
-        onReportHandler = { reason, blockWriter ->
-            viewModel.onReport(reason, blockWriter, undoWindow)
-            tracker.trackEvent(
-                AnalyticsEvent.BottleReported,
-                mapOf(AnalyticsEvent.PARAM_BLOCKED to blockWriter.toString()),
-            )
-        },
+        // a throw back or report counts once it's written (SeaActions), so an undone one doesn't
+        onReportHandler = { reason, blockWriter -> viewModel.onReport(reason, blockWriter, undoWindow) },
         onUndoReportHandler = viewModel::onUndoReport,
         onShareHandler = dropUnlessResumed {
             showing?.let { shareBottle(context, it.bottle.text) }
@@ -144,7 +142,6 @@ fun RevealScreen(
         },
         onThrowBackHandler = dropUnlessResumed {
             viewModel.onThrowBack(undoWindow)
-            tracker.trackEvent(AnalyticsEvent.BottleThrownBack)
             onLeaveHandler()
         },
         onBackToShoreHandler = dropUnlessResumed { onLeaveHandler() },
@@ -182,9 +179,8 @@ internal fun RevealScreen(
     modifier: Modifier = Modifier,
     windowInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     contentPadding: PaddingValues = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom).asPaddingValues(),
-    showReportDialog: Boolean = false,
 ) {
-    var reporting by rememberSaveable { mutableStateOf(showReportDialog) }
+    var reporting by rememberSaveable { mutableStateOf(false) }
     val showing = uiState as? RevealUiState.Showing
     val reported = showing != null && showing.report != RevealReport.None
     val spacing = BottlingTheme.spacing
@@ -220,6 +216,7 @@ internal fun RevealScreen(
                 actionLabel = stringResource(R.string.try_again),
                 actionIcon = R.drawable.ic_symbol_refresh,
                 onAction = onRetryHandler,
+                announce = true,
                 // below the arc: the compact dome is too short to hold it
                 modifier = Modifier.padding(top = (toArc - BottlingTheme.sizes.topBarHeight).coerceAtLeast(0.dp) + spacing.xl),
             )
@@ -235,7 +232,7 @@ internal fun RevealScreen(
                     AnimatedContent(
                         targetState = uiState.report,
                         transitionSpec = {
-                            fadeIn(tween(BottlingMotion.COMPONENT_MILLIS)) togetherWith fadeOut(tween(BottlingMotion.COMPONENT_MILLIS))
+                            fadeIn(BottlingMotion.component()) togetherWith fadeOut(BottlingMotion.component())
                         },
                         contentKey = { it::class },
                         label = "report",

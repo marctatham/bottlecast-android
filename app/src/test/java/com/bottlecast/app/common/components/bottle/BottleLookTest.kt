@@ -33,13 +33,20 @@ class BottleLookTest {
 
     @Test
     fun `the same id always gives the same bottle`() {
-        Assert.assertEquals(bottleLookFor("seededBottle00000001"), bottleLookFor("seededBottle00000001"))
+        // when
+        val first = bottleLookFor("seededBottle00000001")
+        val again = bottleLookFor("seededBottle00000001")
+
+        // then
+        Assert.assertEquals(first, again)
     }
 
     @Test
     fun `the hue jitter stays within six degrees either way`() {
+        // when
         val jitters = (0 until 500).map { bottleLookFor("bottle-$it").hueJitter }
 
+        // then
         Assert.assertTrue(jitters.all { it in -6f..6f })
         Assert.assertTrue(jitters.any { it < -5f } && jitters.any { it > 5f })
     }
@@ -65,8 +72,13 @@ class BottleLookTest {
 
     @Test
     fun `a grey has no hue to turn`() {
+        // given
         val grey = Color(0xFF808080)
 
-        Assert.assertEquals(grey, grey.rotateHue(6f))
+        // when
+        val turned = grey.rotateHue(6f)
+
+        // then
+        Assert.assertEquals(grey, turned)
     }
 }

@@ -25,7 +25,6 @@ import com.bottlecast.app.fakes.FakeSeaRepository
 import com.bottlecast.app.fakes.FakeTracker
 import dagger.hilt.android.testing.HiltAndroidRule
 import dagger.hilt.android.testing.HiltAndroidTest
-import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Rule
@@ -196,9 +195,8 @@ class NavigationTest {
     @Test
     fun alreadyFoundElsewhere_returnsToTheShore_withTheNextTide() {
         openDiscover()
-        // today's bottle was found on another phone in the meantime
-        runBlocking { seaRepository.findTodaysBottle() }
-        seaRepository.alreadyFoundToday = FakeSeaRepository.SEEDED_ID
+        // today's bottle was found on another phone in the meantime, and it was another bottle
+        seaRepository.foundElsewhere("foundOnTheOtherPhone")
 
         uncorkWithThePill()
 
@@ -207,6 +205,10 @@ class NavigationTest {
             composeTestRule.onAllNodesWithText(notice, substring = true).fetchSemanticsNodes().isNotEmpty()
         }
         composeTestRule.onNodeWithText(string(R.string.shore_found_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(
+            composeTestRule.activity.getString(R.string.shore_find_excerpt, FakeSeaRepository.ELSEWHERE_MESSAGE),
+        ).assertIsDisplayed()
+        Assert.assertTrue(seaRepository.finds.isEmpty())
     }
 
     @Test

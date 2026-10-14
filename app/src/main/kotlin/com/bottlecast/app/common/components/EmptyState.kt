@@ -12,7 +12,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
@@ -24,6 +26,9 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
  * The template for edge, empty and error states (spec §3.18): an optional 160dp spot
  * illustration, the title, up to three lines of body, then one pill, and an optional reassuring
  * [note] under it. Copy never blames the user and always says what to do next.
+ *
+ * @param announce when the state replaces a screen the user was on, such as an error after an action:
+ *   TalkBack reads its title and body as it appears (spec §4).
  */
 @Composable
 fun EmptyState(
@@ -34,6 +39,7 @@ fun EmptyState(
     modifier: Modifier = Modifier,
     @DrawableRes actionIcon: Int? = null,
     note: String? = null,
+    announce: Boolean = false,
     illustration: (@Composable () -> Unit)? = null,
 ) {
     val spacing = BottlingTheme.spacing
@@ -54,7 +60,10 @@ fun EmptyState(
             style = MaterialTheme.typography.titleLarge.copy(lineBreak = LineBreak.Heading),
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center,
-            modifier = Modifier.semantics { heading() },
+            modifier = Modifier.semantics {
+                heading()
+                if (announce) liveRegion = LiveRegionMode.Polite
+            },
         )
         Spacer(modifier = Modifier.height(spacing.xs))
         Text(
@@ -62,6 +71,7 @@ fun EmptyState(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
+            modifier = if (announce) Modifier.semantics { liveRegion = LiveRegionMode.Polite } else Modifier,
         )
         Spacer(modifier = Modifier.height(spacing.l))
         BottlingButton(text = actionLabel, leadingIcon = actionIcon, onTapHandler = onAction)

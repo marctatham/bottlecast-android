@@ -29,14 +29,28 @@ class ViewMessagesScreenshotTest {
     @Test
     fun listDawn() = captureList(darkTheme = false)
 
+    // nothing reported is waiting
+    @Test
+    fun emptyNight() = captureList(darkTheme = true, messages = emptyList())
+
+    @Test
+    fun emptyDawn() = captureList(darkTheme = false, messages = emptyList())
+
+    // a pull, remove or restore didn't go through
+    @Test
+    fun actionFailedNight() = captureList(darkTheme = true, actionFailed = true)
+
+    @Test
+    fun actionFailedDawn() = captureList(darkTheme = false, actionFailed = true)
+
     @Test
     fun errorNight() = captureError(darkTheme = true)
 
     @Test
     fun errorDawn() = captureError(darkTheme = false)
 
-    private fun captureList(darkTheme: Boolean) {
-        composeTestRule.captureThemed(darkTheme = darkTheme) { MessageListView(MESSAGES) }
+    private fun captureList(darkTheme: Boolean, messages: List<MessageEntity> = MESSAGES, actionFailed: Boolean = false) {
+        composeTestRule.captureThemed(darkTheme = darkTheme) { MessageListView(messages, actionFailed = actionFailed) }
     }
 
     private fun captureError(darkTheme: Boolean) {

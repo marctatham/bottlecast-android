@@ -17,6 +17,7 @@ import com.bottlecast.app.common.components.MoonDisc
 import com.bottlecast.app.common.components.SceneryStar
 import com.bottlecast.app.common.components.drawStars
 import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.feature.reveal.RevealDimens
 
 /** Reveal's scenery on the compact dome (Reveal board): three stars and the moon. Decorative. */
 @Composable
@@ -33,8 +34,8 @@ internal fun RevealScenery(insets: PaddingValues, modifier: Modifier = Modifier)
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(
-                    top = insets.calculateTopPadding() + MOON_TOP,
-                    end = insets.calculateEndPadding(layoutDirection) + MOON_END,
+                    top = insets.calculateTopPadding() + RevealDimens.moonTop,
+                    end = insets.calculateEndPadding(layoutDirection) + RevealDimens.moonEnd,
                 ),
         )
     }
@@ -48,5 +49,3 @@ private val Stars = listOf(
 )
 
 // the board's moon sits beside the flag, 18dp under the status bar
-private val MOON_TOP = 18.dp
-private val MOON_END = 78.dp

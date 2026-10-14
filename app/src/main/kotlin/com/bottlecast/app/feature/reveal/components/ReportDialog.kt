@@ -35,7 +35,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import com.bottlecast.app.R
 import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.components.BottlingButtonSize
@@ -44,6 +43,7 @@ import com.bottlecast.app.common.components.BottlingDialog
 import com.bottlecast.app.common.components.BottlingTextButton
 import com.bottlecast.app.common.sea.domain.ReportReason
 import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.feature.reveal.RevealDimens
 
 /**
  * Report this bottle? (spec §3.19): an optional reason, none chosen to start with, and "Also block
@@ -197,6 +197,6 @@ private fun ReportReason.label(): Int = when (this) {
     ReportReason.Other -> R.string.report_reason_other
 }
 
-// A radio button or checkbox without its own click handler is a 24dp slot, so the labels start 40dp
-// in, as on the board; the block helper lines up under its label.
-private val CHOICE_INDENT = 24.dp + BottlingTheme.spacing.m
+// The labels start past the control's slot and the gap after it, 40dp in, as on the board; the
+// block helper lines up under its label.
+private val CHOICE_INDENT = RevealDimens.choiceControl + BottlingTheme.spacing.m

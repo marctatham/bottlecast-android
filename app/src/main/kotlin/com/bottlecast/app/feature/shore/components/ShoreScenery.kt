@@ -29,13 +29,19 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
 import com.bottlecast.app.feature.shore.ShoreDimens
 
 /**
- * Which of the Shore's two scenes to draw (spec §3.3).
+ * Which of the Shore's scenes to draw (spec §3.3).
  *
  * @param glowCenter where the dome's moonlight is brightest.
  */
 internal enum class ShoreScene(val glowCenter: Offset) {
     /** State A: the moon sits top-end, with the moonlight behind it, and glints drift on the sea. */
     BottleWaiting(DomeGlowTopEnd),
+
+    /**
+     * State A on a calm sea: the illustration brings its own moon, centred, so the scenery leaves the
+     * moon out and the moonlight sits behind the illustration's (Edge-SeaCalm board). Glints still drift.
+     */
+    SeaCalm(Offset(0.5f, 0.58f)),
 
     /**
      * State B: the moon moves into the tide ring, so the scenery leaves it out, and the moonlight
@@ -51,7 +57,6 @@ internal enum class ShoreScene(val glowCenter: Offset) {
  * @param insets the status bar and cutouts; the boards place the moon from below the status bar.
  * @param largeText leaves the glints out, since they'd cross the stats once large text pushes them
  *   up to the arc.
- * @param moon false when the hero brings a moon of its own.
  */
 @Composable
 internal fun ShoreScenery(
@@ -60,7 +65,6 @@ internal fun ShoreScenery(
     insets: PaddingValues,
     largeText: Boolean,
     modifier: Modifier = Modifier,
-    moon: Boolean = true,
 ) {
     val colors = BottlingTheme.colors
     val layoutDirection = LocalLayoutDirection.current
@@ -70,13 +74,13 @@ internal fun ShoreScenery(
             .clearAndSetSemantics {}
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            drawStars(if (scene == ShoreScene.BottleWaiting) WaitingStars else FoundStars, colors)
-            if (scene == ShoreScene.BottleWaiting && !largeText) {
+            drawStars(if (scene == ShoreScene.FoundToday) FoundStars else WaitingStars, colors)
+            if (scene != ShoreScene.FoundToday && !largeText) {
                 val arcY = size.height * DomeEdge.Full.fraction
                 Glints.forEach { glint -> drawGlint(glint, arcY, tide.glintPhase(), colors.sceneryAccent) }
             }
         }
-        if (scene == ShoreScene.BottleWaiting && moon) {
+        if (scene == ShoreScene.BottleWaiting) {
             MoonDisc(
                 modifier = Modifier
                     .align(Alignment.TopEnd)

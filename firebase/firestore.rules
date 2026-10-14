@@ -148,14 +148,25 @@ service cloud.firestore {
         && getAfter(reportDoc(pairId(messageId))).data.createdAt == request.time;
     }
 
-    // Moderation: pull a bottle (under_review), remove it, or restore it to the sea.
+    // A finder's hold that hasn't run out, whatever the bottle's status: pulling a bottle keeps its
+    // foundAt, so the finder's hold carries on if it's restored.
+    function holdRunning(m) {
+      return m.foundAt != null && request.time < holdEnds(m);
+    }
+
+    // Moderation: pull a bottle (under_review) or remove it, keeping its hold time, or restore it.
+    // Restoring puts it back in the sea, or, while a finder's hold runs, back to that finder with its
+    // reports cleared, so it never has two holders.
     function isModeration() {
+      let before = existing();
       let after = incoming();
       return isAdmin()
         && changedKeys().hasOnly(['status', 'reportCount', 'foundAt'])
-        && after.status in ['afloat', 'under_review', 'removed']
+        && after.status in ['afloat', 'found', 'under_review', 'removed']
         && after.reportCount is int && after.reportCount >= 0
-        && (after.status != 'afloat' || after.foundAt == null);
+        && ((after.status == 'afloat' && after.foundAt == null && !holdRunning(before))
+            || (after.status != 'afloat' && after.foundAt == before.foundAt))
+        && (after.status != 'found' || holdRunning(before));
     }
 
     match /messages/{messageId} {
@@ -181,7 +192,7 @@ service cloud.firestore {
       return hasExactly(['messageId', 'finderUid', 'foundAt', 'dailyId', 'status'])
         && f.finderUid == me()
         && f.messageId is string
-        && findId == f.messageId + '_' + me()
+        && findId == pairId(f.messageId)
         && f.status == 'held'
         && f.foundAt == request.time
         && f.dailyId is string
@@ -237,7 +248,7 @@ service cloud.firestore {
         && d.zone is string && d.zone.size() > 0 && d.zone.size() <= 64
         && d.messageId is string
         && d.foundAt == request.time
-        && getAfter(findDoc(d.messageId + '_' + me())).data.foundAt == request.time;
+        && getAfter(findDoc(pairId(d.messageId))).data.foundAt == request.time;
     }
 
     match /daily/{dailyId} {
@@ -254,7 +265,7 @@ service cloud.firestore {
       return hasExactly(['messageId', 'reporterUid', 'reason', 'blockedWriter', 'createdAt'])
         && r.reporterUid == me()
         && r.messageId is string
-        && reportId == r.messageId + '_' + me()
+        && reportId == pairId(r.messageId)
         && (r.reason == null || r.reason in ['hurtful', 'sexual', 'personal_info', 'spam', 'other'])
         && r.blockedWriter is bool
         && r.createdAt == request.time

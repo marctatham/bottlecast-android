@@ -3,7 +3,7 @@ import {
   Timestamp, collection, deleteDoc, doc, getDocs, orderBy, query, updateDoc, where,
 } from 'firebase/firestore';
 import {
-  HOUR, M1, admin, google, seedBottle, seedHold, withToken,
+  DAY, HOUR, M1, M2, admin, google, seedBottle, seedHold, withToken,
 } from './support.mjs';
 
 describe('moderation', () => {
@@ -28,9 +28,36 @@ describe('moderation', () => {
     await assertSucceeds(deleteDoc(doc(db, 'messages', M1)));
   });
 
-  it('refuses restoring a bottle that still has a hold time', async () => {
+  it('refuses putting a bottle back in the sea while a finder holds it', async () => {
+    await seedHold(M1, 'finn', HOUR, { reportCount: 1 });
+    const ref = doc(admin(), 'messages', M1);
+    await assertFails(updateDoc(ref, { status: 'afloat' }));
+    await assertFails(updateDoc(ref, { status: 'afloat', foundAt: null, reportCount: 0 }));
+  });
+
+  it('restores a held bottle to its finder, with its reports cleared', async () => {
+    await seedHold(M1, 'finn', HOUR, { reportCount: 1 });
+    await assertSucceeds(updateDoc(doc(admin(), 'messages', M1), { status: 'found', reportCount: 0 }));
+  });
+
+  it('restores a pulled bottle to the finder whose hold still runs, and to the sea once it has ended', async () => {
+    const ref = doc(admin(), 'messages', M1);
+    await seedHold(M1, 'finn', HOUR, { reportCount: 1 });
+    await assertSucceeds(updateDoc(ref, { status: 'under_review' }));
+    await assertFails(updateDoc(ref, { status: 'afloat', foundAt: null, reportCount: 0 }));
+    await assertSucceeds(updateDoc(ref, { status: 'found', reportCount: 0 }));
+
+    await seedHold(M2, 'finn', 8 * DAY, { reportCount: 1 });
+    const ended = doc(admin(), 'messages', M2);
+    await assertSucceeds(updateDoc(ended, { status: 'under_review' }));
+    await assertFails(updateDoc(ended, { status: 'found', reportCount: 0 }));
+    await assertSucceeds(updateDoc(ended, { status: 'afloat', foundAt: null, reportCount: 0 }));
+  });
+
+  it('refuses changing a hold time while pulling or removing a bottle', async () => {
     await seedHold(M1, 'finn', HOUR);
-    await assertFails(updateDoc(doc(admin(), 'messages', M1), { status: 'afloat' }));
+    await assertFails(updateDoc(doc(admin(), 'messages', M1), { status: 'under_review', foundAt: Timestamp.now() }));
+    await assertFails(updateDoc(doc(admin(), 'messages', M1), { status: 'removed', foundAt: null }));
   });
 
   it('refuses a status that moderation does not use', async () => {

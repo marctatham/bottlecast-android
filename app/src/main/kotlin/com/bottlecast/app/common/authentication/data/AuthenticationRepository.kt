@@ -52,10 +52,24 @@ class AuthenticationRepository constructor(
             return
         }
 
+        // The account is known before its token is, and a token past its hour can't refresh offline.
+        // So the account is published at once, and its token and admin claim follow once they're read;
+        // otherwise a guest restored offline would look signed out, and its throw backs would be lost.
+        val known = (_user.value as? UserEntity.AuthenticatedUser)?.takeIf { it.userId == currentUser.uid }
+        _user.value = UserEntity.AuthenticatedUser(
+            providerType = providerTypeOf(currentUser),
+            jwtToken = known?.jwtToken.orEmpty(),
+            userId = currentUser.uid,
+            isAdmin = known?.isAdmin == true,
+        )
+        Firebase.crashlytics.setUserId(currentUser.uid)
+
         Timber.i("[onIdTokenChanged] - fetching user's current token")
         val taskGetIdToken: Task<GetTokenResult> = currentUser.getIdToken(false)
         taskGetIdToken
             .addOnSuccessListener { tokenResult ->
+                // the account may have changed while its token was read
+                if (auth.currentUser?.uid != currentUser.uid) return@addOnSuccessListener
                 val providerType = providerTypeOf(currentUser)
                 Timber.d("Signed in with $providerType")
                 _user.value = UserEntity.AuthenticatedUser(
@@ -64,7 +78,6 @@ class AuthenticationRepository constructor(
                     userId = currentUser.uid,
                     isAdmin = tokenResult.claims[CLAIM_ADMIN] == true,
                 )
-                Firebase.crashlytics.setUserId(currentUser.uid)
             }
             .addOnFailureListener { Timber.w(it, "[onIdTokenChanged] - couldn't read the user's token") }
     }
@@ -78,7 +91,13 @@ class AuthenticationRepository constructor(
             AuthProviderType.Anonymous
         }
 
+    // Under the same lock as a guest sign-in, so one starting in the background can't land after
+    // this and replace the Google account.
     override suspend fun firebaseAuthWithGoogle(idToken: String) = withContext(dispatcherNetwork) {
+        signInMutex.withLock { signInWithGoogle(idToken) }
+    }
+
+    private fun signInWithGoogle(idToken: String) {
         Timber.i("[authenticateWithGoogle] Authenticating into FirebaseUser's for user's Google Provided IdToken")
         val authCredential = GoogleAuthProvider.getCredential(idToken, null)
         val guest = firebaseAuth.currentUser?.takeIf { it.isAnonymous }

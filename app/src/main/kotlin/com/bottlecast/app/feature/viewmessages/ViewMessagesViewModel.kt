@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bottlecast.app.common.messages.domain.IMessageRepository
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.messages.domain.ModerationAction
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -44,9 +45,25 @@ class ViewMessagesViewModel @Inject constructor(
 
         viewModelScope.launch(exceptionHandler) {
             messageRepository.moderate(messageId, action)
-            _state.value = MessagesState.MessagesReceived(messageRepository.getReportedMessages())
+            // what changed is known, so the list is updated in place rather than read again, and a
+            // failure always means the bottle didn't change
+            _state.update { state ->
+                (state as? MessagesState.MessagesReceived)?.let { received ->
+                    received.copy(
+                        messageEntities = received.messageEntities.mapNotNull { if (it.id == messageId) it.moderated(action) else it },
+                        actionFailed = false,
+                    )
+                } ?: state
+            }
         }
     }
+}
+
+// A bottle as moderation leaves it, or null once it's no longer one to look at.
+private fun MessageEntity.moderated(action: ModerationAction): MessageEntity? = when (action) {
+    ModerationAction.Pull -> copy(status = MessageStatus.UnderReview)
+    ModerationAction.Remove -> copy(status = MessageStatus.Removed)
+    ModerationAction.Restore -> null
 }
 
 sealed class MessagesState {

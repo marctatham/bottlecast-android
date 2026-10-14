@@ -1,5 +1,7 @@
 package com.bottlecast.app.common.sea
 
+import com.bottlecast.app.common.analytics.AnalyticsEvent
+import com.bottlecast.app.common.analytics.ITracker
 import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
@@ -14,6 +16,7 @@ import com.bottlecast.app.common.sea.domain.SeaActionOutcome
 import com.bottlecast.app.testing.MutableClock
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -41,6 +44,7 @@ class SeaActionsTest {
 
     private val auth = mockk<IAuthenticationRepository> { every { this@mockk.user } returns this@SeaActionsTest.user }
     private val connectivity = mockk<IConnectivityMonitor> { every { isOnline } returns online }
+    private val tracker = mockk<ITracker>(relaxed = true)
 
     private val held = MessageEntity(
         id = "today", message = "Hello", userId = "writer",
@@ -92,6 +96,7 @@ class SeaActionsTest {
         // then
         Assert.assertTrue(source.throwBacks.isEmpty())
         Assert.assertNull(actions.pending.value)
+        verify(exactly = 0) { tracker.trackEvent(any(), any()) }
     }
 
     @Test
@@ -107,6 +112,7 @@ class SeaActionsTest {
         Assert.assertEquals(listOf("today" to ReportReason.Spam), source.reports)
         Assert.assertEquals(listOf("writer"), source.blocks)
         Assert.assertNull(actions.pending.value)
+        verify { tracker.trackEvent(AnalyticsEvent.BottleReported, mapOf(AnalyticsEvent.PARAM_BLOCKED to "true")) }
     }
 
     @Test
@@ -196,7 +202,7 @@ class SeaActionsTest {
         Assert.assertTrue(source.throwBacks.isEmpty())
     }
 
-    private fun TestScope.actions() = SeaActions(source, auth, connectivity, clock, backgroundScope)
+    private fun TestScope.actions() = SeaActions(source, auth, connectivity, clock, tracker, backgroundScope)
 
     private fun TestScope.collectOutcomes(actions: SeaActions): List<SeaActionOutcome> {
         val outcomes = mutableListOf<SeaActionOutcome>()

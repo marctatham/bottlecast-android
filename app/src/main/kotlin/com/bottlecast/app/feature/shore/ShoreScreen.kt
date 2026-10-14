@@ -7,12 +7,10 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.animation.core.tween
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.rememberCoroutineScope
 import com.bottlecast.app.common.components.illustrations.SeaCalmIllustration
 import com.bottlecast.app.common.ui.BottlingMotion
 import com.bottlecast.app.common.ui.rememberHaptics
@@ -77,7 +75,6 @@ import com.bottlecast.app.feature.shore.components.TodaysFindCard
 import com.bottlecast.app.feature.shore.domain.Tide
 import java.time.Duration
 import java.time.LocalTime
-import kotlinx.coroutines.launch
 
 /**
  * The Shore, the app's home (spec §3.3). State A: today's bottle is waiting. State B: it's been
@@ -122,12 +119,12 @@ fun ShoreScreen(
         }
     }
     val alreadyFound = found?.let { stringResource(R.string.shore_already_found, countdownText(it.tide.untilNextTide)) }
-    val noticeScope = rememberCoroutineScope()
+    // Marked shown only once it's been seen: a rotation, or leaving the Shore, while it's up shows it
+    // again next time rather than losing it.
     LaunchedEffect(alreadyFoundNotice, alreadyFound != null) {
         if (alreadyFoundNotice && alreadyFound != null) {
+            snackbarHostState.showSnackbar(alreadyFound)
             onNoticeShown()
-            // marking it shown restarts this effect, which mustn't take the snackbar with it
-            noticeScope.launch { snackbarHostState.showSnackbar(alreadyFound) }
         }
     }
     // at midnight the tide turns, with a tick (spec §3.3)
@@ -143,7 +140,7 @@ fun ShoreScreen(
             if (reducedMotion) {
                 EnterTransition.None togetherWith ExitTransition.None
             } else {
-                fadeIn(tween(BottlingMotion.SCREEN_MILLIS)) togetherWith fadeOut(tween(BottlingMotion.SCREEN_MILLIS))
+                fadeIn(BottlingMotion.screen()) togetherWith fadeOut(BottlingMotion.screen())
             }
         },
         contentKey = { it::class },
@@ -202,7 +199,11 @@ internal fun ShoreScreen(
 ) {
     val spacing = BottlingTheme.spacing
     val largeText = isLargeText()
-    val scene = if (uiState is ShoreUiState.FoundToday) ShoreScene.FoundToday else ShoreScene.BottleWaiting
+    val scene = when {
+        uiState is ShoreUiState.FoundToday -> ShoreScene.FoundToday
+        uiState is ShoreUiState.BottleWaiting && uiState.seaCalm -> ShoreScene.SeaCalm
+        else -> ShoreScene.BottleWaiting
+    }
 
     DomeScaffold(
         edge = DomeEdge.Full,
@@ -211,16 +212,7 @@ internal fun ShoreScreen(
         windowInsets = windowInsets,
         glowCenter = scene.glowCenter,
         edgeOffset = tide.edgeOffset,
-        scenery = { insets ->
-            ShoreScenery(
-                scene = scene,
-                tide = tide,
-                insets = insets,
-                largeText = largeText,
-                // the calm sea's illustration brings its own moon
-                moon = !(uiState is ShoreUiState.BottleWaiting && uiState.seaCalm),
-            )
-        },
+        scenery = { insets -> ShoreScenery(scene = scene, tide = tide, insets = insets, largeText = largeText) },
     ) { toArc ->
         // everything above the arc, sized so state A's text ends just above it and state B's card
         // straddles it

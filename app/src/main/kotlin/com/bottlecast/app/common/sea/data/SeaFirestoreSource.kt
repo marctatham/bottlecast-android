@@ -20,6 +20,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -28,9 +29,6 @@ import java.time.Instant
 import java.time.LocalDate
 import java.util.concurrent.ExecutionException
 import javax.inject.Inject
-
-// how many drifted-back holds to read when nothing is drifting
-private const val EXPIRED_BATCH = 5L
 
 // The report counts still in the sea. The rules only allow sea queries that filter on exactly these.
 private val COUNTS_IN_THE_SEA: List<Int> = (0 until REPORT_THRESHOLD).toList()
@@ -48,31 +46,32 @@ class SeaFirestoreSource @Inject constructor(
     private fun blockedWritersOf(uid: String) =
         firestore.collection(BlockedWriterFields.USERS).document(uid).collection(BlockedWriterFields.COLLECTION)
 
-    override fun querySea(fromRand: Double, wrap: Boolean): List<MessageEntity> {
+    override fun querySea(from: Double, until: Double, after: Double?): List<MessageEntity> {
         val drifting = messages
             .whereEqualTo(MessageFields.STATUS, MessageStatus.Afloat.value)
             .whereIn(MessageFields.REPORT_COUNT, COUNTS_IN_THE_SEA)
-        val ranged = if (wrap) {
-            drifting.whereLessThan(MessageFields.RAND, fromRand)
+            .whereLessThan(MessageFields.RAND, until)
+        val ranged = if (after != null) {
+            drifting.whereGreaterThan(MessageFields.RAND, after)
         } else {
-            drifting.whereGreaterThanOrEqualTo(MessageFields.RAND, fromRand)
+            drifting.whereGreaterThanOrEqualTo(MessageFields.RAND, from)
         }
         val query = ranged.orderBy(MessageFields.RAND).limit(SEA_BATCH_SIZE.toLong())
-        return await(query.get()).documents.mapNotNull { it.toMessage() }
+        return await(query.get(Source.SERVER)).documents.mapNotNull { it.toMessage() }
     }
 
-    override fun queryExpiredHolds(before: Instant): List<MessageEntity> {
-        val query = messages
+    override fun queryExpiredHolds(before: Instant, after: Instant?): List<MessageEntity> {
+        val expired = messages
             .whereEqualTo(MessageFields.STATUS, MessageStatus.Found.value)
             .whereIn(MessageFields.REPORT_COUNT, COUNTS_IN_THE_SEA)
             .whereLessThan(MessageFields.FOUND_AT, Timestamp(before))
-            .orderBy(MessageFields.FOUND_AT)
-            .limit(EXPIRED_BATCH)
-        return await(query.get()).documents.mapNotNull { it.toMessage() }
+        val ranged = if (after != null) expired.whereGreaterThan(MessageFields.FOUND_AT, Timestamp(after)) else expired
+        val query = ranged.orderBy(MessageFields.FOUND_AT).limit(EXPIRED_BATCH_SIZE.toLong())
+        return await(query.get(Source.SERVER)).documents.mapNotNull { it.toMessage() }
     }
 
     override fun hasFound(messageId: String, uid: String): Boolean =
-        await(finds.document(FindFields.id(messageId, uid)).get()).exists()
+        await(finds.document(FindFields.id(messageId, uid)).get(Source.SERVER)).exists()
 
     override fun blockedWriters(uid: String): Set<String> =
         await(blockedWritersOf(uid).get()).documents.map { it.id }.toSet()

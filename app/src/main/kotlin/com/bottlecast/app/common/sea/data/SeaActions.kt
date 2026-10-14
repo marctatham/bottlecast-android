@@ -1,5 +1,7 @@
 package com.bottlecast.app.common.sea.data
 
+import com.bottlecast.app.common.analytics.AnalyticsEvent
+import com.bottlecast.app.common.analytics.ITracker
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
@@ -34,12 +36,17 @@ internal const val SAFETY_WINDOW_MILLIS = 120_000L
 /**
  * Holds each throw back or report for its undo window, then writes it. If the process dies first, the
  * action is lost: the bottle stays held until its hold ends, and then drifts back as usual.
+ *
+ * An action counts for analytics once it's written, not when it's chosen, so an undone one doesn't. It
+ * may be written after its screen has gone, which is why it's tracked here rather than through
+ * LocalTracker.
  */
 class SeaActions @Inject constructor(
     private val source: ISeaDataSource,
     private val authenticationRepository: IAuthenticationRepository,
     private val connectivityMonitor: IConnectivityMonitor,
     private val clock: Clock,
+    private val tracker: ITracker,
     @param:ApplicationScope private val scope: CoroutineScope,
 ) : ISeaActions {
 
@@ -89,6 +96,13 @@ class SeaActions @Inject constructor(
             return
         }
         _outcomes.tryEmit(SeaActionOutcome(entry.action, queuedOffline = !connectivityMonitor.isOnline.value))
+        when (val action = entry.action) {
+            is PendingSeaAction.ThrowBack -> tracker.trackEvent(AnalyticsEvent.BottleThrownBack)
+            is PendingSeaAction.Report -> tracker.trackEvent(
+                AnalyticsEvent.BottleReported,
+                mapOf(AnalyticsEvent.PARAM_BLOCKED to action.blockWriter.toString()),
+            )
+        }
     }
 
     private fun schedule(action: PendingSeaAction, windowMillis: Long?, write: (uid: String) -> Unit): String {

@@ -12,10 +12,25 @@ RULES_API = "https://firebaserules.googleapis.com/v1"
 IDENTITY_API = "https://identitytoolkit.googleapis.com/v1"
 
 
+def run_quietly(cmd, what, stdin=None, echo_error=True):
+    """Runs a command whose arguments may hold a token or an account, so a failure never echoes them.
+
+    A failed command's own exception prints its whole argument list, bearer token included, so it's
+    replaced with a message naming only what failed and the tool's last line of error output.
+    """
+    try:
+        return subprocess.run(cmd, input=stdin, capture_output=True, text=True, check=True).stdout
+    except subprocess.CalledProcessError as error:
+        lines = (error.stderr or "").strip().splitlines() if echo_error else []
+        detail = f": {lines[-1]}" if lines else ""
+        raise SystemExit(f"{what} failed with exit code {error.returncode}{detail}") from None
+
+
 def access_token(account=None):
     account = account or os.environ.get("BOTTLECAST_GCLOUD_ACCOUNT")
     gcloud = ["gcloud", "auth", "print-access-token"] + ([f"--account={account}"] if account else [])
-    return subprocess.run(gcloud, capture_output=True, text=True, check=True).stdout.strip()
+    # gcloud's errors can name the account, so they aren't repeated
+    return run_quietly(gcloud, "Getting an access token from gcloud (try `gcloud auth login`)", echo_error=False).strip()
 
 
 def call(method, url, token, project, json_body=None, allow_missing=False):
@@ -29,7 +44,7 @@ def call(method, url, token, project, json_body=None, allow_missing=False):
         stdin = json.dumps(json_body)
     cmd.append(url)
 
-    out = subprocess.run(cmd, input=stdin, capture_output=True, text=True, check=True).stdout
+    out = run_quietly(cmd, f"{method} {url.split('?')[0]}", stdin=stdin)
     body, _, status = out.rpartition("\n")
     payload = json.loads(body) if body.strip() else {}
     if status == "404" and allow_missing:

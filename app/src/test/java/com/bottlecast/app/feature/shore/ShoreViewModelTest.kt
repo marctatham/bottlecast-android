@@ -23,6 +23,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -274,6 +275,45 @@ class ShoreViewModelTest {
     }
 
     @Test
+    fun `offline, a calm sea from an earlier look doesn't keep today's bottle from waiting`() = runTest {
+        // given
+        candidate.value = CandidateState.SeaCalm
+        isOnline.value = false
+
+        // when
+        val viewModel = shore()
+        runCurrent()
+
+        // then
+        Assert.assertEquals(ShoreUiState.BottleWaiting(isOffline = true, seaCalm = false), viewModel.state.value)
+        close(viewModel)
+    }
+
+    @Test
+    fun `the minute's tick stops while nobody watches the Shore, and starts again from the clock`() = runTest {
+        // given
+        finds.value = mapOf(today to found("today"))
+        val viewModel = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, clock)
+        val watching = backgroundScope.launch { viewModel.state.collect {} }
+        runCurrent()
+
+        // when: nobody watches, and the phone sleeps through midnight without a tick
+        watching.cancel()
+        advanceTimeBy(6_000)
+        runCurrent()
+        clock.advance(Duration.ofHours(8))
+        runCurrent()
+        val unwatched = viewModel.state.value
+        backgroundScope.launch { viewModel.state.collect {} }
+        runCurrent()
+
+        // then
+        Assert.assertTrue(unwatched is ShoreUiState.FoundToday)
+        Assert.assertEquals(ShoreUiState.BottleWaiting(), viewModel.state.value)
+        close(viewModel)
+    }
+
+    @Test
     fun `a failure still offers today's bottle`() = runTest {
         // given
         every { connectivityMonitor.isOnline } throws IllegalStateException("no network service")
@@ -287,7 +327,9 @@ class ShoreViewModelTest {
         close(viewModel)
     }
 
-    private fun shore() = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, clock)
+    // the Shore, watched as it is on screen
+    private fun TestScope.shore() = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, clock)
+        .also { viewModel -> backgroundScope.launch { viewModel.state.collect {} } }
 
     private fun todayFor(date: LocalDate): Flow<TodayFind?> = finds.map { it[date] }
 

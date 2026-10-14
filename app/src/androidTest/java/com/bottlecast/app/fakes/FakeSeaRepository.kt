@@ -56,7 +56,9 @@ class FakeSeaRepository @Inject constructor(
             failNextFind = false
             return FindResult.Failed
         }
-        alreadyFoundToday?.let { return FindResult.AlreadyFound(it) }
+        // as the real sea answers: a daily record naming another bottle is the day's find, one naming
+        // this bottle means an earlier attempt went through, so it's found again
+        alreadyFoundToday?.takeIf { it != SEEDED_ID }?.let { return FindResult.AlreadyFound(it) }
         if (seaCalm) return FindResult.SeaCalm
 
         val found = SEEDED.copy(status = MessageStatus.Found, findCount = 1, foundAt = Instant.now())
@@ -69,6 +71,19 @@ class FakeSeaRepository @Inject constructor(
 
     override suspend fun getMessage(messageId: String): MessageEntity? = cachedMessage(messageId)
 
+    /** Today's bottle was found on another phone, and it was another bottle, [messageId]. */
+    fun foundElsewhere(messageId: String) {
+        alreadyFoundToday = messageId
+        val elsewhere = MessageEntity(
+            id = messageId,
+            message = ELSEWHERE_MESSAGE,
+            userId = "writer",
+            status = MessageStatus.Found,
+            foundAt = Instant.now(),
+        )
+        today.value = TodayFind(LocalDate.now(), messageId, elsewhere, FindStatus.Held)
+    }
+
     /** What a committed throw back or report leaves on today's find. */
     fun setTodayStatus(status: FindStatus) {
         today.value = today.value?.copy(status = status)
@@ -77,6 +92,7 @@ class FakeSeaRepository @Inject constructor(
     companion object {
         const val SEEDED_MESSAGE: String = "Ahoy! This bottle washed up from the test sea."
         const val SEEDED_ID: String = "seededBottle00000001"
+        const val ELSEWHERE_MESSAGE: String = "Found this one on the other phone."
 
         val SEEDED = MessageEntity(
             id = SEEDED_ID,

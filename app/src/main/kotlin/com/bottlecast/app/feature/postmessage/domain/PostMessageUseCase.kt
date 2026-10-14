@@ -13,8 +13,27 @@ const val MINIMUM_MESSAGE_LENGTH: Int = 10
 const val MAXIMUM_MESSAGE_BYTES: Int = 1000
 
 /** The longest start of this text that fits in [MAXIMUM_MESSAGE_BYTES] of UTF-8. */
-fun String.fitToMessageLimit(): String {
+fun String.fitToMessageLimit(): String = fitToBytes(MAXIMUM_MESSAGE_BYTES)
+
+/**
+ * This text, an edit of [previous], cut to fit [MAXIMUM_MESSAGE_BYTES] of UTF-8 by shortening only
+ * what the edit inserted. The rest of the message is never lost: a paste in the middle of a long
+ * message keeps the message's end, and loses the end of the paste instead.
+ */
+fun String.fitEditToMessageLimit(previous: String): String {
     if (encodeToByteArray().size <= MAXIMUM_MESSAGE_BYTES) return this
+    // both keep surrogate pairs whole
+    val prefix = commonPrefixWith(previous).length
+    val suffix = minOf(commonSuffixWith(previous).length, length - prefix, previous.length - prefix)
+    val kept = substring(0, prefix) + substring(length - suffix)
+    val room = MAXIMUM_MESSAGE_BYTES - kept.encodeToByteArray().size
+    if (room <= 0) return kept.fitToMessageLimit()
+    return substring(0, prefix) + substring(prefix, length - suffix).fitToBytes(room) + substring(length - suffix)
+}
+
+// The longest start of this text that fits in [maxBytes] of UTF-8, never splitting a character.
+private fun String.fitToBytes(maxBytes: Int): String {
+    if (encodeToByteArray().size <= maxBytes) return this
     var bytes = 0
     var end = 0
     while (end < length) {
@@ -25,7 +44,7 @@ fun String.fitToMessageLimit(): String {
             codePoint < 0x10000 -> 3
             else -> 4
         }
-        if (bytes + size > MAXIMUM_MESSAGE_BYTES) break
+        if (bytes + size > maxBytes) break
         bytes += size
         end += Character.charCount(codePoint)
     }

@@ -118,7 +118,39 @@ class UncorkMachineTest {
 
         // then
         Assert.assertTrue(effects.isEmpty())
-        Assert.assertFalse(machine.isHolding)
+        Assert.assertFalse(machine.isMoving)
+    }
+
+    @Test
+    fun `a press that a scroll takes, however short, is no tap`() {
+        // given
+        val machine = UncorkMachine()
+        machine.press(nowMillis = 0)
+
+        // when
+        val effects = machine.cancel(nowMillis = 100)
+
+        // then
+        Assert.assertTrue(effects.isEmpty())
+        Assert.assertEquals(0, machine.steps)
+    }
+
+    @Test
+    fun `a cancelled hold drains back to the taps and shakes`() {
+        // given
+        val machine = UncorkMachine()
+        machine.shake()
+        machine.press(nowMillis = 0)
+        machine.frame(nowMillis = 600)
+
+        // when
+        machine.cancel(nowMillis = 600)
+        machine.frame(nowMillis = 600 + UncorkMachine.HOLD_DRAIN_MILLIS)
+
+        // then
+        Assert.assertEquals(1f / 3, machine.progressAt(600 + UncorkMachine.HOLD_DRAIN_MILLIS), 0.0001f)
+        Assert.assertFalse(machine.isMoving)
+        Assert.assertFalse(machine.popped)
     }
 
     @Test

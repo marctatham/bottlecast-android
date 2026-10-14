@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bottlecast.app.R
@@ -143,7 +144,8 @@ internal fun MessageView(
             Text(
                 text = messageEntity.message,
                 maxLines = 20,
-                style = MaterialTheme.typography.titleMedium,
+                // a message runs in its own script's direction, whichever way the app is laid out
+                style = MaterialTheme.typography.titleMedium.copy(textDirection = TextDirection.Content),
             )
             Text(
                 text = stringResource(

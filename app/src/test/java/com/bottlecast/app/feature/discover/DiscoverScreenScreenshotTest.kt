@@ -164,6 +164,7 @@ class DiscoverScreenScreenshotTest {
             onHelpHandler = {},
             onBottlePressed = {},
             onBottleReleased = {},
+            onBottleCancelled = {},
             onUncorkHandler = {},
             onTryAgainHandler = {},
             onCastHandler = {},

@@ -25,10 +25,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.SharingCommand
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -68,8 +70,12 @@ class ShoreViewModel @Inject constructor(
 
     init {
         viewModelScope.launch(exceptionHandler) {
-            // the minute's tick drives the countdown, and a new date finds tomorrow's record
-            val now = minuteTicks().shareIn(viewModelScope, SharingStarted.Eagerly, replay = 1)
+            // The minute's tick drives the countdown, and a new date finds tomorrow's record. It ticks
+            // only while the Shore is watched, so it costs nothing under another screen or in the
+            // background, and it starts again from the clock, so a phone that slept through midnight
+            // shows the new day at once. Today's listeners carry on meanwhile, so coming back from
+            // Reveal shows the find straight away.
+            val now = watchedMinuteTicks().shareIn(viewModelScope, SharingStarted.Eagerly, replay = 1)
             val context = combine(authenticationRepository.user, connectivityMonitor.isOnline, now) { user, online, time ->
                 Context(isAdmin = user is UserEntity.AuthenticatedUser && user.isAdmin, online = online, now = time)
             }
@@ -98,7 +104,8 @@ class ShoreViewModel @Inject constructor(
             return ShoreUiState.BottleWaiting(
                 isAdmin = context.isAdmin,
                 isOffline = !context.online,
-                seaCalm = candidate == CandidateState.SeaCalm,
+                // offline, the sea can't have been looked at today, so today's bottle waits
+                seaCalm = candidate == CandidateState.SeaCalm && context.online,
             )
         }
         // a find that's been thrown back or reported, even one still waiting out its undo, is gone
@@ -134,6 +141,12 @@ class ShoreViewModel @Inject constructor(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun watchedMinuteTicks(): Flow<ZonedDateTime> = SharingStarted.WhileSubscribed(TICKS_LINGER_MILLIS)
+        .command(_state.subscriptionCount)
+        .distinctUntilChanged()
+        .flatMapLatest { command -> if (command == SharingCommand.START) minuteTicks() else emptyFlow() }
+
     // now, then at the start of every minute
     private fun minuteTicks(): Flow<ZonedDateTime> = flow {
         while (true) {
@@ -144,6 +157,9 @@ class ShoreViewModel @Inject constructor(
         }
     }
 }
+
+// how long the ticks carry on once nobody watches, so a rotation doesn't stop them
+private const val TICKS_LINGER_MILLIS = 5_000L
 
 /** The Shore's two states (spec §3.3). A null [streak] or [stats] isn't shown. */
 sealed class ShoreUiState {

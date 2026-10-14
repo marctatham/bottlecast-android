@@ -57,6 +57,7 @@ import com.bottlecast.app.feature.postmessage.ui.PostMessageScreen
 import com.bottlecast.app.feature.reveal.RevealScreen
 import com.bottlecast.app.feature.shore.ShoreScreen
 import com.bottlecast.app.feature.viewmessages.ViewMessagesScreen
+import java.time.LocalDate
 
 /**
  * The app's shell: one NavHost, drawn edge to edge. The tab roots (Shore, Chest, Me) each draw
@@ -117,7 +118,8 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
     ) {
         composable<Shore> { entry ->
             val snackbarHostState = remember { SnackbarHostState() }
-            // a notice another screen left for the Shore, such as Discover finding today already found
+            // A notice Discover left for the Shore: the day it found that day already had a find. It's
+            // dated so a notice that never got shown can't turn up on a later day.
             val notice by entry.savedStateHandle.getStateFlow<String?>(SHORE_NOTICE, null).collectAsStateWithLifecycle()
             TabFrame(
                 selected = TopLevelDestination.SHORE,
@@ -133,7 +135,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                     onOpenTodaysFindHandler = { messageId -> navController.navigate(Reveal(messageId)) },
                     contentPadding = contentPadding,
                     snackbarHostState = snackbarHostState,
-                    alreadyFoundNotice = notice == NOTICE_ALREADY_FOUND,
+                    alreadyFoundNotice = notice == LocalDate.now().toString(),
                     onNoticeShown = { entry.savedStateHandle[SHORE_NOTICE] = null },
                 )
             }
@@ -168,7 +170,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                     navController.navigate(Reveal(messageId, fresh = true)) { popUpTo<Discover> { inclusive = true } }
                 },
                 onAlreadyFoundHandler = {
-                    navController.getBackStackEntry<Shore>().savedStateHandle[SHORE_NOTICE] = NOTICE_ALREADY_FOUND
+                    navController.getBackStackEntry<Shore>().savedStateHandle[SHORE_NOTICE] = LocalDate.now().toString()
                     homeHandler()
                 },
                 onCastHandler = {
@@ -322,14 +324,13 @@ private val RevealEnter: EnterTransition =
     scaleIn(
         initialScale = REVEAL_START_SCALE,
         transformOrigin = TransformOrigin(0.5f, REVEAL_GROWS_FROM_Y),
-        animationSpec = tween(BottlingMotion.SCREEN_MILLIS, easing = BottlingMotion.Emphasized),
-    ) + fadeIn(tween(BottlingMotion.SCREEN_MILLIS))
+        animationSpec = BottlingMotion.screen(),
+    ) + fadeIn(BottlingMotion.screen())
 
 private const val REVEAL_START_SCALE = 0.92f
 
 // where the scroll leaves the bottle's neck, as a share of the screen's height
 private const val REVEAL_GROWS_FROM_Y = 0.3f
 
-/** The Shore entry's saved-state key for notices from other screens, and its one notice. */
+/** The Shore entry's saved-state key for Discover's already-found notice, which holds its date. */
 private const val SHORE_NOTICE = "shore_notice"
-private const val NOTICE_ALREADY_FOUND = "already_found"

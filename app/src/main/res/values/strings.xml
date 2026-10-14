@@ -203,7 +203,7 @@
     <string name="moderation_pull">Pull</string>
     <string name="moderation_remove">Remove</string>
     <string name="moderation_restore">Restore</string>
-    <string name="moderation_failed">That didn\'t work. Try again.</string>
+    <string name="moderation_failed">That didn\'t go through, so the bottle hasn\'t changed. Check your connection and try again.</string>
 
     <string name="snack_post_message_failed">Failed to post your message!</string>
     <string name="snack_post_message_requires_auth">You must be logged in to post!</string>

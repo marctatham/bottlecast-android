@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import com.bottlecast.app.R
 import com.bottlecast.app.common.components.ParchmentCard
 import com.bottlecast.app.common.ui.BottlingTheme
@@ -135,7 +136,8 @@ private fun Modifier.fadingEdges(scroll: ScrollState, parchment: Color): Modifie
 // One soft band of moonlight sweeping across the card, from the start edge to the end (spec §1.5).
 private fun ContentDrawScope.drawSheen(progress: Float, card: Path, moon: Color) {
     val band = size.width * SHEEN_WIDTH
-    val x = -band + progress * (size.width + band * 2)
+    val fromStart = -band + progress * (size.width + band * 2)
+    val x = if (layoutDirection == LayoutDirection.Rtl) size.width - fromStart else fromStart
     clipPath(card) {
         drawRect(
             Brush.linearGradient(

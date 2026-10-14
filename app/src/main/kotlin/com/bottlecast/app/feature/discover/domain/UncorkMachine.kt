@@ -57,10 +57,7 @@ class UncorkMachine(
     // the thirds this hold has already ticked for, so each ticks once
     private var holdTicked = 0
 
-    /** True while the bottle is held, so the screen keeps sending [frame]s. */
-    val isHolding: Boolean get() = hold is Hold.Filling
-
-    /** True while the ring is still moving on its own: filling under a hold, or draining after one. */
+    /** True while the ring is still moving on its own, so the screen keeps sending [frame]s: filling under a hold, or draining after one. */
     val isMoving: Boolean get() = hold != Hold.Idle
 
     /** How full the ring is at [nowMillis], from 0 to 1. */
@@ -78,12 +75,20 @@ class UncorkMachine(
     }
 
     /** Lets go of the bottle. A press shorter than [tapMaxMillis] was a tap, and counts as one. */
-    fun release(nowMillis: Long): List<UncorkEffect> {
+    fun release(nowMillis: Long): List<UncorkEffect> = letGo(nowMillis, mayBeTap = true)
+
+    /**
+     * Ends a press that wasn't let go of on the bottle: a flick that scrolled, a drag off it, or the
+     * bottle leaving the screen. The ring drains as after a hold, but it's never a tap.
+     */
+    fun cancel(nowMillis: Long): List<UncorkEffect> = letGo(nowMillis, mayBeTap = false)
+
+    private fun letGo(nowMillis: Long, mayBeTap: Boolean): List<UncorkEffect> {
         val filling = hold as? Hold.Filling ?: return emptyList()
         val effects = frame(nowMillis)
         if (popped) return effects
         hold = Hold.Draining(startMillis = nowMillis, from = holdLevel(nowMillis))
-        val tapped = nowMillis - filling.startMillis < tapMaxMillis
+        val tapped = mayBeTap && nowMillis - filling.startMillis < tapMaxMillis
         return if (tapped) effects + step(UncorkMethod.Tap) else effects
     }
 

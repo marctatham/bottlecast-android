@@ -14,31 +14,60 @@ class CastAgoTest {
 
     @Test
     fun `earlier today, and late yesterday, by the local calendar`() {
-        Assert.assertEquals(CastAgo.Today, castAgo(instant("2026-10-13T00:30:00+01:00"), now))
-        Assert.assertEquals(CastAgo.Yesterday, castAgo(instant("2026-10-12T23:30:00+01:00"), now))
+        // given
+        val earlierToday = instant("2026-10-13T00:30:00+01:00")
+        val lateYesterday = instant("2026-10-12T23:30:00+01:00")
+
+        // when
+        val today = castAgo(earlierToday, now)
+        val yesterday = castAgo(lateYesterday, now)
+
+        // then
+        Assert.assertEquals(CastAgo.Today, today)
+        Assert.assertEquals(CastAgo.Yesterday, yesterday)
     }
 
     @Test
     fun `days, then months, then years`() {
-        Assert.assertEquals(CastAgo.Days(3), castAgo(instant("2026-10-10T12:00:00+01:00"), now))
-        Assert.assertEquals(CastAgo.Days(29), castAgo(instant("2026-09-14T12:00:00+01:00"), now))
-        Assert.assertEquals(CastAgo.Months(1), castAgo(instant("2026-09-13T12:00:00+01:00"), now))
-        Assert.assertEquals(CastAgo.Months(11), castAgo(instant("2025-10-14T12:00:00+01:00"), now))
-        Assert.assertEquals(CastAgo.Years(3), castAgo(instant("2023-10-11T12:00:00+01:00"), now))
+        // given
+        val casts = listOf(
+            "2026-10-10T12:00:00+01:00" to CastAgo.Days(3),
+            "2026-09-14T12:00:00+01:00" to CastAgo.Days(29),
+            "2026-09-13T12:00:00+01:00" to CastAgo.Months(1),
+            "2025-10-14T12:00:00+01:00" to CastAgo.Months(11),
+            "2023-10-11T12:00:00+01:00" to CastAgo.Years(3),
+        )
+
+        // when
+        val ages = casts.map { (castAt, _) -> castAgo(instant(castAt), now) }
+
+        // then
+        Assert.assertEquals(casts.map { it.second }, ages)
     }
 
     @Test
     fun `a bottle cast a moment from now, by a fast clock, was cast today`() {
-        Assert.assertEquals(CastAgo.Today, castAgo(instant("2026-10-13T09:05:00+01:00"), now))
+        // given
+        val castAt = instant("2026-10-13T09:05:00+01:00")
+
+        // when
+        val age = castAgo(castAt, now)
+
+        // then
+        Assert.assertEquals(CastAgo.Today, age)
     }
 
     @Test
     fun `it counts the reader's days, wherever the writer was`() {
-        // 23:30 in London is already tomorrow in Tokyo
+        // given: 23:30 in London is already tomorrow in Tokyo
         val castAt = instant("2026-10-12T23:30:00+01:00")
         val tokyo = now.withZoneSameInstant(ZoneId.of("Asia/Tokyo"))
 
-        Assert.assertEquals(CastAgo.Today, castAgo(castAt, tokyo))
+        // when
+        val age = castAgo(castAt, tokyo)
+
+        // then
+        Assert.assertEquals(CastAgo.Today, age)
     }
 
     private fun instant(text: String): Instant = ZonedDateTime.parse(text).toInstant()

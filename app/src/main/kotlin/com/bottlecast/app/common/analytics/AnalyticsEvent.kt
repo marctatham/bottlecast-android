@@ -14,9 +14,10 @@ sealed class AnalyticsEvent(val eventName: String) {
 
     data object BottleShared : AnalyticsEvent("bottle_shared")
 
+    /** A throw back was written, once its undo window ended. */
     data object BottleThrownBack : AnalyticsEvent("bottle_thrown_back")
 
-    /** A report was sent; param [PARAM_BLOCKED]: whether the writer was blocked too. */
+    /** A report was sent, once its undo window ended; param [PARAM_BLOCKED]: whether the writer was blocked too. */
     data object BottleReported : AnalyticsEvent("bottle_reported")
 
     companion object {

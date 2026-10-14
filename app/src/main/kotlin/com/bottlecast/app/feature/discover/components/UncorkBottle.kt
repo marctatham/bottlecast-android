@@ -65,12 +65,14 @@ internal fun UncorkBottle(
     showRing: Boolean,
     onPressed: () -> Unit,
     onReleased: () -> Unit,
+    onCancelled: () -> Unit,
     onActivate: () -> Unit,
     modifier: Modifier = Modifier,
     waveSpeed: Dp = WavyProgressIndicatorDefaults.CircularWavelength,
 ) {
     val currentOnPressed by rememberUpdatedState(onPressed)
     val currentOnReleased by rememberUpdatedState(onReleased)
+    val currentOnCancelled by rememberUpdatedState(onCancelled)
     val currentOnActivate by rememberUpdatedState(onActivate)
     val interactionSource = remember { MutableInteractionSource() }
     val focused by interactionSource.collectIsFocusedAsState()
@@ -124,8 +126,9 @@ internal fun UncorkBottle(
                     awaitEachGesture {
                         awaitFirstDown()
                         currentOnPressed()
-                        waitForUpOrCancellation()
-                        currentOnReleased()
+                        // a press that ends anywhere but a lift on the bottle (a scroll took it, it was
+                        // dragged off, the bottle left the screen) is never a tap
+                        if (waitForUpOrCancellation() != null) currentOnReleased() else currentOnCancelled()
                     }
                 },
         ) {

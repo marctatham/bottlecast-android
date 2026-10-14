@@ -5,6 +5,7 @@ import com.bottlecast.app.common.authentication.domain.UserEntity
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
 import com.bottlecast.app.common.messages.domain.HOLD_DAYS
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.messages.domain.REPORT_THRESHOLD
 import com.bottlecast.app.common.sea.domain.CandidateState
 import com.bottlecast.app.common.sea.domain.FindResult
@@ -45,6 +46,11 @@ private val SEA_CALM_RECHECK: Duration = Duration.ofMinutes(10)
 // an hour's margin, so a hold the server still thinks is live isn't picked
 private val EXPIRY_MARGIN: Duration = Duration.ofHours(1)
 
+// How far one look reads on through each part of the sea before calling it calm. A look stops as soon
+// as it has today's candidate and a fallback for each other attempt at the pop.
+private const val SEA_PAGES = 2
+private const val EXPIRED_PAGES = 2
+
 class SeaRepository @Inject constructor(
     private val source: ISeaDataSource,
     private val authenticationRepository: IAuthenticationRepository,
@@ -63,10 +69,17 @@ class SeaRepository @Inject constructor(
         val fallbacks: List<MessageEntity>,
     )
 
+    // The writers an account had blocked when the day's look at the sea began. A block always comes
+    // with a report, which needs the day's find, so a new block can't matter until the next day's look.
+    private data class Blocked(val uid: String, val date: LocalDate, val writers: Set<String>)
+
     private val mutex = Mutex()
     private var pin: Pin? = null
-    private var blocked: Pair<String, Set<String>>? = null
+    private var blocked: Blocked? = null
     private val justFound = ConcurrentHashMap<String, MessageEntity>()
+
+    // Bottles each account is known to have found. A find is forever, so only a yes is kept.
+    private val foundBefore = ConcurrentHashMap<String, MutableSet<String>>()
 
     private val _candidate = MutableStateFlow<CandidateState>(CandidateState.Unknown)
     override val candidate: StateFlow<CandidateState> = _candidate.asStateFlow()
@@ -76,6 +89,8 @@ class SeaRepository @Inject constructor(
             val uid = authenticationRepository.ensureSignedIn()
             val date = LocalDate.now(clock)
             currentPin(uid, date)?.let { return@withLock it.state }
+            // another account's or day's candidate says nothing about this one's
+            if (pin?.let { it.uid != uid || it.date != date } == true) _candidate.value = CandidateState.Unknown
             pick(uid, date, exclude = emptySet()).state
         }
     }
@@ -86,30 +101,54 @@ class SeaRepository @Inject constructor(
             !(it.state is CandidateState.SeaCalm && Duration.between(it.pinnedAt, clock.instant()) >= SEA_CALM_RECHECK)
     }
 
+    // Reads on through the sea, from a random point up, then round from the bottom to it, then the holds
+    // that have ended, until it has today's candidate and its fallbacks or the pages run out.
     private fun pick(uid: String, date: LocalDate, exclude: Set<String>): Pin {
-        val blockedWriters = blockedWritersOf(uid)
+        val blockedWriters = blocked?.takeIf { it.uid == uid && it.date == date }?.writers ?: source.blockedWriters(uid)
+        val look = Look(uid, blockedWriters, exclude)
         val fromRand = random.nextDouble()
-        val upward = source.querySea(fromRand, wrap = false)
-        val drifting = if (upward.size < SEA_BATCH_SIZE) upward + source.querySea(fromRand, wrap = true) else upward
-        var pool = seaCandidates(drifting, uid, blockedWriters, exclude)
-        if (pool.isEmpty()) {
-            val expiredBefore = clock.instant().minus(Duration.ofDays(HOLD_DAYS)).minus(EXPIRY_MARGIN)
-            pool = seaCandidates(source.queryExpiredHolds(expiredBefore), uid, blockedWriters, exclude)
-        }
+        look.readOn(SEA_PAGES, SEA_BATCH_SIZE, MessageEntity::rand) { after -> source.querySea(fromRand, 1.0, after) }
+        look.readOn(SEA_PAGES, SEA_BATCH_SIZE, MessageEntity::rand) { after -> source.querySea(0.0, fromRand, after) }
+        val expiredBefore = clock.instant().minus(Duration.ofDays(HOLD_DAYS)).minus(EXPIRY_MARGIN)
+        look.readOn(EXPIRED_PAGES, EXPIRED_BATCH_SIZE, MessageEntity::foundAt) { after -> source.queryExpiredHolds(expiredBefore, after) }
 
-        // A bottle this account found before can never be found again, so skip to one it hasn't.
-        val unseen = pool.dropWhile { source.hasFound(it.id, uid) }
-        val chosen = unseen.firstOrNull()
+        val chosen = look.unseen.firstOrNull()
         val state = if (chosen == null) CandidateState.SeaCalm else CandidateState.Available(chosen)
-        return Pin(uid, date, state, clock.instant(), unseen.drop(1)).also {
+        blocked = Blocked(uid, date, blockedWriters)
+        return Pin(uid, date, state, clock.instant(), look.unseen.drop(1)).also {
             pin = it
             _candidate.value = state
         }
     }
 
-    private fun blockedWritersOf(uid: String): Set<String> =
-        blocked?.takeIf { it.first == uid }?.second
-            ?: source.blockedWriters(uid).also { blocked = uid to it }
+    // One look at the sea: the bottles it has passed, and the ones this account could find.
+    private inner class Look(val uid: String, val blockedWriters: Set<String>, exclude: Set<String>) {
+        val unseen = mutableListOf<MessageEntity>()
+        private val passed = exclude.toMutableSet()
+        private val full get() = unseen.size >= MAX_FIND_ATTEMPTS
+
+        fun <C : Any> readOn(maxPages: Int, pageSize: Int, cursor: (MessageEntity) -> C?, read: (after: C?) -> List<MessageEntity>) {
+            var after: C? = null
+            repeat(maxPages) {
+                if (full) return
+                val page = read(after)
+                for (bottle in seaCandidates(page, uid, blockedWriters, passed)) {
+                    passed += bottle.id
+                    // a bottle this account found before can never be found again
+                    if (!hasFound(bottle.id, uid)) unseen += bottle
+                    if (full) return
+                }
+                if (page.size < pageSize) return
+                after = cursor(page.last()) ?: return
+            }
+        }
+    }
+
+    private fun hasFound(messageId: String, uid: String): Boolean {
+        val known = foundBefore.getOrPut(uid) { ConcurrentHashMap.newKeySet() }
+        if (messageId in known) return true
+        return source.hasFound(messageId, uid).also { if (it) known += messageId }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeToday(date: LocalDate): Flow<TodayFind?> = authenticationRepository.user
@@ -122,7 +161,10 @@ class SeaRepository @Inject constructor(
                     flowOf(null)
                 } else {
                     combine(source.observeFindStatus(messageId, uid), source.observeMessage(messageId)) { status, message ->
-                        TodayFind(date, messageId, message ?: justFound[messageId], status ?: FindStatus.Held)
+                        // a bottle that can't be read any more, such as one a moderator pulled, is gone
+                        // here too, so Reveal can't show it from memory
+                        if (message == null) justFound.remove(messageId)
+                        TodayFind(date, messageId, message, status ?: FindStatus.Held)
                     }
                 }
             }
@@ -158,13 +200,13 @@ class SeaRepository @Inject constructor(
                 FindOutcome.Taken
             }
             when (outcome) {
-                is FindOutcome.Found -> {
-                    justFound[outcome.message.id] = outcome.message
-                    return FindResult.Found(outcome.message)
-                }
+                is FindOutcome.Found -> return FindResult.Found(remember(uid, outcome.message))
 
+                // An earlier attempt went through though its answer was lost, so the hold is today's.
+                // The candidate is from before the find, so it's held from now, or a throw back would
+                // think the hold over and leave the bottle out of the sea.
                 is FindOutcome.AlreadyFound -> return if (outcome.messageId == candidate.id) {
-                    FindResult.Found(justFound[candidate.id] ?: candidate)
+                    FindResult.Found(justFound[candidate.id] ?: remember(uid, candidate.heldFrom(clock.instant())))
                 } else {
                     FindResult.AlreadyFound(outcome.messageId)
                 }
@@ -185,13 +227,23 @@ class SeaRepository @Inject constructor(
         }
     }
 
+    // A just-found bottle, for Reveal's first frame, and a find this account won't try again.
+    private fun remember(uid: String, found: MessageEntity): MessageEntity {
+        justFound[found.id] = found
+        foundBefore.getOrPut(uid) { ConcurrentHashMap.newKeySet() } += found.id
+        return found
+    }
+
     override fun cachedMessage(messageId: String): MessageEntity? = justFound[messageId]
-        ?: (pin?.state as? CandidateState.Available)?.message?.takeIf { it.id == messageId }
 
     override suspend fun getMessage(messageId: String): MessageEntity? =
         cachedMessage(messageId) ?: withContext(dispatcher) { source.getMessage(messageId) }
 
 }
+
+/** A bottle from before its find, as the find left it: held from [now]. */
+private fun MessageEntity.heldFrom(now: Instant): MessageEntity =
+    copy(status = MessageStatus.Found, findCount = findCount + 1, foundAt = now)
 
 /**
  * The bottles this account could find, in the order they came: never its own, a blocked writer's, one
