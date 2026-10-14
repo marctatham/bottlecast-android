@@ -29,7 +29,9 @@ class MessageFirestoreSource @Inject constructor(
 
     override suspend fun postMessage(message: String, userId: String): MessageEntity {
         val document = messages.document()
-        Tasks.await(document.set(newBottle(document.id, message, userId, Random.nextDouble())))
+        Tasks.await(
+            document.set(newBottle(document.id, message, userId, Random.nextDouble(), LANG_UNDETERMINED, penName = null, sealable = false))
+        )
         Timber.i("New message posted")
         return MessageEntity(id = document.id, message = message, userId = userId)
     }
@@ -88,19 +90,27 @@ class MessageFirestoreSource @Inject constructor(
 }
 
 /**
- * A new bottle, with exactly the keys firestore.rules accepts for a cast. Until slice 3's Preview lets
- * writers choose, a bottle has no pen name and can't be sealed, and its language isn't detected.
+ * A new bottle, with exactly the keys firestore.rules accepts for a cast: the writer's words, language
+ * and choices from Preview (spec §3.4b), afloat and unfound.
  */
-internal fun newBottle(id: String, message: String, userId: String, rand: Double): Map<String, Any?> = mapOf(
+internal fun newBottle(
+    id: String,
+    message: String,
+    userId: String,
+    rand: Double,
+    lang: String,
+    penName: String?,
+    sealable: Boolean,
+): Map<String, Any?> = mapOf(
     MessageFields.ID to id,
     MessageFields.MESSAGE_CONTENT to message,
     MessageFields.USER_ID to userId,
     MessageFields.CREATED_AT to FieldValue.serverTimestamp(),
-    MessageFields.LANG to LANG_UNDETERMINED,
+    MessageFields.LANG to lang,
     MessageFields.STATUS to MessageStatus.Afloat.value,
     MessageFields.RAND to rand,
-    MessageFields.PEN_NAME to null,
-    MessageFields.SEALABLE to false,
+    MessageFields.PEN_NAME to penName,
+    MessageFields.SEALABLE to sealable,
     MessageFields.REPORT_COUNT to 0,
     MessageFields.FIND_COUNT to 0,
     MessageFields.FOUND_AT to null,
