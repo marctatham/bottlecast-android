@@ -13,6 +13,7 @@ class BottlingRouteTest {
     fun `routes keep their analytics screen names`() {
         // given
         val expected = mapOf(
+            Onboarding::class to "onboarding",
             Shore::class to "home",
             Chest::class to "chest",
             Me::class to "me",

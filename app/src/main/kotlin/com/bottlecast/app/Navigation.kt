@@ -15,6 +15,12 @@ sealed interface BottlingRoute {
     val screenName: String
 }
 
+/** First-launch onboarding (spec §3.1), the start until it's been seen. */
+@Serializable
+data object Onboarding : BottlingRoute {
+    override val screenName: String get() = "onboarding"
+}
+
 /** The Shore, the app's home and first tab. */
 @Serializable
 data object Shore : BottlingRoute {
@@ -85,6 +91,7 @@ enum class TopLevelDestination(val route: BottlingRoute, @StringRes val label: I
  * A route with arguments has no instance to ask, so the names are listed here.
  */
 val routeScreenNames: Map<KClass<out BottlingRoute>, String> = mapOf(
+    Onboarding::class to Onboarding.screenName,
     Shore::class to Shore.screenName,
     Chest::class to Chest.screenName,
     Me::class to Me.screenName,

@@ -39,8 +39,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavGraphBuilder
+import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -53,6 +53,7 @@ import com.bottlecast.app.feature.chest.ChestScreen
 import com.bottlecast.app.feature.discover.DiscoverScreen
 import com.bottlecast.app.feature.login.LoginRequiredToPostScreen
 import com.bottlecast.app.feature.me.MeScreen
+import com.bottlecast.app.feature.onboarding.OnboardingScreen
 import com.bottlecast.app.feature.postmessage.ui.PostMessageScreen
 import com.bottlecast.app.feature.reveal.RevealScreen
 import com.bottlecast.app.feature.shore.ShoreScreen
@@ -67,6 +68,8 @@ import java.time.LocalDate
 fun MessageInABottleApp(analyticsProvider: ITracker) {
     val navController = rememberNavController()
     val viewModel: AppNavigationStateViewModel = hiltViewModel()
+    // read once, while the first frame waits (MainActivity)
+    val startDestination = viewModel.startDestination.collectAsStateWithLifecycle().value ?: return
     TrackScreens(navController, analyticsProvider, viewModel)
     SystemBarAppearance()
 
@@ -84,7 +87,8 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
     val tabHandler: (TopLevelDestination) -> Unit = { destination ->
         val fromTabRoot = navController.currentDestination?.isTopLevel() == true
         navController.navigate(destination.route) {
-            popUpTo(navController.graph.findStartDestination().id) { saveState = fromTabRoot }
+            // the Shore, not the graph's start, which is onboarding on a first launch
+            popUpTo<Shore> { saveState = fromTabRoot }
             launchSingleTop = true
             restoreState = true
         }
@@ -92,7 +96,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
 
     NavHost(
         navController = navController,
-        startDestination = Shore,
+        startDestination = startDestination,
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background),
@@ -116,6 +120,21 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
             if (initialState.destination.isTopLevel()) fadeOut(BottlingMotion.screen()) else PredictiveBackExit
         },
     ) {
+        immersive<Onboarding> {
+            // onboarding leaves the back stack as it ends, so back from the Shore leaves the app
+            val toShore: NavOptionsBuilder.() -> Unit = { popUpTo<Onboarding> { inclusive = true } }
+            OnboardingScreen(
+                onSkipHandler = { navController.navigate(Shore, toShore) },
+                onFindFirstHandler = {
+                    navController.navigate(Shore, toShore)
+                    navController.navigate(Discover)
+                },
+                onCastHandler = {
+                    navController.navigate(Shore, toShore)
+                    navController.navigate(PostMessage)
+                },
+            )
+        }
         composable<Shore> { entry ->
             val snackbarHostState = remember { SnackbarHostState() }
             // A notice Discover left for the Shore: the day it found that day already had a find. It's
