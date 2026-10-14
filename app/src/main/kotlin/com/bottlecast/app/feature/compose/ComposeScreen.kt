@@ -209,7 +209,7 @@ private fun CastLimit(castsLeft: Int?) {
     val spacing = BottlingTheme.spacing
     when (castsLeft) {
         0 -> Banner(
-            text = stringResource(R.string.compose_cast_limit, MessageLimits.CASTS_PER_DAY),
+            text = pluralStringResource(R.plurals.compose_cast_limit, MessageLimits.CASTS_PER_DAY, MessageLimits.CASTS_PER_DAY),
             icon = R.drawable.ic_symbol_info,
             modifier = Modifier.padding(horizontal = spacing.gutter, vertical = spacing.xxs),
         )

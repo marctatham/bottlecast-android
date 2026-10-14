@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -249,7 +250,7 @@ private fun PreviewActions(
         verticalArrangement = Arrangement.spacedBy(spacing.xxs),
     ) {
         if (uiState.castsLeft == 0) {
-            Banner(text = stringResource(R.string.compose_cast_limit, MessageLimits.CASTS_PER_DAY), icon = R.drawable.ic_symbol_info)
+            Banner(text = pluralStringResource(R.plurals.compose_cast_limit, MessageLimits.CASTS_PER_DAY, MessageLimits.CASTS_PER_DAY), icon = R.drawable.ic_symbol_info)
             Spacer(modifier = Modifier.height(spacing.xxs))
         }
         BottlingButton(

@@ -282,7 +282,10 @@
         <item quantity="one">%1$d cast left today</item>
         <item quantity="other">%1$d casts left today</item>
     </plurals>
-    <string name="compose_cast_limit">That\'s %1$d bottles today — the sea needs a rest. Try again tomorrow.</string>
+    <plurals name="compose_cast_limit">
+        <item quantity="one">That\'s %1$d bottle today — the sea needs a rest. Try again tomorrow.</item>
+        <item quantity="other">That\'s %1$d bottles today — the sea needs a rest. Try again tomorrow.</item>
+    </plurals>
 
     <!-- Preview (spec §3.4b); the on-chain lines differ by build type, in strings_chain.xml -->
     <string name="preview_title">Preview</string>
