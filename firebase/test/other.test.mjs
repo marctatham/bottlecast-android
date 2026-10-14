@@ -34,8 +34,6 @@ describe('blocked writers', () => {
 describe('everything else', () => {
   it('denies documents outside the known collections', async () => {
     const db = guest('finn');
-    await assertFails(getDoc(doc(db, 'users', 'finn')));
-    await assertFails(setDoc(doc(db, 'users', 'finn'), { name: 'Finn' }));
     await assertFails(getDoc(doc(db, 'claims', 'x')));
     await assertFails(setDoc(doc(db, 'foo', 'bar'), { a: 1 }));
   });

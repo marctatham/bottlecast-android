@@ -1,9 +1,10 @@
 // Shared helpers for the rules tests: the test environment, who's asking, seed data and the
 // writes the app makes, each shaped exactly as the app sends it.
+import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
-  Timestamp, doc, increment, serverTimestamp, setDoc, setLogLevel, writeBatch,
+  Bytes, Timestamp, doc, increment, serverTimestamp, setDoc, setLogLevel, writeBatch,
 } from 'firebase/firestore';
 
 // Denied writes are the point of most tests; keep the SDK from logging each one.
@@ -40,6 +41,13 @@ export function guest(uid) {
 
 export function google(uid) {
   return testEnv.authenticatedContext(uid, googleToken).firestore();
+}
+
+// A guest that linked Google: the identities carry Google, though the provider may still say anonymous.
+export function linkedGuest(uid) {
+  return testEnv.authenticatedContext(uid, {
+    firebase: { sign_in_provider: 'anonymous', identities: { 'google.com': ['1'] } },
+  }).firestore();
 }
 
 export function admin(uid = 'moderator') {
@@ -109,6 +117,14 @@ export async function seedHold(id, finderUid, ageMillis, { findStatus = 'held', 
   return foundAt;
 }
 
+export async function seedProfile(uid, profile) {
+  await seed((db) => setDoc(doc(db, 'users', uid), profile));
+}
+
+export async function seedTally(uid, tally) {
+  await seed((db) => setDoc(doc(db, 'castTally', uid), tally));
+}
+
 // ---------- Dates ----------
 
 export function utcDate(millis = Date.now()) {
@@ -139,8 +155,60 @@ export function castFields(uid, id, overrides = {}) {
   };
 }
 
-export function cast(db, uid, id, overrides = {}) {
-  return setDoc(doc(db, 'messages', id), castFields(uid, id, overrides));
+// A cast, as one commit: the bottle, my cast tally counting it, and my profile accepting the Terms.
+// `tally` and `profile` replace or extend those writes; `tallyKind` 'update' is the same-day form,
+// and a null `profile` leaves the profile out.
+export function castWrites(uid, id, {
+  message = {}, tally = {}, tallyKind = 'set', profile = {},
+} = {}) {
+  const writes = [
+    ['set', ['messages', id], castFields(uid, id, message)],
+    tallyKind === 'update'
+      ? ['update', ['castTally', uid], { date: utcDate(), count: increment(1), messageId: id, ...tally }]
+      : ['set', ['castTally', uid], { date: utcDate(), count: 1, messageId: id, ...tally }],
+  ];
+  if (profile !== null) {
+    writes.push(['merge', ['users', uid], { termsVersion: 1, termsAcceptedAt: serverTimestamp(), ...profile }]);
+  }
+  return writes;
+}
+
+export function cast(db, uid, id, overrides = {}, options = {}) {
+  return commit(db, castWrites(uid, id, { ...options, message: overrides }));
+}
+
+// ---------- Handovers ----------
+
+// A random token, as the app makes one, and the SHA-256 commitment the guest leaves.
+export function newToken() {
+  return randomBytes(32).toString('base64url');
+}
+
+export function tokenHash(token) {
+  return Bytes.fromUint8Array(new Uint8Array(createHash('sha256').update(token).digest()));
+}
+
+export function handoffFields(uid, { date = utcDate(), hash, ...overrides } = {}) {
+  return {
+    from: uid, date, tokenHash: hash, createdAt: serverTimestamp(), token: null, claimedBy: null, claimedAt: null,
+    ...overrides,
+  };
+}
+
+export function armHandoff(db, uid, id, options = {}) {
+  return setDoc(doc(db, 'handoffs', id), handoffFields(uid, options));
+}
+
+// The claim, as one commit: present the token, move the hold to me, and record my find for today.
+export function claimWrites(uid, id, token, { date = utcDate(), handoff = {}, message = {} } = {}) {
+  return [
+    ['update', ['handoffs', id], { token, claimedBy: uid, claimedAt: serverTimestamp(), ...handoff }],
+    ['update', ['messages', id], { foundAt: serverTimestamp(), ...message }],
+    ['set', ['finds', `${id}_${uid}`], {
+      messageId: id, finderUid: uid, foundAt: serverTimestamp(), dailyId: `${uid}_${date}`, status: 'held',
+    }],
+    ['set', ['daily', `${uid}_${date}`], { uid, date, zone: 'UTC', messageId: id, foundAt: serverTimestamp() }],
+  ];
 }
 
 // The pop, as one commit: hold the bottle, create my find and today's daily record.
@@ -180,6 +248,7 @@ export function commit(db, writes, only) {
     if (only && !only.includes(index)) return;
     const ref = doc(db, ...path);
     if (kind === 'set') batch.set(ref, data);
+    else if (kind === 'merge') batch.set(ref, data, { merge: true });
     else batch.update(ref, data);
   });
   return batch.commit();

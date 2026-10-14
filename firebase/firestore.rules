@@ -2,12 +2,14 @@ rules_version = '2';
 
 // BottleCast's Cloud Firestore security rules.
 //
-// Collections: messages, finds, daily, reports and users/{uid}/blockedWriters. Anything else is
-// denied, because rules deny by default. Tests: firebase/test, run with `npm run test:emulator`.
+// Collections: messages, finds, daily, reports, handoffs, castTally, users and
+// users/{uid}/blockedWriters. Anything else is denied, because rules deny by default. Tests:
+// firebase/test, run with `npm run test:emulator`.
 //
-// The report threshold (3) also lives in the app's sea queries (reportCount in [0, 1, 2]), so change
-// both together. Access calls (get, getAfter, exists) go last in each && chain and never in a let,
-// which is evaluated eagerly.
+// The report threshold (3) also lives in the app's sea queries (reportCount in [0, 1, 2]), the Terms
+// version in the app's TERMS_VERSION and the daily casts in its CASTS_PER_DAY, so change each pair
+// together. Access calls (get, getAfter, exists) go last in each && chain and never in a let, which
+// is evaluated eagerly.
 
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -20,6 +22,13 @@ service cloud.firestore {
 
     function me() {
       return request.auth.uid;
+    }
+
+    // A Google identity on the account: a Google sign-in, or a guest that linked Google. A linked
+    // guest's token can still name 'anonymous' as its sign-in provider, so the identities decide.
+    function hasGoogle() {
+      return signedIn()
+        && 'google.com' in request.auth.token.get('firebase', {}).get('identities', {});
     }
 
     // A custom claim, set per project by scripts/set_admin_claim.py.
@@ -66,6 +75,33 @@ service cloud.firestore {
       return /databases/$(database)/documents/reports/$(reportId);
     }
 
+    function handoffDoc(messageId) {
+      return /databases/$(database)/documents/handoffs/$(messageId);
+    }
+
+    function castTallyDoc(uid) {
+      return /databases/$(database)/documents/castTally/$(uid);
+    }
+
+    function userDoc(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+
+    // The Terms version a cast needs (the app's TERMS_VERSION).
+    function currentTermsVersion() {
+      return 1;
+    }
+
+    // The most casts one local date allows, spec §3.4 (the app's CASTS_PER_DAY).
+    function castsPerDay() {
+      return 5;
+    }
+
+    // 3 to 20 characters with no space at either end, spec §3.2.
+    function isPenName(name) {
+      return name is string && name.size() >= 3 && name.size() <= 20 && name.trim() == name;
+    }
+
     // ---------- messages/{messageId} ----------
 
     // In the sea: drifting, or found (a live or an expired hold), and reported fewer than 3 times.
@@ -87,26 +123,31 @@ service cloud.firestore {
         && (m.status == 'afloat' || (m.status == 'found' && request.time >= holdEnds(m)));
     }
 
-    // Guests can still cast in slice 2, as they could before; slice 3 requires a Google identity.
+    // A cast needs a Google identity, the current Terms on my profile and my cast tally counting it,
+    // both as this commit leaves them. A pen name must be my profile's own (spec §3.4, §3.4b).
     function isValidCast(messageId) {
       let m = incoming();
-      return hasExactly(['id', 'messageContent', 'userId', 'createdAt', 'lang', 'status',
-                         'rand', 'penName', 'sealable', 'reportCount', 'findCount', 'foundAt'])
+      return hasGoogle()
+        && hasExactly(['id', 'messageContent', 'userId', 'createdAt', 'lang', 'status',
+                       'rand', 'penName', 'sealable', 'reportCount', 'findCount', 'foundAt'])
         && messageId.matches('^[A-Za-z0-9]{20}$')
         && m.id == messageId
         && m.messageContent is string
         && m.messageContent.trim().size() >= 10
-        && m.messageContent.toUtf8().size() <= 1000
+        && m.messageContent.toUtf8().size() <= 280
         && m.userId == me()
         && m.createdAt == request.time
         && m.lang is string && m.lang.matches('^[a-z]{2,3}(-[A-Za-z0-9]{1,8})*$')
         && m.status == 'afloat'
         && m.rand is float && m.rand >= 0 && m.rand < 1
-        && m.penName == null
-        && m.sealable == false
+        && m.sealable is bool
         && m.reportCount is int && m.reportCount == 0
         && m.findCount is int && m.findCount == 0
-        && m.foundAt == null;
+        && m.foundAt == null
+        && (m.penName == null || isPenName(m.penName))
+        && getAfter(castTallyDoc(me())).data.messageId == messageId
+        && getAfter(userDoc(me())).data.get('termsVersion', 0) >= currentTermsVersion()
+        && (m.penName == null || getAfter(userDoc(me())).data.get('penName', null) == m.penName);
     }
 
     // The pop: one commit holds the bottle and creates my find and today's daily record.
@@ -169,6 +210,24 @@ service cloud.firestore {
         && (after.status != 'found' || holdRunning(before));
     }
 
+    // Handover (spec §3.2): a guest who signs in to a Google account that already exists hands today's
+    // live hold to it. The handoff the guest left is claimed in this commit with the token only its
+    // phone knew, and my new find holds the bottle from now. The guest's find keeps the old foundAt,
+    // so it no longer holds the bottle. The find count stays: nobody new found it.
+    function isHandover(messageId) {
+      let before = existing();
+      return before.userId != me()
+        && holdIsLive(before)
+        && changedKeys().hasOnly(['foundAt'])
+        && incoming().foundAt == request.time
+        && getAfter(handoffDoc(messageId)).data.claimedBy == me()
+        && getAfter(handoffDoc(messageId)).data.claimedAt == request.time
+        && get(findDoc(messageId + '_' + getAfter(handoffDoc(messageId)).data.from)).data.status == 'held'
+        && get(findDoc(messageId + '_' + getAfter(handoffDoc(messageId)).data.from)).data.foundAt
+             == before.foundAt
+        && getAfter(findDoc(pairId(messageId))).data.foundAt == request.time;
+    }
+
     match /messages/{messageId} {
       allow get: if signedIn()
         && (resource == null
@@ -181,7 +240,8 @@ service cloud.firestore {
             || (request.query.limit <= 20 && isInSea(resource.data)));
       allow create: if signedIn() && isValidCast(messageId);
       allow update: if signedIn()
-        && (isFind(messageId) || isThrowBack(messageId) || isReport(messageId) || isModeration());
+        && (isFind(messageId) || isThrowBack(messageId) || isReport(messageId) || isModeration()
+            || isHandover(messageId));
       allow delete: if isAdmin();
     }
 
@@ -278,6 +338,110 @@ service cloud.firestore {
       allow get: if isAdmin() || (signedIn() && reportId.matches('^.+_' + me() + '$'));
       allow list, delete: if isAdmin();
       allow create: if signedIn() && isValidReport(reportId);
+    }
+
+    // ---------- handoffs/{messageId} ----------
+
+    // Only today's live holder, as a guest, may hand its bottle over. tokenHash is the SHA-256 of a
+    // random token kept only in that phone's memory. Arming again replaces an older handoff.
+    function isValidHandoff(messageId) {
+      let h = incoming();
+      return !hasGoogle()
+        && hasExactly(['from', 'date', 'tokenHash', 'createdAt', 'token', 'claimedBy', 'claimedAt'])
+        && h.from == me()
+        && h.date is string && isLocalDateNow(h.date)
+        && h.tokenHash is bytes && h.tokenHash.size() == 32
+        && h.createdAt == request.time
+        && h.token == null && h.claimedBy == null && h.claimedAt == null
+        && get(dailyDoc(me() + '_' + h.date)).data.messageId == messageId
+        && get(findDoc(pairId(messageId))).data.status == 'held'
+        && get(findDoc(pairId(messageId))).data.foundAt == get(messageDoc(messageId)).data.foundAt
+        && holdIsLive(get(messageDoc(messageId)).data);
+    }
+
+    // The claim: once, within 10 minutes, by a Google account other than the guest, presenting the
+    // token whose hash the guest left. The bottle moves to me in the same commit (isHandover).
+    function isHandoffClaim(messageId) {
+      let before = existing();
+      let after = incoming();
+      return hasGoogle()
+        && before.from != me()
+        && before.claimedBy == null
+        && request.time < before.createdAt + duration.value(10, 'm')
+        && changedKeys().hasOnly(['token', 'claimedBy', 'claimedAt'])
+        && after.token is string && after.token.size() <= 64
+        && hashing.sha256(after.token) == before.tokenHash
+        && after.claimedBy == me()
+        && after.claimedAt == request.time
+        && getAfter(messageDoc(messageId)).data.foundAt == request.time;
+    }
+
+    match /handoffs/{messageId} {
+      // No reads at all, so nobody can learn a hash, a token, or who handed what to whom.
+      allow create: if signedIn() && isValidHandoff(messageId);
+      allow update: if signedIn() && (isValidHandoff(messageId) || isHandoffClaim(messageId));
+    }
+
+    // ---------- castTally/{uid} ----------
+
+    // Each cast counts on its writer's tally in the same commit, at most castsPerDay() on a local date.
+    // The date only moves forward, so going back a day can't reset the count.
+    function isTally(userId) {
+      let t = incoming();
+      return me() == userId
+        && hasExactly(['date', 'count', 'messageId'])
+        && t.date is string && isLocalDateNow(t.date)
+        && t.count is int && t.count >= 1 && t.count <= castsPerDay()
+        && t.messageId is string;
+    }
+
+    // The tally names a bottle of mine, created in this commit.
+    function countsMyCast() {
+      return getAfter(messageDoc(incoming().messageId)).data.userId == me()
+        && getAfter(messageDoc(incoming().messageId)).data.createdAt == request.time;
+    }
+
+    match /castTally/{userId} {
+      allow get: if signedIn() && me() == userId;
+      allow create: if signedIn() && isTally(userId) && incoming().count == 1 && countsMyCast();
+      allow update: if signedIn() && isTally(userId)
+        && ((incoming().date == existing().date && incoming().count == existing().count + 1)
+            || (incoming().date > existing().date && incoming().count == 1))
+        && countsMyCast();
+    }
+
+    // ---------- users/{uid} ----------
+
+    // My profile: a pen name, and which Terms I accepted and when. Writes merge, so a key may be
+    // missing. Only Google accounts have one.
+    function isValidProfile(userId) {
+      let u = incoming();
+      return me() == userId
+        && hasGoogle()
+        && u.keys().hasOnly(['penName', 'termsVersion', 'termsAcceptedAt'])
+        && (!('penName' in u) || u.penName == null || isPenName(u.penName))
+        && (('termsVersion' in u) == ('termsAcceptedAt' in u))
+        && (!('termsVersion' in u) || (u.termsVersion is int && u.termsVersion >= 1));
+    }
+
+    // Accepting stamps the commit's time at a version no older than before. The same version again
+    // is allowed: offline, the app may not know it already accepted.
+    function acceptsTerms(previousVersion) {
+      return incoming().termsVersion >= previousVersion && incoming().termsAcceptedAt == request.time;
+    }
+
+    function keepsTerms() {
+      return incoming().get('termsVersion', null) == existing().get('termsVersion', null)
+        && incoming().get('termsAcceptedAt', null) == existing().get('termsAcceptedAt', null);
+    }
+
+    match /users/{userId} {
+      allow get: if signedIn() && me() == userId;
+      allow create: if signedIn() && isValidProfile(userId)
+        && (!('termsVersion' in incoming()) || acceptsTerms(1));
+      allow update: if signedIn() && isValidProfile(userId)
+        && (keepsTerms()
+            || ('termsVersion' in incoming() && acceptsTerms(existing().get('termsVersion', 1))));
     }
 
     // ---------- users/{uid}/blockedWriters/{writerUid} ----------
