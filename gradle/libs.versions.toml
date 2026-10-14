@@ -15,6 +15,9 @@ androidxHilt = "1.4.0"
 androidxNavigation = "2.10.2"
 kotlinxSerialization = "1.8.1" # the version Firebase already resolves; navigation's type-safe routes need it at compile time
 androidxCredentials = "1.6.0"
+androidxDataStore = "1.2.1"
+androidxBrowser = "1.10.0"
+mlkitLanguageId = "17.0.0"
 androidxTest = "1.7.0"
 androidxTestExt = "1.3.0"
 androidxTestRunner = "1.7.0"
@@ -42,6 +45,9 @@ androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "androidxCredentials" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "androidxCredentials" } # Credential Manager's Google Play services provider, required on Android 13 & below
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidxDataStore" }
+androidx-browser = { module = "androidx.browser:browser", version.ref = "androidxBrowser" } # Custom Tabs for the Terms and Privacy pages
+mlkit-language-id = { module = "com.google.android.gms:play-services-mlkit-language-id", version.ref = "mlkitLanguageId" } # unbundled: Play services keeps the model, so the APK doesn't
 androidx-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
