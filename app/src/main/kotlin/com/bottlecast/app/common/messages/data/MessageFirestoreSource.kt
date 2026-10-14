@@ -3,7 +3,6 @@ package com.bottlecast.app.common.messages.data
 import com.bottlecast.app.common.messages.data.mapper.MessageDataModelMapper
 import com.bottlecast.app.common.messages.data.model.MessageFields
 import com.bottlecast.app.common.messages.domain.HOLD_DAYS
-import com.bottlecast.app.common.messages.domain.LANG_UNDETERMINED
 import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.messages.domain.ModerationAction
@@ -18,7 +17,6 @@ import timber.log.Timber
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import javax.inject.Inject
-import kotlin.random.Random
 
 class MessageFirestoreSource @Inject constructor(
     private val firestore: FirebaseFirestore,
@@ -26,15 +24,6 @@ class MessageFirestoreSource @Inject constructor(
 ) : IMessageDataSource {
 
     private val messages: CollectionReference = firestore.collection(MessageFields.COLLECTION)
-
-    override suspend fun postMessage(message: String, userId: String): MessageEntity {
-        val document = messages.document()
-        Tasks.await(
-            document.set(newBottle(document.id, message, userId, Random.nextDouble(), LANG_UNDETERMINED, penName = null, sealable = false))
-        )
-        Timber.i("New message posted")
-        return MessageEntity(id = document.id, message = message, userId = userId)
-    }
 
     override suspend fun getReportedMessages(): List<MessageEntity> {
         val reported = messages

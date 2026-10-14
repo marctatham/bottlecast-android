@@ -33,8 +33,9 @@ class ScreenNameMappingTest {
             composable<Me> {}
             composable<Discover> {}
             composable<Reveal> {}
-            composable<PostMessage> {}
-            composable<PostMessageLoginRequired> {}
+            composable<Compose> {}
+            composable<ComposePreview> {}
+            composable<CastSuccess> {}
             composable<Moderation> {}
         }
 

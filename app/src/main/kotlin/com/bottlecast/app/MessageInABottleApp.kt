@@ -49,14 +49,17 @@ import com.bottlecast.app.common.components.BottlingSnackbarHost
 import com.bottlecast.app.common.components.TabFrame
 import com.bottlecast.app.common.ui.BottlingMotion
 import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.feature.castsuccess.CastSuccessScreen
 import com.bottlecast.app.feature.chest.ChestScreen
+import com.bottlecast.app.feature.compose.ComposeScreen
+import com.bottlecast.app.feature.composepreview.ComposePreviewScreen
 import com.bottlecast.app.feature.discover.DiscoverScreen
-import com.bottlecast.app.feature.login.LoginRequiredToPostScreen
 import com.bottlecast.app.feature.me.MeScreen
 import com.bottlecast.app.feature.onboarding.OnboardingScreen
-import com.bottlecast.app.feature.postmessage.ui.PostMessageScreen
 import com.bottlecast.app.feature.reveal.RevealScreen
 import com.bottlecast.app.feature.shore.ShoreScreen
+import com.bottlecast.app.feature.signin.SignInReason
+import com.bottlecast.app.feature.signin.SignInSheet
 import com.bottlecast.app.feature.viewmessages.ViewMessagesScreen
 import java.time.LocalDate
 
@@ -129,14 +132,17 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                     navController.navigate(Shore, toShore)
                     navController.navigate(Discover)
                 },
-                onCastHandler = {
+                onCastHandler = { justSignedIn ->
                     navController.navigate(Shore, toShore)
-                    navController.navigate(PostMessage)
+                    navController.navigate(Compose(justSignedIn))
                 },
             )
         }
         composable<Shore> { entry ->
             val snackbarHostState = remember { SnackbarHostState() }
+            // The sign-in sheet before casting (spec §2, flow 3), in the entry's saved state, so it
+            // survives a rotation, and so Discover's calm-sea cast can open it as it closes.
+            val signingInToCast by entry.savedStateHandle.getStateFlow(SIGN_IN_TO_CAST, false).collectAsStateWithLifecycle()
             // A notice Discover left for the Shore: the day it found that day already had a find. It's
             // dated so a notice that never got shown can't turn up on a later day.
             val notice by entry.savedStateHandle.getStateFlow<String?>(SHORE_NOTICE, null).collectAsStateWithLifecycle()
@@ -147,7 +153,13 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
             ) { contentPadding ->
                 ShoreScreen(
                     onFindBottleHandler = { navController.navigate(Discover) },
-                    onCastHandler = { navController.navigate(viewModel.onNavigateToPostMessage()) },
+                    onCastHandler = {
+                        if (viewModel.needsSignInToCast()) {
+                            entry.savedStateHandle[SIGN_IN_TO_CAST] = true
+                        } else {
+                            navController.navigate(Compose())
+                        }
+                    },
                     onModerationHandler = { navController.navigate(Moderation) },
                     onOpenChestHandler = { tabHandler(TopLevelDestination.CHEST) },
                     onOpenMeHandler = { tabHandler(TopLevelDestination.ME) },
@@ -156,6 +168,16 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                     snackbarHostState = snackbarHostState,
                     alreadyFoundNotice = notice == LocalDate.now().toString(),
                     onNoticeShown = { entry.savedStateHandle[SHORE_NOTICE] = null },
+                )
+            }
+            if (signingInToCast) {
+                SignInSheet(
+                    reason = SignInReason.Cast,
+                    onDismissRequest = { entry.savedStateHandle[SIGN_IN_TO_CAST] = false },
+                    onSignedIn = {
+                        entry.savedStateHandle[SIGN_IN_TO_CAST] = false
+                        navController.navigate(Compose(justSignedIn = true))
+                    },
                 )
             }
         }
@@ -193,7 +215,13 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                     homeHandler()
                 },
                 onCastHandler = {
-                    navController.navigate(viewModel.onNavigateToPostMessage()) { popUpTo<Discover> { inclusive = true } }
+                    if (viewModel.needsSignInToCast()) {
+                        // back on the Shore, which asks for Google first
+                        navController.getBackStackEntry<Shore>().savedStateHandle[SIGN_IN_TO_CAST] = true
+                        homeHandler()
+                    } else {
+                        navController.navigate(Compose()) { popUpTo<Discover> { inclusive = true } }
+                    }
                 },
             )
         }
@@ -205,27 +233,23 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
         ) {
             RevealScreen(onBackHandler = backHandler, onLeaveHandler = homeHandler)
         }
-        immersive<PostMessageLoginRequired> {
-            LegacyScreen {
-                LoginRequiredToPostScreen(
-                    // one step, so the Shore never becomes current in between
-                    onProceedHandler = {
-                        navController.navigate(PostMessage) {
-                            popUpTo<PostMessageLoginRequired> { inclusive = true }
-                        }
-                    },
-                    onBackHandler = backHandler,
-                    onCancelHandler = homeHandler
-                )
-            }
+        immersive<Compose> {
+            ComposeScreen(
+                onCloseHandler = backHandler,
+                onPreviewHandler = { navController.navigate(ComposePreview) },
+            )
         }
-        immersive<PostMessage> {
-            LegacyScreen {
-                PostMessageScreen(
-                    onBackHandler = backHandler,
-                    onHomeHandler = homeHandler,
-                )
-            }
+        immersive<ComposePreview> {
+            ComposePreviewScreen(
+                onEditHandler = backHandler,
+                // Compose and Preview go, so back from success leads to the Shore (spec §2)
+                onCastHandler = { messageId, queued, sealable ->
+                    navController.navigate(CastSuccess(messageId, queued, sealable)) { popUpTo<Compose> { inclusive = true } }
+                },
+            )
+        }
+        immersive<CastSuccess> {
+            CastSuccessScreen(onBackToShoreHandler = homeHandler)
         }
         immersive<Moderation> {
             LegacyScreen { ViewMessagesScreen() }
@@ -283,7 +307,7 @@ private fun LegacyScreen(content: @Composable () -> Unit) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
             .safeDrawingPadding()
-            // stops oversized backgrounds (CustomBox's circle) painting into the system bars
+            // stops oversized backgrounds painting into the system bars
             .clipToBounds()
     ) { content() }
 }
@@ -353,3 +377,6 @@ private const val REVEAL_GROWS_FROM_Y = 0.3f
 
 /** The Shore entry's saved-state key for Discover's already-found notice, which holds its date. */
 private const val SHORE_NOTICE = "shore_notice"
+
+/** The Shore entry's saved-state key for the sign-in sheet that comes before casting. */
+private const val SIGN_IN_TO_CAST = "sign_in_to_cast"

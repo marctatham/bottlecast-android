@@ -19,8 +19,9 @@ class BottlingRouteTest {
             Me::class to "me",
             Discover::class to "get_messages",
             Reveal::class to "reveal",
-            PostMessage::class to "post_message",
-            PostMessageLoginRequired::class to "post_message_login_required",
+            Compose::class to "post_message",
+            ComposePreview::class to "compose_preview",
+            CastSuccess::class to "cast_success",
             Moderation::class to "view_messages",
         )
 

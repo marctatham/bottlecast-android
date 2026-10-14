@@ -15,7 +15,7 @@ import androidx.lifecycle.compose.currentStateAsState
  * True when the user has asked for less motion: the system's animator duration scale is 0
  * ("Remove animations"). Settings adds an in-app "Reduce motion" switch in slice 4.
  *
- * Under reduced motion there are no infinite transitions, Lottie is pinned to a still frame and
+ * Under reduced motion there are no infinite transitions, the cast is a short crossfade, and
  * haptics stay on (spec §1.5). It's re-read each time the screen resumes, so changing the setting
  * applies without a restart.
  */

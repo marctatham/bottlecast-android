@@ -12,15 +12,6 @@ class MessageRepository(
     private val dispatcherNetwork: CoroutineDispatcher
 ) : IMessageRepository {
 
-    override suspend fun postMessage(message: String, userId: String): MessageEntity {
-        Timber.i("[postMessage] Posting message to datasource")
-        return withContext(dispatcherNetwork) {
-            messageDataSource.postMessage(message, userId).also {
-                Timber.i("[postMessage] Message posted successfully")
-            }
-        }
-    }
-
     override suspend fun getReportedMessages(): List<MessageEntity> {
         Timber.v("[getReportedMessages] Retrieving the messages to moderate")
         return withContext(dispatcherNetwork) {

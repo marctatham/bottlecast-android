@@ -179,10 +179,6 @@ dependencies {
     // on-device language identification, stored on each cast (spec §3.4b)
     implementation(libs.mlkit.language.id)
 
-    // lottie
-    implementation(libs.airbnb.lottie)
-    implementation(libs.airbnb.lottie.compose)
-
     // firebase
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

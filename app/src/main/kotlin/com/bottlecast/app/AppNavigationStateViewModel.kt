@@ -40,14 +40,9 @@ class AppNavigationStateViewModel @Inject constructor(
      */
     var lastTrackedDestinationId: Int? = null
 
-    // Guests have an account too (from today's first prefetch), so only Google skips the sign-in
-    // sheet, where a guest can still choose to carry on as one until slice 3.
-    fun onNavigateToPostMessage(): BottlingRoute {
+    /** Casting needs Google (spec §2, flow 3): anyone else sees the sign-in sheet first. */
+    fun needsSignInToCast(): Boolean {
         val user = authenticationRepository.user.value
-        return if (user is UserEntity.AuthenticatedUser && user.providerType == AuthProviderType.Google) {
-            PostMessage
-        } else {
-            PostMessageLoginRequired
-        }
+        return !(user is UserEntity.AuthenticatedUser && user.providerType == AuthProviderType.Google)
     }
 }

@@ -18,7 +18,7 @@ import kotlin.math.sin
  * - the dome's edge rises and falls ±2dp on an 8s sine;
  * - three moon glints drift across the sea over 12s;
  * - the moon's halo dims to 0.9 and brightens back to 1.0 over 6s;
- * - the bottle bobs up and back down over 6.7s (the Lottie's loop at 0.6×).
+ * - the bottle bobs up and back down over 6.7s (the boards' float).
  *
  * Each value is a lambda read at draw time, so the tide redraws without recomposing.
  */

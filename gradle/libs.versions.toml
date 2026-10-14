@@ -26,7 +26,6 @@ junit = "4.13.2"
 mockk = "1.14.11"
 byteBuddy = "1.18.2" # the version mockk resolves; its agent is preloaded in unit tests (app/build.gradle.kts)
 timber = "5.0.1"
-lottie = "6.7.1"
 googleId = "1.2.1"
 firebase = "35.0.0"
 roborazzi = "1.76.0"
@@ -66,8 +65,6 @@ junit = { module = "junit:junit", version.ref = "junit" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 kotlinx-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "pluginKotlin" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
-airbnb-lottie = { module = "com.airbnb.android:lottie", version.ref = "lottie" }
-airbnb-lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase" } # when using the BoM, don't specify versions in the Firebase dependencies
 firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
 firebase-auth = { module = "com.google.firebase:firebase-auth" }

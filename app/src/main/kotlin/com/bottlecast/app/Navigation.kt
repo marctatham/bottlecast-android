@@ -61,16 +61,33 @@ data class Reveal(val messageId: String, val fresh: Boolean = false) : BottlingR
     }
 }
 
-/** Today's post screen, until slice 3's Compose replaces it. */
+/**
+ * Compose: writing a bottle (spec §3.4). It keeps the name of the post screen it replaced. When
+ * [justSignedIn], it offers a pen name.
+ */
 @Serializable
-data object PostMessage : BottlingRoute {
-    override val screenName: String get() = "post_message"
+data class Compose(val justSignedIn: Boolean = false) : BottlingRoute {
+    override val screenName: String get() = SCREEN_NAME
+
+    companion object {
+        const val SCREEN_NAME = "post_message"
+    }
 }
 
-/** The sign-in explainer shown before posting while signed out. */
+/** Preview: the bottle as it will wash up, and the writer's consent (spec §3.4b). */
 @Serializable
-data object PostMessageLoginRequired : BottlingRoute {
-    override val screenName: String get() = "post_message_login_required"
+data object ComposePreview : BottlingRoute {
+    override val screenName: String get() = "compose_preview"
+}
+
+/** The cast and its success (spec §3.5). [queued] while it waits for a connection or the server. */
+@Serializable
+data class CastSuccess(val messageId: String, val queued: Boolean, val sealable: Boolean) : BottlingRoute {
+    override val screenName: String get() = SCREEN_NAME
+
+    companion object {
+        const val SCREEN_NAME = "cast_success"
+    }
 }
 
 /** The admin's list of reported and pulled bottles (spec §3.3: "Moderation"). */
@@ -97,8 +114,9 @@ val routeScreenNames: Map<KClass<out BottlingRoute>, String> = mapOf(
     Me::class to Me.screenName,
     Discover::class to Discover.screenName,
     Reveal::class to Reveal.SCREEN_NAME,
-    PostMessage::class to PostMessage.screenName,
-    PostMessageLoginRequired::class to PostMessageLoginRequired.screenName,
+    Compose::class to Compose.SCREEN_NAME,
+    ComposePreview::class to ComposePreview.screenName,
+    CastSuccess::class to CastSuccess.SCREEN_NAME,
     Moderation::class to Moderation.screenName,
 )
 
