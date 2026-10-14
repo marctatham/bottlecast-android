@@ -8,7 +8,7 @@ import dagger.Module
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
 
-// keeps instrumented tests away from Firestore
+// keeps instrumented tests away from Firestore (NoFirestoreModule refuses it anyway)
 @Module
 @TestInstallIn(
     components = [SingletonComponent::class],
