@@ -28,4 +28,16 @@ interface ISeaRepository {
 
     /** A bottle by id, or null when it doesn't exist or can't be read. */
     suspend fun getMessage(messageId: String): MessageEntity?
+
+    /**
+     * As the guest, before it signs in to a Google account that already exists: arms a handoff of
+     * today's live hold, or returns null when there's none to hand over (spec §3.2).
+     */
+    suspend fun prepareHandover(): Handover?
+
+    /**
+     * As the Google account [uid], just signed in: takes over the guest's hold, unless it has a find
+     * today. The uid comes from the sign-in itself, since the signed-in user may not have caught up.
+     */
+    suspend fun claimHandover(handover: Handover, uid: String): HandoverResult
 }

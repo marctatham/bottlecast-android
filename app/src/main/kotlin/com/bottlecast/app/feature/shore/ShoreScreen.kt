@@ -11,10 +11,11 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.LaunchedEffect
+import com.bottlecast.app.common.components.bottle.FloatingBottle
+import com.bottlecast.app.common.components.bottle.FloatingBottleDefaults
 import com.bottlecast.app.common.components.illustrations.SeaCalmIllustration
 import com.bottlecast.app.common.ui.BottlingMotion
 import com.bottlecast.app.common.ui.rememberHaptics
-import com.bottlecast.app.feature.shore.components.ShoreBottle
 import com.bottlecast.app.feature.shore.components.countdownText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -56,6 +57,7 @@ import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.components.BottlingButtonType
 import com.bottlecast.app.common.components.DomeEdge
 import com.bottlecast.app.common.components.DomeScaffold
+import com.bottlecast.app.common.components.TideRing
 import com.bottlecast.app.common.ui.BottlingPreview
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.common.ui.isLargeText
@@ -70,7 +72,6 @@ import com.bottlecast.app.feature.shore.components.ShoreScene
 import com.bottlecast.app.feature.shore.components.ShoreScenery
 import com.bottlecast.app.feature.shore.components.ShoreStatsRow
 import com.bottlecast.app.feature.shore.components.ShoreTopRow
-import com.bottlecast.app.feature.shore.components.TideRing
 import com.bottlecast.app.feature.shore.components.TodaysFindCard
 import com.bottlecast.app.feature.shore.domain.Tide
 import java.time.Duration
@@ -312,8 +313,8 @@ private fun ColumnScope.BottleWaitingHero(tide: BreathingTide, largeText: Boolea
         contentAlignment = Alignment.Center,
     ) {
         if (!largeText && maxHeight >= ShoreDimens.bottleMinHeight) {
-            ShoreBottle(
-                height = min(ShoreDimens.bottleHeight, maxHeight - ShoreDimens.ripplesUnderBottle),
+            FloatingBottle(
+                height = min(ShoreDimens.bottleHeight, maxHeight - FloatingBottleDefaults.ripplesUnderBottle),
                 bob = tide.bob,
                 modifier = Modifier.semantics { contentDescription = bottleDescription },
             )

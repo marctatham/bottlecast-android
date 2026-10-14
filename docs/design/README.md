@@ -32,6 +32,7 @@ This is a summary. `decisions.md` has the exact wording, the dates and the spec 
 - **Accounts and wallets:** the Google/Firebase account is the passport. Wallets are display cases linked to it, many to one, by a free "Prove it's yours" signature (SIWE signed with plain `personal_sign` and checked by the Worker). One wallet is marked "Receiving". A wallet never signs anyone in.
 - **Calendar-day tides:** a new bottle washes up at local midnight, and each day allows one find. The reminder fires at a time the user picks (default 9:00 AM) and respects quiet hours (default 10 PM to 8 AM). There is no 20-hour cooldown.
 - **Reporting:** a report hides the bottle for the reporter straight away. The bottle leaves the sea after several reports (3 is proposed) or an admin review. Reporting is never rewarded. The Report dialog and gifts offer "Block this writer".
+- **Casting:** only a Google account casts, up to 5 bottles a day, which the rules enforce. A guest is asked to sign in when they first cast, and one who signs in to an existing account brings today's find along. Offline casts are queued.
 - **Writer choices:** Preview has the opt-in pen name and "Let the finder seal this as a keepsake" (on by default). The first cast needs an explicit terms checkbox.
 - **Gifts:** a recipient can keep a gift from the `/b/{token}` web page with a wallet, without the app or a sign-in. The sender's notification says "Your bottle for Mum was opened".
 - **On the phone** (from the owner's original brief, specified in spec §3.4 and §3.7): translation (ML Kit) and writing help (Gemini Nano where available, hidden otherwise) run on the device.
@@ -48,9 +49,9 @@ Build the slices in this order. Each one ships on its own. This list replaces sp
 - [x] **2. Discover, Reveal and the data model.** The bottle rig; shake, tap or hold to uncork; prefetch; Reveal; the real Report (hidden for the reporter, a report threshold, block); the message fields (`createdAt`, `lang`, `status`, `rand`, `id`, `penName`, `sealable`, `reportCount`); the daily find record; a silent guest uid created when first needed (the first prefetch or find); and `firestore.rules`.
   Spec §1.5 (haptics), §1.6, §1.7, §2 (flow 2), §3.6, §3.7, §3.18, §3.19. Boards: Discover-Idle, Discover-Progress, Reveal, Report-Dialog, Edge-SeaCalm, Edge-Offline.
   Open: what needs a Worker now (blocking, the report threshold, a server-pinned daily bottle) and what stays client-only until slice 6; daily-limit holes (peeking, reinstalling, changing the time zone); bottles that drift back to the sea while the model has a single `foundBy`.
-- [ ] **3. Compose, Cast, sign-in and first run.** Compose; Preview with the pen name, the seal opt-out and terms; the cast animation and success screen; the lazy Google sign-in sheet and the guest upgrade; onboarding.
+- [x] **3. Compose, Cast, sign-in and first run.** Compose; Preview with the pen name, the seal opt-out and terms; the cast animation and success screen; the lazy Google sign-in sheet and the guest upgrade; onboarding.
   Spec §2 (flows 1 and 3), §3.1, §3.2, §3.4, §3.4b, §3.5. Boards: Compose, Compose-Preview, Cast-Success, SignIn-Sheet, Onboarding-1, Onboarding-3.
-  Open: the merge rule when the guest's Google account already exists. Onboarding page 3 mentions sealing, which doesn't arrive until slice 6.
+  Decided: a guest who signs in to an existing Google account hands today's find over; onboarding page 3 keeps the spec's copy, and nothing is released before slices 4 and 6 (`decisions.md`, slice 3 planning).
 - [ ] **4. Chest, Keep, streak and reminders.** Keep (Firestore only); the Chest tabs; Keepsake detail in its Kept state; the streak and calm-sea shields; the Me tab; the daily reminder with quiet hours; Settings with the rows that exist so far.
   Spec §2 (flows 4, 5 and 7), §3.3 (streak rules), §3.10, §3.11, §3.12, §3.16, §3.17. Boards: Chest-Found, Chest-Cast, Keepsake-Detail, Profile, Notify-Rationale, Notify-Examples, Settings.
   Open: quiet hours versus "found" notifications; whether a shield for each day's first cast invites filler casts; what deleting an account does to bottles in other people's chests and to pending seals; whether the Me tab is headed by the pen name or the Google name.
@@ -66,6 +67,9 @@ Build the slices in this order. Each one ships on its own. This list replaces sp
 - [ ] **8. Achievements, translation, on-device AI and edge states.** Badges and the unlock moment; on-device translation; Nudge, Polish and the tone check; the remaining edge states.
   Spec §3.4 (AI chips), §3.7 (translation), §3.14, §3.18. Boards: Achievements, Achievement-Unlock, Reveal-Translated, Translate-Download, Edge-NoAI, Edge-HarbourClosed, Edge-UnderReview.
   Open: which of the two achievement lists to use; "Night owl" versus quiet hours.
+- [ ] **9. Tidy-up.** Loose ends from earlier slices: the owner reviews and deploys the Terms and Community guidelines in `../bottlecast-web`; a flow for queued casts the server refuses after the app restarts, using the saved pending cast; anything else found along the way.
+  The Terms item can't wait for the slice: it blocks the next release.
+  Open: the items tagged slice 9 in `open-issues.md`.
 
 ## How a session should use these docs
 1. Take the first unticked slice, or the one the owner names. Read `decisions.md`, the slice's entry above, and only the spec sections it lists. Put the slice's "Open" items in your plan, and ask the owner about them before building anything that depends on them.

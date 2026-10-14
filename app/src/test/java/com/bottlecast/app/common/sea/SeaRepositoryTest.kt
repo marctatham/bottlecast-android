@@ -7,13 +7,17 @@ import com.bottlecast.app.common.connectivity.IConnectivityMonitor
 import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.sea.data.FindOutcome
+import com.bottlecast.app.common.sea.data.FindRecord
 import com.bottlecast.app.common.sea.data.SeaRefusedException
 import com.bottlecast.app.common.sea.data.SeaUnavailableException
 import com.bottlecast.app.common.sea.data.SeaRepository
 import com.bottlecast.app.common.sea.data.seaCandidates
+import com.bottlecast.app.common.sea.data.sha256
 import com.bottlecast.app.common.sea.domain.CandidateState
 import com.bottlecast.app.common.sea.domain.FindResult
 import com.bottlecast.app.common.sea.domain.FindStatus
+import com.bottlecast.app.common.sea.domain.Handover
+import com.bottlecast.app.common.sea.domain.HandoverResult
 import com.bottlecast.app.common.sea.domain.TodayFind
 import com.bottlecast.app.testing.MutableClock
 import io.mockk.coEvery
@@ -26,6 +30,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
+import java.security.SecureRandom
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -438,9 +443,166 @@ class SeaRepositoryTest {
         Assert.assertEquals(listOf(bottle("ok")), candidates)
     }
 
+    @Test
+    fun `a guest arms a handover of today's live hold, with only a hash of its token`() = runTest {
+        // given
+        liveHold()
+        val repository = repository()
+
+        // when
+        val handover = repository.prepareHandover()
+
+        // then
+        Assert.assertEquals("today", handover?.messageId)
+        Assert.assertEquals("finn", handover?.fromUid)
+        val (messageId, fromUid, hash) = source.armed.single()
+        Assert.assertEquals("today" to "finn", messageId to fromUid)
+        Assert.assertArrayEquals(sha256(handover!!.token), hash)
+        Assert.assertEquals(43, handover.token.length)
+        Assert.assertFalse(handover.toString().contains(handover.token))
+    }
+
+    @Test
+    fun `there's nothing to hand over without a live hold`() = runTest {
+        // given
+        val cases: Map<String, (MessageEntity) -> Unit> = mapOf(
+            "no find today" to { source.dailyRecords.clear() },
+            "a thrown-back find" to { source.findRecords["today" to "finn"] = FindRecord(FindStatus.ThrownBack, it.foundAt) },
+            "a hold that's moved on" to { source.findRecords["today" to "finn"] = FindRecord(FindStatus.Held, it.foundAt!!.minusSeconds(60)) },
+            "a bottle that can't be read" to { source.serverMessages.clear() },
+        )
+
+        cases.forEach { (case, takeAway) ->
+            takeAway(liveHold())
+
+            // when
+            val handover = repository().prepareHandover()
+
+            // then
+            Assert.assertNull(case, handover)
+        }
+        Assert.assertTrue(source.armed.isEmpty())
+    }
+
+    @Test
+    fun `a hold that has run out isn't handed over`() = runTest {
+        // given: found 8 days ago, though the daily record is today's
+        liveHold(foundAt = clock.instant().minus(Duration.ofDays(8)))
+
+        // when
+        val handover = repository().prepareHandover()
+
+        // then
+        Assert.assertNull(handover)
+    }
+
+    @Test
+    fun `a Google account has nothing to hand over, and an unreachable server means nothing`() = runTest {
+        // given
+        val repository = repository()
+        user.value = google("gail")
+
+        // when
+        val asGoogle = repository.prepareHandover()
+        user.value = guest("finn")
+        source.unreachable = true
+        val offline = repository.prepareHandover()
+
+        // then
+        Assert.assertNull(asGoogle)
+        Assert.assertNull(offline)
+    }
+
+    @Test
+    fun `the Google account claims the handover and holds the bottle from now`() = runTest {
+        // given
+        user.value = google("gail")
+        val repository = repository()
+        val handover = Handover("today", "finn", "token")
+
+        // when
+        val result = repository.claimHandover(handover, "gail")
+
+        // then
+        Assert.assertEquals(HandoverResult.HandedOver, result)
+        Assert.assertEquals(listOf("today" to "token"), source.claims)
+    }
+
+    // Firebase tells the app about the new account on the main thread, a moment after the switch
+    @Test
+    fun `the claim goes to the uid the switch returned, even before the signed-in user catches up`() = runTest {
+        // given
+        user.value = guest("finn")
+        val repository = repository()
+
+        // when
+        val result = repository.claimHandover(Handover("today", "finn", "token"), "gail")
+
+        // then
+        Assert.assertEquals(HandoverResult.HandedOver, result)
+        Assert.assertEquals(listOf("today" to "token"), source.claims)
+    }
+
+    @Test
+    fun `a guest never claims its own handover`() = runTest {
+        // given
+        val repository = repository()
+
+        // when
+        val result = repository.claimHandover(Handover("today", "finn", "token"), "finn")
+
+        // then
+        Assert.assertEquals(HandoverResult.Failed, result)
+        Assert.assertTrue(source.claims.isEmpty())
+    }
+
+    @Test
+    fun `a Google account with its own find today keeps it`() = runTest {
+        // given
+        user.value = google("gail")
+        source.dailyRecords["gail" to LocalDate.now(clock)] = "theirs"
+        val repository = repository()
+
+        // when
+        val result = repository.claimHandover(Handover("today", "finn", "token"), "gail")
+
+        // then
+        Assert.assertEquals(HandoverResult.KeptOwnFind, result)
+        Assert.assertTrue(source.claims.isEmpty())
+    }
+
+    @Test
+    fun `a bottle the Google account found before, or a refused claim, doesn't move`() = runTest {
+        // given
+        user.value = google("gail")
+        source.foundBefore += "today" to "gail"
+        val repository = repository()
+
+        // when
+        val foundBefore = repository.claimHandover(Handover("today", "finn", "token"), "gail")
+        source.foundBefore.clear()
+        source.refuseClaim = true
+        val refused = repository().claimHandover(Handover("today", "finn", "token"), "gail")
+
+        // then
+        Assert.assertEquals(HandoverResult.Failed, foundBefore)
+        Assert.assertEquals(HandoverResult.Failed, refused)
+    }
+
+    // finn's guest holds "today", found an hour ago, as the server has it; returns the held bottle
+    private fun liveHold(foundAt: Instant = clock.instant().minus(Duration.ofHours(1))): MessageEntity {
+        val heldBottle = bottle("today", status = MessageStatus.Found, foundAt = foundAt)
+        source.dailyRecords.clear()
+        source.dailyRecords["finn" to LocalDate.now(clock)] = "today"
+        source.findRecords["today" to "finn"] = FindRecord(FindStatus.Held, foundAt)
+        source.serverMessages["today"] = heldBottle
+        return heldBottle
+    }
+
     // fromRand is where the look at the sea starts; from 0 it reads every bottle upwards
-    private fun TestScope.repository(fromRand: Double = 0.0) =
-        SeaRepository(source, auth, connectivity, clock, fixedRandom(fromRand), StandardTestDispatcher(testScheduler))
+    private fun TestScope.repository(fromRand: Double = 0.0) = SeaRepository(
+        source, auth, connectivity, clock, fixedRandom(fromRand), SecureRandom(), StandardTestDispatcher(testScheduler),
+    )
 
     private fun fixedRandom(value: Double) = object : Random() {
         override fun nextBits(bitCount: Int): Int = 0
@@ -452,6 +614,8 @@ class SeaRepositoryTest {
         bottle.copy(status = MessageStatus.Found, findCount = bottle.findCount + 1, foundAt = clock.instant())
 
     private fun guest(uid: String) = UserEntity.AuthenticatedUser(AuthProviderType.Anonymous, "token", uid, isAdmin = false)
+
+    private fun google(uid: String) = UserEntity.AuthenticatedUser(AuthProviderType.Google, "token", uid, isAdmin = false)
 
     private fun bottle(
         id: String,

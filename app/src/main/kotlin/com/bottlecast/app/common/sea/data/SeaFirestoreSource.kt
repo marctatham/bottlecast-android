@@ -9,12 +9,14 @@ import com.bottlecast.app.common.messages.domain.isFindable
 import com.bottlecast.app.common.sea.data.model.BlockedWriterFields
 import com.bottlecast.app.common.sea.data.model.DailyFields
 import com.bottlecast.app.common.sea.data.model.FindFields
+import com.bottlecast.app.common.sea.data.model.HandoffFields
 import com.bottlecast.app.common.sea.data.model.ReportFields
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ReportReason
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -24,11 +26,15 @@ import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
 import timber.log.Timber
 import java.time.Instant
 import java.time.LocalDate
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
+import kotlin.coroutines.resume
 
 // The report counts still in the sea. The rules only allow sea queries that filter on exactly these.
 private val COUNTS_IN_THE_SEA: List<Int> = (0 until REPORT_THRESHOLD).toList()
@@ -42,6 +48,7 @@ class SeaFirestoreSource @Inject constructor(
     private val finds = firestore.collection(FindFields.COLLECTION)
     private val daily = firestore.collection(DailyFields.COLLECTION)
     private val reports = firestore.collection(ReportFields.COLLECTION)
+    private val handoffs = firestore.collection(HandoffFields.COLLECTION)
 
     private fun blockedWritersOf(uid: String) =
         firestore.collection(BlockedWriterFields.USERS).document(uid).collection(BlockedWriterFields.COLLECTION)
@@ -180,6 +187,77 @@ class SeaFirestoreSource @Inject constructor(
             .logFailure("block")
     }
 
+    override suspend fun awaitPendingWrites() = suspendCancellableCoroutine { continuation ->
+        // done either way: a write the server turns down is just as settled
+        firestore.waitForPendingWrites().addOnCompleteListener { if (continuation.isActive) continuation.resume(Unit) }
+    }
+
+    override fun dailyMessageId(uid: String, date: LocalDate): String? =
+        await(daily.document(DailyFields.id(uid, date)).get(Source.SERVER)).getString(DailyFields.MESSAGE_ID)
+
+    override fun findOf(messageId: String, uid: String): FindRecord? {
+        val find = await(finds.document(FindFields.id(messageId, uid)).get(Source.SERVER))
+        if (!find.exists()) return null
+        return FindRecord(FindStatus.from(find.getString(FindFields.STATUS)), find.getTimestamp(FindFields.FOUND_AT)?.toInstant())
+    }
+
+    override fun serverMessage(messageId: String): MessageEntity? = try {
+        await(messages.document(messageId).get(Source.SERVER)).toMessage()
+    } catch (_: SeaRefusedException) {
+        null
+    }
+
+    override fun armHandoff(messageId: String, fromUid: String, date: LocalDate, tokenHash: ByteArray) {
+        awaitServer(
+            handoffs.document(messageId).set(
+                mapOf(
+                    HandoffFields.FROM to fromUid,
+                    HandoffFields.DATE to date.toString(),
+                    HandoffFields.TOKEN_HASH to Blob.fromBytes(tokenHash),
+                    HandoffFields.CREATED_AT to FieldValue.serverTimestamp(),
+                    HandoffFields.TOKEN to null,
+                    HandoffFields.CLAIMED_BY to null,
+                    HandoffFields.CLAIMED_AT to null,
+                ),
+            ),
+        )
+    }
+
+    override fun claimHandoff(messageId: String, uid: String, token: String, date: LocalDate, zone: String) {
+        val dailyId = DailyFields.id(uid, date)
+        val batch = firestore.batch()
+        batch.update(
+            handoffs.document(messageId),
+            mapOf(
+                HandoffFields.TOKEN to token,
+                HandoffFields.CLAIMED_BY to uid,
+                HandoffFields.CLAIMED_AT to FieldValue.serverTimestamp(),
+            ),
+        )
+        batch.update(messages.document(messageId), MessageFields.FOUND_AT, FieldValue.serverTimestamp())
+        batch.set(
+            finds.document(FindFields.id(messageId, uid)),
+            mapOf(
+                FindFields.MESSAGE_ID to messageId,
+                FindFields.FINDER_UID to uid,
+                FindFields.FOUND_AT to FieldValue.serverTimestamp(),
+                FindFields.DAILY_ID to dailyId,
+                FindFields.STATUS to FindStatus.Held.value,
+            ),
+        )
+        batch.set(
+            daily.document(dailyId),
+            mapOf(
+                DailyFields.UID to uid,
+                DailyFields.DATE to date.toString(),
+                DailyFields.ZONE to zone,
+                DailyFields.MESSAGE_ID to messageId,
+                DailyFields.FOUND_AT to FieldValue.serverTimestamp(),
+            ),
+        )
+        awaitServer(batch.commit())
+    }
+
     private fun DocumentSnapshot.toMessage(): MessageEntity? = data?.let { mapper.mapFrom(id, it) }
 
     // A listener that ends in an error (a bottle pulled from the sea can't be read) reads as gone.
@@ -201,9 +279,21 @@ class SeaFirestoreSource @Inject constructor(
     }
 }
 
+/** How long a handover's write waits for the server, which offline would never answer. */
+internal const val SERVER_WRITE_TIMEOUT_SECONDS = 10L
+
+// Waits for a write to reach the server. A write only completes once the server has it, so offline,
+// or on a stalled connection, it would wait for good; past the timeout it counts as unavailable, and
+// stays queued on the phone.
+private fun <T> awaitServer(task: Task<T>): T = try {
+    await(task, SERVER_WRITE_TIMEOUT_SECONDS)
+} catch (exception: TimeoutException) {
+    throw SeaUnavailableException(exception)
+}
+
 // Waits for a task, turning Firestore's errors into the sea's own, so the repository needn't know them.
-private fun <T> await(task: Task<T>): T = try {
-    Tasks.await(task)
+private fun <T> await(task: Task<T>, timeoutSeconds: Long? = null): T = try {
+    if (timeoutSeconds == null) Tasks.await(task) else Tasks.await(task, timeoutSeconds, TimeUnit.SECONDS)
 } catch (exception: ExecutionException) {
     val cause = exception.cause ?: exception
     throw when ((cause as? FirebaseFirestoreException)?.code) {

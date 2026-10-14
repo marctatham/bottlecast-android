@@ -11,7 +11,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
-import kotlin.random.Random
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -28,8 +27,4 @@ object SeaModule {
     @Provides
     @Singleton
     fun providesSeaActions(actions: SeaActions): ISeaActions = actions
-
-    /** Where in the sea today's look starts; tests pass a seeded one instead. */
-    @Provides
-    fun providesRandom(): Random = Random.Default
 }

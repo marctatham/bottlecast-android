@@ -198,3 +198,56 @@ Choices made while building it, which the owner can revisit at review:
   - Long edge-state titles break into even lines, and the countdown keeps "7h 12m" on one line.
   - The calm Shore hides the sky's moon, since its illustration brings one.
 
+
+## 2026-10-14 — Slice 3 planning
+
+The owner's answers while planning slice 3 (Compose, Cast, sign-in and first run), which its PR applies.
+
+- **A guest who signs in to an existing Google account brings today's find.** Linking still keeps the uid. When that Google account already exists:
+  - the guest first arms a one-time handoff (`handoffs/{messageId}`), holding the SHA-256 of a token only that phone knows, then signs in;
+  - the Google account claims the live hold by presenting the token within 10 minutes;
+  - the rules move the find only if that account has no find today and has never found the bottle.
+
+  Slice 4 reuses the handoff for the streak. Resolves "Merging a guest into an existing Google account".
+- **Onboarding page 3 keeps the spec's copy,** sealing line included, and no release goes out before Keep (slice 4) and sealing (slice 6). Resolves "Onboarding page 3 mentions sealing".
+- **Terms and Community guidelines** are drafted as plain boilerplate for a free hobby project: provided as is, with no warranty, liability limited as far as the law allows, and flagged as not legal advice. The owner reviews and deploys them before any release (slice 9).
+- **Cast success is redrawn with the bottle rig.** `message_in_bottle.json` and the Lottie dependency are deleted. Resolves "The cast-success bottle's Lottie licence".
+- **The bottle tint row waits for slice 4.** Every bottle is Sea glass until then, and messages carry no tint field.
+- **5 casts a day, enforced by the rules,** through a per-account `castTally/{uid}` that each cast's batch bumps.
+- **Offline casts are queued,** as the spec has it. A queued cast that the server refuses after the app has restarted gets its own flow in the tidy-up slice (9). The pending cast is already saved for it.
+- **The spec wins over the boards** where they differ, as in slice 2. Resolves "Board or spec where they differ" for slice 3.
+
+  *Changes spec: §1.6 (no Lottie), §3.2 (the carry-over chip and the handover), §3.3 (the Shore's bottle), §3.4 (the cap).*
+
+Choices made while building it, which the owner can revisit at review:
+
+- **Casting needs Google.** The rules look for `google.com` in the token's `firebase.identities`, not at the sign-in provider: a guest that linked Google can still name `anonymous` as its provider. Linking and switching both refresh the ID token.
+- **A cast is one batch:**
+  - the message;
+  - the tally, incremented on the same day, or reset to 1 on a later one;
+  - `users/{uid}`, but only when the bottle is signed or the Terms are being accepted.
+
+  The rules read the profile and the tally with `getAfter`. So the first cast can accept the Terms (version 1) in the same commit, and a signed bottle's pen name must match the profile's.
+- **The cap's time-zone hole is accepted,** like the daily one. The tally's date may be any date that's real somewhere on Earth, so moving the phone's time zone forward can start a new day early.
+- **Waiting for the server:**
+  - Online, a cast waits up to 8 s for the server, then counts as queued.
+  - A refusal brings the words back as the draft, unless a newer draft exists, and Compose says "We kept your draft."
+- **Switching accounts settles first.** Firestore keeps a write queue per user, so a throw back or report still waiting would be stranded once the account switches. `SeaActions.settle()` writes them first and waits up to 5 s.
+- **A guest's earlier casts stay with its uid** when it switches to an existing account. They date from before slice 3, when guests could cast. Only today's find moves.
+- **The sign-in chip** reads "Today's find comes with you", and shows only while the guest holds a live find today. Slice 4 adds the streak half.
+- **Onboarding never makes a guest.** The Shore isn't drawn behind it, so nothing prefetches until it's done. The app holds its first frame until it knows whether to show onboarding.
+- **Language:** ML Kit's language identification (the unbundled model) runs on the phone. A cast gets `und` if detection fails or takes over 1 s.
+- **`inkError` (#B3261E)** is a new ink token, for Compose's "At least 10 characters" error on the parchment. It reaches 4.9:1 on Night's parchment and 6.2:1 on Dawn's, and `InkContrastTest` pins both.
+- **The queued variant** splits the spec's line into the title "Corked" and the body "It'll set sail when you're back online.", to fit the screen's title and body.
+- **Legal links** point at `terms.html`, `guidelines.html` and `privacy.html` on the web project's hosting, which has no `cleanUrls`. The Terms and guidelines are drafted on a local branch of `../bottlecast-web`, and nothing is deployed yet.
+- **Copy with no spec source:**
+  - "A pen name needs 3 to 20 characters."
+  - the Terms row's "First cast only" (from the board)
+  - onboarding page 3's sample message
+  - the accessibility labels for the art, the page dots and the journey row
+- **Where the boards and the spec differ,** the spec wins:
+
+  | Spec value, taken | Board value, not taken |
+  |---|---|
+  | Compose's editor right under the top bar, since the "Into the sea / To someone" row waits for slice 7 (editor at y≈116) | The editor under the segmented row |
+  | The cast's bottle at 12% scale on the horizon (about 23dp tall) | A 63dp bottle |

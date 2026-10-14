@@ -1,6 +1,7 @@
 package com.bottlecast.app.common.authentication.data
 
 import com.bottlecast.app.common.authentication.domain.AuthProviderType
+import com.bottlecast.app.common.authentication.domain.GoogleLinkResult
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
 import com.google.android.gms.tasks.Task
@@ -93,29 +94,40 @@ class AuthenticationRepository constructor(
 
     // Under the same lock as a guest sign-in, so one starting in the background can't land after
     // this and replace the Google account.
-    override suspend fun firebaseAuthWithGoogle(idToken: String) = withContext(dispatcherNetwork) {
-        signInMutex.withLock { signInWithGoogle(idToken) }
-    }
-
-    private fun signInWithGoogle(idToken: String) {
-        Timber.i("[authenticateWithGoogle] Authenticating into FirebaseUser's for user's Google Provided IdToken")
-        val authCredential = GoogleAuthProvider.getCredential(idToken, null)
-        val guest = firebaseAuth.currentUser?.takeIf { it.isAnonymous }
-        val signedIn: FirebaseUser = if (guest == null) {
-            Tasks.await(firebaseAuth.signInWithCredential(authCredential)).user!!
-        } else {
+    override suspend fun linkGoogle(idToken: String): GoogleLinkResult = withContext(dispatcherNetwork) {
+        signInMutex.withLock {
+            val authCredential = GoogleAuthProvider.getCredential(idToken, null)
+            val guest = firebaseAuth.currentUser?.takeIf { it.isAnonymous }
+            if (guest == null) {
+                Timber.i("[linkGoogle] Nobody to link, so signing in with Google")
+                refreshed(Tasks.await(firebaseAuth.signInWithCredential(authCredential)).user!!)
+                return@withLock GoogleLinkResult.SignedIn
+            }
             try {
-                Tasks.await(guest.linkWithCredential(authCredential)).user!!
+                refreshed(Tasks.await(guest.linkWithCredential(authCredential)).user!!)
+                Timber.i("[linkGoogle] Linked the guest to Google")
+                GoogleLinkResult.Linked
             } catch (exception: ExecutionException) {
                 if (exception.cause !is FirebaseAuthUserCollisionException) throw exception
-                // That Google account already exists: switch to it, and leave the guest's finds behind
-                Timber.w("[authenticateWithGoogle] Google account already exists, so the guest isn't merged")
-                Tasks.await(firebaseAuth.signInWithCredential(authCredential)).user!!
+                Timber.i("[linkGoogle] That Google account already exists, so the guest stays signed in for now")
+                GoogleLinkResult.AccountExists
             }
         }
-        // refresh, so the token carries the Google identity and any admin claim
-        Tasks.await(signedIn.getIdToken(true))
-        Timber.i("[authenticateWithGoogle] Authenticated successfully!")
+    }
+
+    override suspend fun switchToGoogle(idToken: String): String = withContext(dispatcherNetwork) {
+        signInMutex.withLock {
+            val authCredential = GoogleAuthProvider.getCredential(idToken, null)
+            val account = Tasks.await(firebaseAuth.signInWithCredential(authCredential)).user!!
+            refreshed(account)
+            Timber.i("[switchToGoogle] Switched to the Google account")
+            account.uid
+        }
+    }
+
+    // refreshes the token, so it carries the Google identity and any admin claim
+    private fun refreshed(user: FirebaseUser) {
+        Tasks.await(user.getIdToken(true))
     }
 
     override suspend fun ensureSignedIn(): String = withContext(dispatcherNetwork) {

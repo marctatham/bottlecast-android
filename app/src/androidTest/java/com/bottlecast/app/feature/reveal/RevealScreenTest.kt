@@ -64,7 +64,7 @@ class RevealScreenTest {
         composeTestRule.onNodeWithText(FakeSeaRepository.SEEDED_MESSAGE).assertIsDisplayed()
 
         val castAgo = composeTestRule.activity.resources.getQuantityString(R.plurals.reveal_cast_days, 3, 3)
-        val byline = composeTestRule.activity.getString(R.string.reveal_byline_cast, string(R.string.reveal_byline_stranger), castAgo)
+        val byline = composeTestRule.activity.getString(R.string.message_byline_when, string(R.string.message_byline_stranger), castAgo)
         composeTestRule.onNodeWithText(byline).assertIsDisplayed()
     }
 

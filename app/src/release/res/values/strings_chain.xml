@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Release builds seal on Base mainnet (spec §1.7); debug builds have their own wording. -->
+<resources>
+    <string name="preview_consent_chain">If they keep and seal it, your words go on Base, a public blockchain, for good</string>
+    <string name="preview_sealable_helper">If they keep it, your words go on Base for good, marked “Bottled by a verified account”. Your name and email never do.</string>
+</resources>

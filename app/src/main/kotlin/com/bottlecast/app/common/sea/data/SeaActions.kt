@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.time.Clock
 import java.util.UUID
@@ -32,6 +33,9 @@ import javax.inject.Inject
  * written anyway, so a forgotten Undo doesn't keep it from the server for good.
  */
 internal const val SAFETY_WINDOW_MILLIS = 120_000L
+
+/** How long settling waits for the server before the account switches anyway. */
+internal const val SETTLE_TIMEOUT_MILLIS = 5_000L
 
 /**
  * Holds each throw back or report for its undo window, then writes it. If the process dies first, the
@@ -103,6 +107,13 @@ class SeaActions @Inject constructor(
                 mapOf(AnalyticsEvent.PARAM_BLOCKED to action.blockWriter.toString()),
             )
         }
+    }
+
+    override suspend fun settle() {
+        synchronized(lock) { scheduled.keys.toList() }.forEach(::commit)
+        // offline, the writes stay queued for this account, which is all there is to do
+        withTimeoutOrNull(SETTLE_TIMEOUT_MILLIS) { source.awaitPendingWrites() }
+            ?: Timber.w("[settle] The server hadn't taken every sea action before the account switched")
     }
 
     private fun schedule(action: PendingSeaAction, windowMillis: Long?, write: (uid: String) -> Unit): String {

@@ -170,9 +170,14 @@ dependencies {
     // logging
     implementation(libs.timber)
 
-    // lottie
-    implementation(libs.airbnb.lottie)
-    implementation(libs.airbnb.lottie.compose)
+    // the onboarding flag and the Compose draft
+    implementation(libs.androidx.datastore.preferences)
+
+    // Custom Tabs, for the Terms, Community guidelines and Privacy Policy
+    implementation(libs.androidx.browser)
+
+    // on-device language identification, stored on each cast (spec §3.4b)
+    implementation(libs.mlkit.language.id)
 
     // firebase
     implementation(platform(libs.firebase.bom))

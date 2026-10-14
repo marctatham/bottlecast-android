@@ -29,6 +29,12 @@ interface ISeaActions {
 
     /** Writes the action now rather than when its window ends. */
     fun commit(actionId: String)
+
+    /**
+     * Writes whatever is waiting and waits, up to a few seconds, for the server to have it. Firestore
+     * keeps each account's writes apart, so this comes before switching to another account.
+     */
+    suspend fun settle()
 }
 
 sealed interface PendingSeaAction {

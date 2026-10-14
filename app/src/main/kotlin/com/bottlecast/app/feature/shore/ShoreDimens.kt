@@ -17,15 +17,8 @@ internal object ShoreDimens {
     val streakPillPaddingEnd = 12.dp
     val shieldIcon = 14.dp
 
-    /** The bottle rig (Main board): 188dp tall, leaning on the tide over 240dp of ripples. */
+    /** The bottle rig (Main board): 188dp tall, floating on the tide. */
     val bottleHeight = 188.dp
-    const val BOTTLE_TILT = -14f
-    val ripplesWidth = 240.dp
-    val ripplesUnderBottle = 12.dp
-
-    /** Its bob: up 6dp, and 5° more upright, at the top of the swell (the boards' float). */
-    val bobHeight = 6.dp
-    const val BOB_TILT = 5f
 
     /** Below this height the bottle drops out. */
     val bottleMinHeight = 96.dp
@@ -46,12 +39,7 @@ internal object ShoreDimens {
     /** State A's moon: 40dp, this far in from the top-end of the screen below the status bar. */
     val moonInset = 60.dp
 
-    /** State B's tide ring: 128dp across with a 4dp stroke, drawn in a box with room for its end marker. */
-    val tideRingBox = 144.dp
-    val tideRing = 128.dp
-    val tideRingStroke = 4.dp
-    val tideMarker = 8.dp
-    val tideMarkerGlow = 16.dp
+    /** State B's tide ring sits this close under the top row, and the countdown under it. */
     val belowTopRow = 2.dp
     val belowTideRing = 4.dp
 

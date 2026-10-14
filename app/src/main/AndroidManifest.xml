@@ -56,6 +56,12 @@
             </intent-filter>
         </activity>
 
+        <!-- Play services fetches ML Kit's language identification model at install, so Preview can
+             tell which language a bottle is written in (spec §3.4b) -->
+        <meta-data
+            android:name="com.google.mlkit.vision.DEPENDENCIES"
+            android:value="langid" />
+
     </application>
 
 </manifest>

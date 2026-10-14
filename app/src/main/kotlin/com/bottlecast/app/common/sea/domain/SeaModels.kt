@@ -50,6 +50,26 @@ sealed interface FindResult {
     data object Failed : FindResult
 }
 
+/**
+ * A guest's live hold on today's bottle, armed to hand over to the Google account it's signing in to
+ * (spec §3.2). Only this phone knows [token], which the claim presents.
+ */
+class Handover(val messageId: String, val fromUid: String, val token: String) {
+    // the token stays out of logs
+    override fun toString(): String = "Handover(messageId=$messageId)"
+}
+
+enum class HandoverResult {
+    /** The Google account holds today's find now. */
+    HandedOver,
+
+    /** The Google account already has a find today, which stays. */
+    KeptOwnFind,
+
+    /** It couldn't move: that account found the bottle before, or the server turned the claim down. */
+    Failed,
+}
+
 /** Why someone reported a bottle, as firestore.rules spells it. */
 enum class ReportReason(val value: String) {
     Hurtful("hurtful"),

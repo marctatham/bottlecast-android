@@ -27,13 +27,15 @@ class ScreenNameMappingTest {
             navigatorProvider.addNavigator(ComposeNavigator())
         }
         val graph = navController.createGraph(startDestination = Shore) {
+            composable<Onboarding> {}
             composable<Shore> {}
             composable<Chest> {}
             composable<Me> {}
             composable<Discover> {}
             composable<Reveal> {}
-            composable<PostMessage> {}
-            composable<PostMessageLoginRequired> {}
+            composable<Compose> {}
+            composable<ComposePreview> {}
+            composable<CastSuccess> {}
             composable<Moderation> {}
         }
 

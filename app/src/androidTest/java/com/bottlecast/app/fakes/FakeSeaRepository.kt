@@ -1,10 +1,14 @@
 package com.bottlecast.app.fakes
 
+import com.bottlecast.app.common.authentication.domain.AuthProviderType
+import com.bottlecast.app.common.authentication.domain.UserEntity
 import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.sea.domain.CandidateState
 import com.bottlecast.app.common.sea.domain.FindResult
 import com.bottlecast.app.common.sea.domain.FindStatus
+import com.bottlecast.app.common.sea.domain.Handover
+import com.bottlecast.app.common.sea.domain.HandoverResult
 import com.bottlecast.app.common.sea.domain.ISeaRepository
 import com.bottlecast.app.common.sea.domain.TodayFind
 import kotlinx.coroutines.CompletableDeferred
@@ -70,6 +74,23 @@ class FakeSeaRepository @Inject constructor(
     override fun cachedMessage(messageId: String): MessageEntity? = SEEDED.takeIf { it.id == messageId }
 
     override suspend fun getMessage(messageId: String): MessageEntity? = cachedMessage(messageId)
+
+    /** How many handovers were claimed: a guest signing in to an existing Google account brought today's find. */
+    @Volatile var handovers: Int = 0
+        private set
+
+    // a guest's held find hands over; the fake's one day of finds simply stays with the new account
+    override suspend fun prepareHandover(): Handover? {
+        val guest = authenticationRepository.user.value as? UserEntity.AuthenticatedUser
+        val find = today.value
+        if (guest?.providerType != AuthProviderType.Anonymous || find?.status != FindStatus.Held) return null
+        return Handover(find.messageId, guest.userId, "fakeToken")
+    }
+
+    override suspend fun claimHandover(handover: Handover, uid: String): HandoverResult {
+        handovers += 1
+        return HandoverResult.HandedOver
+    }
 
     /** Today's bottle was found on another phone, and it was another bottle, [messageId]. */
     fun foundElsewhere(messageId: String) {

@@ -6,17 +6,14 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
 
 ## Questions for the owner
 
-- [ ] **Board or spec where they differ** (Slices 3, 6 and 7)
-  - Spec §6 lets the spec win for the Compose and Preview wording and the three onboarding pages (slice 3), the three-step wallet sheet (slice 6) and Gift-Compose's own pen-name switch (slice 7). The owner may prefer a board in some of these.
-  - Proposed: the spec, unless the owner picks the board. For slice 2 the owner chose the spec (2026-10-13, see [decisions.md](decisions.md)).
+- [ ] **Board or spec where they differ** (Slices 6 and 7)
+  - Spec §6 lets the spec win for the three-step wallet sheet (slice 6) and Gift-Compose's own pen-name switch (slice 7). The owner may prefer a board in either.
+  - Proposed: the spec, unless the owner picks the board. For slices 2 and 3 the owner chose the spec (2026-10-13 and 2026-10-14, see [decisions.md](decisions.md)).
 
-- [ ] **Merging a guest into an existing Google account** (Slice 3)
-  - The sign-in chip promises "Your 3-day streak and today's find come with you". If that Google account already exists, `linkWithCredential` fails, and moving the streak and the find between two uids needs a server-side merge.
-  - Options: a server-side merge with a rule (for example, keep the longer streak), or softer copy on the chip.
-
-- [ ] **Onboarding page 3 mentions sealing** (Slice 3)
-  - Onboarding ships in slice 3, but sealing only arrives in slice 6.
-  - Options: keep the line, or hold it back until slice 6.
+- [ ] **Review and deploy the Terms and Community guidelines** (Slice 9, before any release)
+  - Slice 3's sign-in sheet and first cast link to `terms.html` and `guidelines.html`, which are drafted as hobby-project boilerplate on a local branch of `../bottlecast-web`. Until they're deployed, those links don't open anything.
+  - The owner reviews the wording (it isn't legal advice), then pushes and deploys the web repo. This blocks the next release, even if slice 9 hasn't started.
+  - `privacy.html` dates from 2023 and needs the same review. It says no third parties and no cookies, but the app now uses Firebase Analytics, Crashlytics and Google sign-in, stores pen names and the accepted Terms, and will write sealed keepsakes to a public chain.
 
 - [ ] **Quiet hours and "found" notifications** (Slice 4)
   - Spec §3.16b holds every notification, the daily reminder included, until quiet hours end. The Notify-Rationale and Settings boards promise "found" notifications, which the spec defers until push exists.
@@ -67,9 +64,10 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't. Still open: whether signing fits in 10 ms of CPU (a slice 5 spike), staying under 50 subrequests per invocation (cron runs included), and serialising the single minter's nonce.
   - Options for the nonce: cron-only minting, or a Durable Object that owns it. Someone also has to watch the minter's balance (the Base Sepolia faucet gives 0.1 ETH per rolling 24 hours).
 
-- [ ] **The cast-success bottle's Lottie licence** (Slice 3)
-  - Spec §1.6 flags `message_in_bottle.json` for a licence check, or a redraw in the rig. Nothing records its source yet.
-  - Slice 2 drew the Shore's bottle in the rig, so only cast success still plays the Lottie, until slice 3 rebuilds it.
+- [ ] **Queued casts refused after a restart** (Slice 9)
+  - An offline cast is queued in Firestore's offline cache. If the app is closed before the server answers, and the server then refuses it (the daily cap, say, or Terms that changed), nothing tells the writer, and the words aren't restored.
+  - The draft store already saves the pending cast for this, but nothing reads it yet.
+  - Proposed: on start, check a saved pending cast against the server; if it never landed, restore it as the draft and say so on Compose.
 
 - [ ] **In-app licences** (Slice 4)
   - Material Symbols and Roboto Slab are Apache 2.0, which asks for the licence text to reach people who get the app. The texts are in `licenses/`, but nothing in the app shows them.
@@ -96,6 +94,18 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - "Harbour closed" now covers the Firestore, Auth and Worker daily limits, and a low minter shows "Sealing · delayed". Not yet designed: Firebase Hosting's 360 MB a day running out (the gift and profile pages and `assetlinks.json` go down) and a Shore variant of Harbour closed.
 
 ## Resolved
+
+- [x] **Merging a guest into an existing Google account** (Slice 3)
+  - The sign-in chip promises that the streak and today's find come with you, but if that Google account already exists, `linkWithCredential` fails and the guest's day would be lost.
+  - Answer (2026-10-14, slice 3 planning): hand today's find over. The guest arms a one-time handoff with a token the rules check, and the find moves only if the account has no find today and has never found that bottle. Slice 4 reuses it for the streak. See [decisions.md](decisions.md).
+
+- [x] **Onboarding page 3 mentions sealing** (Slice 3)
+  - Onboarding ships in slice 3, but sealing only arrives in slice 6.
+  - Answer (2026-10-14, slice 3 planning): keep the spec's copy, and release nothing before Keep (slice 4) and sealing (slice 6). See [decisions.md](decisions.md).
+
+- [x] **The cast-success bottle's Lottie licence** (Slice 3)
+  - Spec §1.6 flagged `message_in_bottle.json` for a licence check, or a redraw in the rig.
+  - Answer (2026-10-14, slice 3 planning): redraw it in the rig, and delete the Lottie and its dependency. See [decisions.md](decisions.md).
 
 - [x] **How much of the Worker comes forward to slice 2** (Slice 2)
   - Blocking, the report threshold and a server-pinned daily bottle all seemed to need discovery to go through a Worker, which is planned for slice 6.

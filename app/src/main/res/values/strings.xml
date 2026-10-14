@@ -16,6 +16,7 @@
 
 <resources>
     <string name="button_back">Back</string>
+    <string name="button_close">Close</string>
 
     <string name="nav_shore">Shore</string>
     <string name="nav_chest">Chest</string>
@@ -129,9 +130,10 @@
     <string name="reveal_report">Report</string>
     <string name="reveal_report_description">Report this bottle</string>
     <string name="reveal_reported_description">You\'ve reported this</string>
-    <string name="reveal_byline_stranger">— A stranger at sea</string>
-    <string name="reveal_byline_pen_name">— %1$s</string>
-    <string name="reveal_byline_cast">%1$s · %2$s</string>
+    <string name="message_byline_stranger">— A stranger at sea</string>
+    <string name="message_byline_pen_name">— %1$s</string>
+    <string name="message_byline_when">%1$s · %2$s</string>
+    <string name="message_cast_just_now">just now</string>
     <string name="reveal_cast_today">cast today</string>
     <string name="reveal_cast_yesterday">cast yesterday</string>
     <plurals name="reveal_cast_days">
@@ -174,18 +176,155 @@
     <string name="report_cancel">Cancel</string>
     <string name="report_confirm">Report</string>
 
-    <string name="login_required_title">Your guide to bottling messages</string>
-    <string name="login_required_image_description">Safety First, sign in is required</string>
+    <!-- First-launch onboarding (spec §3.1) -->
+    <string name="onboarding_skip">Skip</string>
+    <string name="onboarding_next">Next</string>
+    <string name="onboarding_find_first">Find my first bottle</string>
+    <string name="onboarding_cast_instead">I\'d rather cast one</string>
+    <string name="onboarding_page_description">Page %1$d of %2$d</string>
+    <string name="onboarding_1_title">Messages, adrift</string>
+    <string name="onboarding_1_body">People cast short notes into the sea. Every so often, one washes up for you.</string>
+    <string name="onboarding_1_art">A glass bottle with a rolled message, bobbing on the tide</string>
+    <string name="onboarding_2_title">One bottle a day</string>
+    <string name="onboarding_2_body">A new bottle washes up every day at midnight. Open it whenever suits you.</string>
+    <string name="onboarding_2_art">A bottle on the sand under the moon, with the tide two-thirds of the way round</string>
+    <string name="onboarding_3_title">Keep what moves you</string>
+    <string name="onboarding_3_body">Keep a bottle and it\'s yours. If you like, seal it on-chain as a one-of-a-kind keepsake. No wallet needed to start.</string>
+    <string name="onboarding_3_art">A kept message on parchment, stamped with a wax seal</string>
+    <string name="onboarding_3_message">Leave the porch light on for the people still finding their way home.</string>
 
-    <string name="login_required_description">Ready to cast your message adrift in a virtual bottle? 🌊 You’ll need to be signed in to set sail on this adventure. It’s not just about keeping the high seas clean; it’s also about making sure our virtual beach stays family-friendly!\n\nDon’t worry though, your secrets are safe with us! 🤐 We’ve got your back on privacy, and we’ll never spill your personally identifiable info into the message. Even if you choose to go incognito, your identity will remain as elusive as a message in a real bottle lost at sea! 🏴‍☠️⚓</string>
-    <string name="login_required_button_primary">Agree and set sail</string>
-    <string name="login_required_button_secondary">No thanks, I\'ll stay dry</string>
+    <!-- The sign-in sheet (spec §3.2) -->
+    <string name="sign_in_title_cast">Sign in to cast your bottle</string>
+    <string name="sign_in_body">We use your Google account so your chest and streak follow you to any phone. Your name never appears on bottles unless you choose a pen name.</string>
+    <string name="sign_in_carry_find">Today\'s find comes with you</string>
+    <string name="sign_in_google">Continue with Google</string>
+    <string name="sign_in_not_now">Not now</string>
+    <string name="sign_in_legal">By continuing you agree to the %1$s and the %2$s.</string>
+    <string name="sign_in_legal_terms">Terms</string>
+    <string name="sign_in_legal_privacy">Privacy Policy</string>
+    <string name="sign_in_error">Couldn\'t sign you in. Check your connection and try again.</string>
+    <string name="sign_in_unavailable">Google sign-in isn\'t available on this device.</string>
+    <string name="sign_in_offline">You\'re offline</string>
+    <string name="sign_in_signed_in">Signed in. Your bottles stay anonymous unless you pick a pen name.</string>
+    <string name="sign_in_pick_pen_name">Pick one</string>
 
-    <string name="loginBottomSheet_title">Log in to continue</string>
-    <string name="loginBottomSheet_subtext">By continuing, you agree to our User Agreement and acknowledge that you understand the Privacy Policy.</string>
-    <string name="loginBottomSheet_error">There was a problem signing you in, please try an alternative sign-in method.</string>
-    <string name="btnSignInWithGoogle">Sign in with Google</string>
-    <string name="btnSignInAnonymously">Sign in anonymously</string>
+    <!-- The pen-name sheet (spec §3.2, G13) -->
+    <string name="pen_name_title">Your pen name</string>
+    <string name="pen_name_label">Pen name</string>
+    <string name="pen_name_helper">Shown only on bottles you choose to sign. 3–20 characters.</string>
+    <string name="pen_name_error">A pen name needs 3 to 20 characters.</string>
+    <string name="pen_name_surprise">Surprise me</string>
+    <string name="pen_name_save">Save</string>
+    <!-- "Surprise me" picks from these, never from the Google name (spec §3.2) -->
+    <string-array name="pen_name_suggestions">
+        <item>Driftwood</item>
+        <item>Quiet Otter</item>
+        <item>Tidewise</item>
+        <item>Sea Lantern</item>
+        <item>Salt Breeze</item>
+        <item>Moon Harbour</item>
+        <item>Little Gull</item>
+        <item>Kelp Keeper</item>
+        <item>Low Tide</item>
+        <item>Night Heron</item>
+        <item>Sand Dollar</item>
+        <item>Harbour Fox</item>
+        <item>Paper Boat</item>
+        <item>Coral Echo</item>
+        <item>Foam Finch</item>
+        <item>Shell Seeker</item>
+        <item>Beach Glass</item>
+        <item>Sea Fern</item>
+        <item>Tide Pool</item>
+        <item>Dune Walker</item>
+        <item>Moonwake</item>
+        <item>Gentle Swell</item>
+        <item>Cove Keeper</item>
+        <item>Mist Sailor</item>
+        <item>Pebble</item>
+        <item>Starfish</item>
+        <item>Wandering Tern</item>
+        <item>Lighthouse Cat</item>
+        <item>Ripple</item>
+        <item>Saltwater Sparrow</item>
+    </string-array>
+
+    <!-- Compose (spec §3.4) -->
+    <string name="compose_title">Cast a bottle</string>
+    <string name="compose_editor_label">Your message</string>
+    <string name="compose_prompt_1">If you could send a message to anyone, anywhere, what would it say?</string>
+    <string name="compose_prompt_2">What\'s something small that made today better?</string>
+    <string name="compose_prompt_3">Tell a stranger something you wish someone had told you.</string>
+    <plurals name="compose_helper_minimum">
+        <item quantity="one">At least %1$d character</item>
+        <item quantity="other">At least %1$d characters</item>
+    </plurals>
+    <string name="compose_helper_language">%1$s · detected on your phone</string>
+    <string name="compose_helper_limit">That\'s the limit — bottles are small.</string>
+    <string name="compose_helper_emoji">Emoji take extra room</string>
+    <string name="compose_counter">%1$d / %2$d</string>
+    <plurals name="compose_counter_left">
+        <item quantity="one">%1$d left</item>
+        <item quantity="other">%1$d left</item>
+    </plurals>
+    <plurals name="compose_counter_description">
+        <item quantity="one">%1$d of %2$d characters</item>
+        <item quantity="other">%1$d of %2$d characters</item>
+    </plurals>
+    <string name="compose_kindness">Strangers will read this. Keep it kind.</string>
+    <string name="compose_preview">Preview</string>
+    <string name="compose_discard_title">Toss this draft?</string>
+    <string name="compose_discard_keep">Keep writing</string>
+    <string name="compose_discard_toss">Toss</string>
+    <string name="compose_draft_restored">We kept your draft.</string>
+    <string name="compose_start_fresh">Start fresh</string>
+    <plurals name="compose_casts_left">
+        <item quantity="one">%1$d cast left today</item>
+        <item quantity="other">%1$d casts left today</item>
+    </plurals>
+    <plurals name="compose_cast_limit">
+        <item quantity="one">That\'s %1$d bottle today — the sea needs a rest. Try again tomorrow.</item>
+        <item quantity="other">That\'s %1$d bottles today — the sea needs a rest. Try again tomorrow.</item>
+    </plurals>
+
+    <!-- Preview (spec §3.4b); the on-chain lines differ by build type, in strings_chain.xml -->
+    <string name="preview_title">Preview</string>
+    <string name="preview_edit">Edit</string>
+    <string name="preview_overline">How it washes up</string>
+    <string name="preview_bottle_description">Your bottle, as it will wash up</string>
+    <string name="preview_recipient_sea">Drifting to: anyone at sea</string>
+    <string name="preview_consent_edit">You can\'t edit a bottle once it\'s cast</string>
+    <string name="preview_consent_share">Whoever finds it can read and share it</string>
+    <string name="preview_sign_pen_name">Sign with my pen name (%1$s)</string>
+    <string name="preview_set_pen_name">Set a pen name…</string>
+    <string name="preview_sealable">Let the finder seal this as a keepsake</string>
+    <string name="preview_terms">I agree to the %1$s and %2$s</string>
+    <string name="preview_terms_guidelines">Community guidelines</string>
+    <string name="preview_terms_terms">Terms</string>
+    <string name="preview_terms_first_cast">First cast only</string>
+    <string name="preview_cast">Cast it</string>
+    <string name="preview_cast_offline">Cast when back online</string>
+    <string name="preview_cast_failed">Couldn\'t cast. Your words are saved.</string>
+
+    <!-- Casting and its success (spec §3.5) -->
+    <string name="cast_success_title">Corked and cast</string>
+    <string name="cast_success_body">Your bottle is drifting. Someone will find it soon.</string>
+    <string name="cast_success_queued_title">Corked</string>
+    <string name="cast_success_queued_body">It\'ll set sail when you\'re back online.</string>
+    <string name="cast_success_caption">Nothing goes on-chain unless someone keeps and seals it.</string>
+    <string name="cast_success_back">Back to shore</string>
+    <string name="cast_success_skip">Skip the animation</string>
+    <string name="cast_success_bottle_description">Your corked bottle, small and far out on the water</string>
+    <string name="journey_description">Bottle journey</string>
+    <string name="journey_corked">Corked</string>
+    <string name="journey_drifting">Drifting</string>
+    <string name="journey_waiting">Waiting for connection</string>
+    <string name="journey_found">Found</string>
+    <string name="journey_kept">Kept</string>
+    <string name="journey_sealed">Sealed</string>
+    <string name="journey_done">%1$s, done</string>
+    <string name="journey_now">%1$s, now</string>
+    <string name="journey_to_come">%1$s, to come</string>
 
     <string name="view_messages_error_get">There was a problem fetching messages</string>
 
@@ -204,18 +343,5 @@
     <string name="moderation_remove">Remove</string>
     <string name="moderation_restore">Restore</string>
     <string name="moderation_failed">That didn\'t go through, so the bottle hasn\'t changed. Check your connection and try again.</string>
-
-    <string name="snack_post_message_failed">Failed to post your message!</string>
-    <string name="snack_post_message_requires_auth">You must be logged in to post!</string>
-    <string name="snack_post_message_insufficient_length">Your message must be at least %1$s characters long</string>
-    <string name="post_message_char_count">%1$s/%2$s</string>
-
-    <string name="post_completion_title">Message bottled!</string>
-    <string name="post_completion_description">Your message has been bottled up and is ready to set sail!</string>
-    <string name="btn_post_complete">Back to adventure</string>
-
-    <string name="title_post_message">Your BottleCast</string>
-    <string name="post_message_hint">Need a nudge to start? How about this: \nIf you could send a message to anyone, anywhere, what would it say?</string>
-    <string name="btnPostMessage">Cast away</string>
 
 </resources>

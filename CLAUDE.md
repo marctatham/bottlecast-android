@@ -14,29 +14,44 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - Kotlin 2.4 via AGP 9.4's built-in Kotlin.
   - Jetpack Compose with Material 3 (material3 pinned to 1.5.0-beta01 ahead of the BOM), Navigation Compose with type-safe routes (kotlinx-serialization), Hilt (KSP).
   - Firebase Auth/Firestore/Analytics/Crashlytics, and Google sign-in through Credential Manager.
-  - Lottie, Timber.
+  - DataStore Preferences, Custom Tabs (`androidx.browser`), ML Kit's language identification (the unbundled model) and Timber.
   - minSdk 33, compileSdk/targetSdk 37, Java 11.
   - Gradle 9.8 with the configuration cache and build cache on. Versions live in `gradle/libs.versions.toml`.
 - Code is in `app/src/main/kotlin/com/bottlecast/app/`. Build-type code is in `app/src/debug/kotlin/` and `app/src/release/kotlin/`. Tests are in `app/src/test/java/` (JVM) and `app/src/androidTest/java/` (device); both hold Kotlin.
 - Shell: `MainActivity` → `BottlingTheme` → `MessageInABottleApp.kt`, the NavHost. The app draws edge to edge with transparent bars.
   - Routes are `@Serializable` objects in `Navigation.kt`, each with a stable `screenName` for analytics. `TopLevelDestination` lists the tabs.
+  - The start destination is Onboarding until it's been seen, then the Shore.
+    - `AppNavigationStateViewModel` reads it once from DataStore.
+    - `MainActivity` holds the first frame with a pre-draw listener until it's known, and the NavHost isn't composed before then.
+    - Tabs pop to `Shore`, never to `findStartDestination()`, which can be Onboarding.
   - Tab roots (Shore, Chest, Me) draw themselves in a `TabFrame`, which adds the navigation bar and hands its height to the screen as `contentPadding`. Every other route is immersive.
   - Screens under the dome (Shore, Chest, Me) are built on `DomeScaffold`. It draws the dome under the status bar and keeps the content inside `windowInsets = WindowInsets.safeDrawing.only(Top + Horizontal)`, scrolling below the see-through bar. The bottom comes only from `contentPadding`, so the navigation bar isn't counted twice.
   - Every other route is registered with `immersive<T>`. Its frame rounds the corners on a back swipe and takes every tap, so none falls through to the screen still drawn underneath. Screens from before the redesign also sit in `LegacyScreen`, which keeps them inside the system bars over an opaque background.
   - A tab root stays drawn while a screen opens over it. A keyboard, TalkBack or Switch Access can still reach it there, so its actions go through `dropUnlessStarted`, and `TabFrame` guards the bar the same way.
-- `common/authentication/`, `common/messages/` (the writer's side and moderation) and `common/sea/` (the finder's side: today's candidate, the find, throw back and report) split into:
-  - `domain`: `I`-prefixed interfaces and entities
-  - `data`: implementations, with Firestore field names in `data/model/` and mappers in `data/mapper/`
-  - `di`: Hilt modules
+- These packages each split into `domain`, `data` and `di`:
+  - `common/authentication/`
+  - `common/messages/`: the writer's side (the draft, and casting through the app-scoped `CastCoordinator`, with the daily tally and the language) and moderation
+  - `common/profile/`: `users/{uid}`, holding the pen name and the accepted Terms version
+  - `common/sea/`: the finder's side (today's candidate, the find, throw back, report, and handing a guest's find over to an existing account)
 
-  `common/analytics/`, `common/connectivity/`, `common/threading/` (dispatchers and `@ApplicationScope`) and `common/time/` (a `Clock` that follows the phone's time zone, and a monotonic `TimeSource`) are flat, plus `di`.
+  `domain` holds `I`-prefixed interfaces and entities; `data` the implementations, with Firestore field names in `data/model/` and mappers in `data/mapper/`; and `di` the Hilt modules.
+
+  `common/analytics/`, `common/connectivity/`, `common/preferences/` (the app's one DataStore, and whether onboarding has been seen), `common/threading/` (dispatchers and `@ApplicationScope`) and `common/time/` (a `Clock` that follows the phone's time zone, and a monotonic `TimeSource`) are flat, plus `di`.
+  - `common/firestore/di/` provides `FirebaseFirestore`, and `common/random/di/` provides `Random` and `SecureRandom`.
+  - `common/legal/` holds the Terms, Community guidelines and privacy links, which open in a Custom Tab.
 - `common/ui/` is the theme: `Theme.kt`, `Color.kt`, `Effects.kt`, `Typography.kt`, `Shapes.kt`, `Dimens.kt`, `Motion.kt`. Material's roles come from `MaterialTheme`; the brand tokens Material has no slot for come from `BottlingTheme.colors`, `.effects`, `.typography`, `.shapes`, `.spacing`, `.sizes` and `.motion`.
-- `common/components/` holds shared composables, including the design-system pieces: `BottlingButton` (pills), `BottlingBottomSheet`, `BottlingDialog` (which draws the theme's own scrim), `BottlingSnackbarHost`, `ImmersiveTopBar`, `StatusChip`, `ParchmentCard`, `MoonDisc`, `OverlineText`, `Dome`, `DomeScaffold`, `BottlingNavigationBar`, `TabFrame`, `Banner`, `EmptyState` and `Avatar`. `bottle/` is the bottle rig, drawn on a Canvas in each bottle's seeded look (`bottleLookFor(id)`), and `illustrations/` holds the spot illustrations. The debug-only `FoundationsSpecimen` (in `src/debug`) shows the whole design system.
+- `common/components/` holds shared composables, including the design-system pieces: `BottlingButton` (pills), `BottlingBottomSheet`, `BottlingDialog` (which draws the theme's own scrim), `BottlingSnackbarHost`, `ImmersiveTopBar`, `StatusChip`, `ParchmentCard`, `MoonDisc`, `OverlineText`, `Dome`, `DomeScaffold`, `BottlingNavigationBar`, `TabFrame`, `Banner`, `EmptyState`, `Avatar`, `MessageCard`, `TideRing`, `WaxSeal` and `LinkedText` (text with links, through `LinkAnnotation`). `bottle/` is the bottle rig, drawn on a Canvas in each bottle's seeded look (`bottleLookFor(id)`), plus `FloatingBottle`, the rig bobbing on its ripples. `illustrations/` holds the spot illustrations. The debug-only `FoundationsSpecimen` (in `src/debug`) shows the whole design system.
   - `common/ui/` also holds the motion policy. `rememberReducedMotion()` reads the system setting. `rememberIdleMotionEnabled()` is true while the screen is resumed and motion isn't reduced, and gates idle loops such as `rememberBreathingTide()`, which holds still where it is and carries on from there.
   - Haptics go through `rememberHaptics()` (spec §1.5), which respects the system's touch feedback setting. Timed controls, such as an Undo, last `rememberTimedControlMillis()`: at least the system's recommended timeout, and no timeout while TalkBack is on (spec §4). `isLargeText()` is true from 175% text.
 - `firebase/` holds `firestore.rules`, `firestore.indexes.json` and the rules' emulator tests (Node). `scripts/` holds the Python tools for Play uploads, the message migration and the admin claim; `scripts/README.md` says how to run each.
-- `feature/<name>/` holds a screen and its ViewModel (`postmessage` keeps them in `ui/`). Composables that only one feature uses go in its `components/`; use cases go in its `domain/`. Sizes only one feature uses go in its own tokens object, such as `ShoreDimens`.
-  - `shore` is the home (states A and B, spec §3.3); `discover` uncorks today's bottle and `reveal` shows it (spec §3.6–3.7); `chest` and `me` are empty states until slice 4.
+- `feature/<name>/` holds a screen and its ViewModel. Composables that only one feature uses go in its `components/`; use cases go in its `domain/`. Sizes only one feature uses go in its own tokens object, such as `ShoreDimens`.
+  - `shore` is the home (states A and B, spec §3.3).
+  - `discover` uncorks today's bottle and `reveal` shows it (spec §3.6–3.7).
+  - `onboarding` is the first run (spec §3.1).
+  - `signin` is the lazy Google sign-in sheet, with the guest upgrade, and `penname` is the pen-name sheet (spec §3.2).
+  - `compose`, `composepreview` and `castsuccess` are casting (spec §3.4–3.5).
+  - `chest` and `me` are empty states until slice 4.
+  - `viewmessages` is the moderation screen from before the redesign.
 
 ## Conventions
 - **ViewModels:** `@HiltViewModel class XViewModel @Inject constructor(…)` with:
@@ -47,7 +62,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **Screens:**
   - A public `XScreen(on…Handler: () -> Unit, viewModel: XViewModel = hiltViewModel())` collects with `collectAsStateWithLifecycle()`.
   - It passes plain state to an `internal` stateless overload, which `@Preview`s and screenshot tests call.
-  - Tests can't see `private` functions, so make a stateless overload `internal` before testing it. `ShoreScreen`, `DiscoverScreen`, `RevealScreen` and `PostMessageSuccessView` already are, with their motion hoisted.
+  - Tests can't see `private` functions, so make a stateless overload `internal` before testing it. `ShoreScreen`, `DiscoverScreen`, `RevealScreen`, `OnboardingScreen` and `CastSuccessScreen` already are, with their motion hoisted.
 - **UI text** lives in `res/values/strings.xml` (`stringResource`, `@StringRes` parameters). No hard-coded strings.
 - **Hilt and dispatchers:** modules use `@InstallIn(SingletonComponent::class)` with `@Provides @Singleton`; leaf classes use `@Inject constructor`. Inject dispatchers with the qualifiers in `common/threading/` (`@DispatcherIO` and the rest), and switch with `withContext` in repositories.
 - **Analytics:** add a case to the sealed `AnalyticsEvent` (snake_case name) and send it through `LocalTracker.current`. An event that happens after its screen has gone, such as a throw back or report written once its undo window ends, is tracked where it happens, with the injected `ITracker` (`SeaActions`). Tracker wiring is in two `AnalyticsModule`s, one in `src/debug` and one in `src/release`; change both.
@@ -84,6 +99,11 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - JUnit4 with `org.junit.Assert`, backtick names, and `// given // when // then`.
   - mockk (`mockk<IFoo>()`, `every`/`coEvery`/`coVerify`) inside `runTest`.
   - New ViewModels and use cases get unit tests. ViewModel tests call `Dispatchers.setMain(…)`, because `viewModelScope` runs on Main.
+  - **DataStore** does its IO on its own thread, off the test scheduler.
+    - Writes that tests wait for return their `Job` (`markSeen()`, `clear()`), so a test can `join()` it.
+    - Test timing, such as the draft's 1 s save delay, on `MemoryPreferences`.
+    - Test persistence on `filePreferences(scope)`, a real file in a temp folder.
+    - Both are in `testing/TestDataStores.kt`.
 - **Screenshot tests** (`src/test`, named `*ScreenshotTest`; see `RevealScreenScreenshotTest`):
   - Use `RobolectricTestRunner` and `@GraphicsMode(NATIVE)`.
   - Use `@Config(sdk = [37], application = Application::class, qualifiers = …)`. The plain `Application` keeps the Hilt `BottleCastApplication` out.
@@ -94,16 +114,19 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - For 200% text use `@Config(fontScale = 2f)`, which scales non-linearly as a device does; a `LocalDensity` override scales linearly.
   - Infinite animations only run with `mainClock.autoAdvance = false`. A state write from the test thread then reaches the composition only after `waitForIdle()` (see `BreathingTideTest`).
   - Test classes share a JVM, and a class's tests share one Robolectric sandbox, so process-wide caches carry over from test to test. Compose's typeface cache, for one, ignores the font scale. Keep anything a test varies, such as `fontScale`, out of cached state, so a golden never depends on test order. That's why `Typography.kt` pins `opsz` as a plain number.
-- **Never capture a running animation.** Hoist animation state into a parameter and pass a fixed value: Lottie `progress`, or a lambda read at draw time, as `DiscoverMotion` and `BottleRigPose` do.
-  - Pass the composition in too: `rememberLottieComposition` parses on a background thread, so a capture can come out blank.
-  - In tests, load it with `loadLottieComposition(R.raw.…)` from `testing/LottieCompositions.kt`. It also decodes the images embedded as base64, which `fromRawResSync` leaves out, so the bottle draws.
+- **Never capture a running animation.** Hoist animation state into a parameter and pass a fixed value, such as a lambda read at draw time, as `DiscoverMotion`, `OnboardingMotion`, `CastMotion` and `BottleRigPose` do. The cast reads one timeline through the pure `castPose(ms)`, so a test can capture any frame.
 - **Re-recording goldens:** only for an intended change, and only after reading its `_compare.png`. Never re-record just to make the gate pass.
 - **Instrumented tests** (`src/androidTest`):
   - `@HiltAndroidTest`, `HiltAndroidRule` at order 0, and `createAndroidComposeRule<MainActivity>()` from `androidx.compose.ui.test.junit4.v2`.
   - Fakes in `fakes/` replace real modules through `testdi/*Module` with `@TestInstallIn(replaces = […])`. `FakeTracker` records screen views and events. Inject it with `@Inject` and `hiltRule.inject()`.
+  - `NoFirestoreModule` replaces `FirestoreModule` with a provider that throws, so nothing unfaked can reach the debug project. A new module that binds anything backed by Firestore needs a fake module too.
+  - Onboarding counts as seen. A test of the first run adds `FirstLaunchRule` at order 1, before the compose rule at order 2.
+  - `FakeAuthenticationRepository` signs in with `signInAsGoogle()` or `signInAsGuest()`. Its `googleAccountExists` sends a sign-in down the handover path, and `FakeSeaRepository.foundElsewhere(id)` gives the guest today's find to carry.
+  - `FakeCastCoordinator` answers at once, or refuses once after `refuseNext`. Offline, it queues casts until `confirmQueued()`.
   - `FakeSeaRepository` holds one seeded bottle. Switch it with `seaCalm`, `alreadyFoundToday` or `failNextFind`, or hold a find back with `findGate`. `FakeSeaActions` holds throw backs and reports until a test calls `expireAll()`, so no test waits out an undo window.
   - A screen test without Hilt uses `ComponentActivity` and builds its ViewModel from fakes, as `ShoreScreenTest` does.
   - Look text up with `activity.getString(R.string.…)`. Wait with `waitUntil`; never sleep or add delays to fakes.
+  - `performClick()` taps a node's centre. On a merged row that holds links, such as the Terms checkbox, the centre can land on a link and open a Custom Tab, and the next lookup finds no Compose hierarchy. Tap the control itself with `performTouchInput { click(…) }`.
 
 ## Environments and safety
 - **Firebase projects:** debug builds (`com.bottlecast.app.debug`) use the debug Firebase project; release builds (`com.bottlecast.app`) use production. Never commit, print or paste either `google-services.json`.
@@ -173,6 +196,8 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **Firestore documents and R8:** write documents as explicit maps, with their field names in the `*Fields` objects, never as POJOs: release 1.0 wrote R8-obfuscated `a`/`b` fields from one. Mappers read named fields and skip malformed documents. R8 is on in release and `proguard-rules.pro` has no rules, so smoke-test a release build after adding libraries that rely on reflection.
 - **Firestore errors on the JVM:** `FirebaseFirestoreException.Code` can't load in plain unit tests, so the sea's data source turns Firestore errors into `SeaRefusedException` and `SeaUnavailableException` before they reach the repository.
 - **One owner per animation:** an `Animatable` cancels whatever animation it's already running, so a second coroutine animating it can cut the first one short, along with anything that coroutine would have done next. Discover's reveal waits for the scroll's slide half out for this reason. A `LaunchedEffect` that changes its own key, such as clearing a notice, cancels itself too: clear the key after the work, so an interrupted effect runs again instead of losing it.
+- **Who counts as a Google account:** a guest that linked Google can still name `anonymous` as its sign-in provider. So the rules look for `'google.com'` in `request.auth.token.firebase.identities` (`hasGoogle()`), and the app refreshes the ID token after linking or switching. In the app, `UserEntity.googleUid` is the one check. Firebase tells `user` about a new account on the main thread, a moment after a sign-in returns, so code that runs straight after one uses the uid it returned (`switchToGoogle`).
+- **Firestore's write queue belongs to the signed-in user.** Writes still pending when the account switches stay behind with the old user. `SignInWithGoogleUseCase` calls `SeaActions.settle()` first, which writes any throw back or report still waiting.
 - **Firestore offline reads:** a query's default `get()` answers from the cache once Firestore is offline, possibly with nothing. Reads that decide something, such as whether the sea is calm, use `Source.SERVER`, so offline they fail instead.
 - **Robolectric setup:** it needs the `--add-opens` JVM flags set on the `Test` tasks in `app/build.gradle.kts` (JDK 17+). Keep unit-test Espresso at 3.7.0 or later: Roborazzi brings 3.5.1, which fails on SDK 37 with `InputManager.getInstance()`.
 - **Fonts:** all three families are bundled in `res/font/` and nothing downloads, because Robolectric can't load downloadable fonts. Roboto Flex is the variable font, with each weight selected through `FontVariation` and `opsz` pinned per size; `BottlingFontsTest` checks Robolectric still applies the axes. Sources and licences are in `licenses/`.

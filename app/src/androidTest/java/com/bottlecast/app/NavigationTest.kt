@@ -267,8 +267,7 @@ class NavigationTest {
 
     @Test
     fun backTappedTwiceAsAScreenCloses_leavesTheShoreShowing() {
-        composeTestRule.onNodeWithText(string(R.string.shore_cast)).performClick()
-        composeTestRule.onNodeWithText(string(R.string.login_required_title)).assertIsDisplayed()
+        openDiscover()
 
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.onNodeWithContentDescription(string(R.string.button_back)).performClick()
@@ -289,20 +288,19 @@ class NavigationTest {
         Assert.assertEquals(listOf(Shore.screenName, Chest.screenName), tracker.screens)
     }
 
+    // casting needs Google, so the sheet comes first, then Compose with the pen-name offer (spec §3.2)
     @Test
-    fun signingInToCast_goesStraightOnToPosting() {
+    fun signingInToCast_goesStraightOnToCompose() {
         composeTestRule.onNodeWithText(string(R.string.shore_cast)).performClick()
-        composeTestRule.onNodeWithText(string(R.string.login_required_button_primary)).performClick()
-        composeTestRule.onNodeWithText(string(R.string.btnSignInAnonymously)).performClick()
+        composeTestRule.onNodeWithText(string(R.string.sign_in_title_cast)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.sign_in_google)).performClick()
 
-        composeTestRule.waitUntil(conditionDescription = "posting is shown") {
-            tracker.screens.lastOrNull() == PostMessage.screenName
+        composeTestRule.waitUntil(conditionDescription = "Compose is shown") {
+            tracker.screens.lastOrNull() == Compose.SCREEN_NAME
         }
-        // the Shore never became the screen in between
-        Assert.assertEquals(
-            listOf(Shore.screenName, PostMessageLoginRequired.screenName, PostMessage.screenName),
-            tracker.screens,
-        )
+        waitForText(string(R.string.sign_in_signed_in))
+        Assert.assertEquals(listOf(Shore.screenName, Compose.SCREEN_NAME), tracker.screens)
+        Assert.assertTrue(AnalyticsEvent.SignedIn in tracker.events)
     }
 
     @Test

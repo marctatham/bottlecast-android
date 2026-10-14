@@ -277,7 +277,7 @@ Badges use the MaterialShapes cookie/scallop (Material3 1.5, experimental opt-in
 - Haptics stay on, because they convey state rather than motion.
 
 ### 1.6 Illustration and iconography
-**Style: soft glass under moonlight.** It matches `message_in_bottle.json`:
+**Style: soft glass under moonlight,** as the bottle rig draws it:
 - Cyan glass at 70% opacity with white specular highlights.
 - A cream scroll (#F0E0D0 / #E0C0A0) and a tan cork.
 - No outlines.
@@ -288,7 +288,7 @@ Badges use the MaterialShapes cookie/scallop (Material3 1.5, experimental opt-in
 - freezes cleanly under reduced motion;
 - replaces `message_from_bottle.json`, which has an outlined aubergine style, Chinese "成为密友" end text and a licence to confirm.
 
-`message_in_bottle.json` stays on the Shore and Cast success in phase 1. Flag it for a licence check, or redraw it in the rig.
+The Shore and Cast success draw the rig too, so no Lottie ships (decided 2026-10-14).
 
 **Seeded silhouette (G9).** `seed = SHA-256(messageId)`:
 - byte 0 mod 3 picks Classic, Flask or Gourd;
@@ -475,7 +475,8 @@ Primary copy avoids crypto jargon. Detail rows name each technical term exactly 
   - "Sign in to share your profile"
   - "Sign in to add a wallet"
 - Body: "We use your Google account so your chest and streak follow you to any phone. Your name never appears on bottles unless you choose a pen name."
-- Carry-over chip: "Your 3-day streak and today's find come with you"
+- Carry-over chip: "Your 3-day streak and today's find come with you". Until streaks exist (slice 4), it reads "Today's find comes with you", shown only while the guest holds a live find today.
+- If that Google account already exists, the guest's live find is handed over to it, as long as the account has no find today and has never found that bottle (decided 2026-10-14).
 - Button: "Continue with Google". Secondary: "Not now".
 - Legal: "By continuing you agree to the Terms and the Privacy Policy."
 - Error: "Couldn't sign you in. Check your connection and try again."
@@ -506,7 +507,7 @@ Shared frame: edge-to-edge 360×800, full dome (edge at y≈480), breathing tide
 **While-you-were-away banner (G5):** under the top row when present. glassContainer, 16dp radius, 48dp minimum height.
 
 **State A: a bottle is waiting**
-- The bottle sits centred at y≈210 (260×170dp; the Lottie in phase 1, the rig in phase 2), bobbing.
+- The bottle sits centred at y≈210 (260×170dp, drawn by the rig), bobbing.
 - Headline at y≈318: "A bottle washed ashore" (headlineMedium).
 - Body at y≈360: "Today's bottle is waiting for you." (bodyLarge, onSurfaceVariant, 32dp side padding).
 - Below the arc: three moon glints.
@@ -613,7 +614,7 @@ Shared frame: edge-to-edge 360×800, full dome (edge at y≈480), breathing tide
 - **Offline:** writing is allowed.
 - **Draft:** autosaved locally, debounced at 1s.
 - **Restored draft:** snackbar "We kept your draft." [Start fresh].
-- **Soft cap:** 5 casts a day; "That's 5 bottles today — the sea needs a rest."
+- **Cap:** 5 casts a day, enforced by the rules; "That's 5 bottles today — the sea needs a rest."
 
 ### 3.4b Preview and tone check
 Preview stays a separate route: it is where the writer consents to permanence.
