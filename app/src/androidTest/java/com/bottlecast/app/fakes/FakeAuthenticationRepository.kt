@@ -64,6 +64,11 @@ class FakeAuthenticationRepository @Inject constructor() : IAuthenticationReposi
     /** Signs straight in with Google, as someone who signed in on an earlier day. */
     fun signInAsGoogle() = signIn(AuthProviderType.Google)
 
+    /** Signs in the silent guest, as today's first look at the sea would. */
+    fun signInAsGuest() = signIn(AuthProviderType.Anonymous)
+
+    fun signedInUid(): String? = (user.value as? UserEntity.AuthenticatedUser)?.userId
+
     private fun signIn(providerType: AuthProviderType, userId: String = FAKE_USER_ID) {
         _user.value = UserEntity.AuthenticatedUser(
             providerType = providerType,
