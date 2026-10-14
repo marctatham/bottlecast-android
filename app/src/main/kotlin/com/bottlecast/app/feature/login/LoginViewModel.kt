@@ -4,6 +4,7 @@ package com.bottlecast.app.feature.login
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bottlecast.app.common.authentication.domain.AuthProviderType
+import com.bottlecast.app.common.authentication.domain.GoogleLinkResult
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -50,7 +51,9 @@ class LoginViewModel @Inject constructor(
     fun initiateLoginWithGoogle(idToken: String) {
         viewModelScope.launch(exceptionHandler) {
             _state.value = State.Loading
-            authenticationRepository.firebaseAuthWithGoogle(idToken)
+            if (authenticationRepository.linkGoogle(idToken) == GoogleLinkResult.AccountExists) {
+                authenticationRepository.switchToGoogle(idToken)
+            }
         }
     }
 

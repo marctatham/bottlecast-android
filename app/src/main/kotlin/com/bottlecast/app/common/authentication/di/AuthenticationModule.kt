@@ -4,7 +4,9 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.auth
 import com.google.firebase.Firebase
 import com.bottlecast.app.common.authentication.data.AuthenticationRepository
+import com.bottlecast.app.common.authentication.data.CredentialManagerGoogleCredentials
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
+import com.bottlecast.app.common.authentication.domain.IGoogleCredentials
 import com.bottlecast.app.common.threading.DispatcherIO
 import dagger.Module
 import dagger.Provides
@@ -31,4 +33,8 @@ object AuthenticationModule {
             firebaseAuth,
             dispatcher
         )
+
+    @Provides
+    @Singleton
+    fun providesGoogleCredentials(credentials: CredentialManagerGoogleCredentials): IGoogleCredentials = credentials
 }
