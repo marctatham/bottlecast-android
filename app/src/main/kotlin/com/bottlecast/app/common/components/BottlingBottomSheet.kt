@@ -1,6 +1,8 @@
 package com.bottlecast.app.common.components
 
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -43,7 +45,8 @@ fun BottlingBottomSheet(
         dragHandle = if (dismissible) {
             { BottomSheetDefaults.DragHandle(color = MaterialTheme.colorScheme.outline) }
         } else {
-            null
+            // the handle's room stays, so the sheet doesn't jump as it goes
+            { Spacer(modifier = Modifier.height(BottlingTheme.sizes.touchTarget)) }
         },
         properties = ModalBottomSheetProperties(
             shouldDismissOnBackPress = dismissible,

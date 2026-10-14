@@ -186,10 +186,12 @@ fun BottlingTextButton(
     @StringRes text: Int,
     onTapHandler: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     TextButton(
         onClick = onTapHandler,
         modifier = modifier.heightIn(min = BottlingTheme.sizes.touchTarget),
+        enabled = enabled,
         shape = BottlingTheme.shapes.pill,
         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
         contentPadding = PaddingValues(horizontal = BottlingTheme.spacing.m),
