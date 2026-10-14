@@ -137,3 +137,64 @@ Choices made while building it, which the owner can revisit at review:
 - **No failure screen on the Shore:** if its inputs fail, it logs and still offers today's bottle.
 - **Predictive back:** full-screen routes shrink to 90% with 32dp corners over the screen underneath (spec §1.5), and tabs fade back to the Shore.
 
+## 2026-10-13 — Slice 2 planning
+
+The owner's answers while planning slice 2 (Discover, Reveal and the data model), which its PR applies.
+
+- **Rules only, no Worker.** Firestore rules enforce the create-only daily record, one report per finder and a threshold of 3 reports. Blocking happens on the phone, by the writer id each bottle carries. Slice 6's Worker takes over discovery and blocking. Accepted until then: a modified app can read bottles without using up its day, or group one writer's bottles. Resolves the open issue "How much of the Worker comes forward to slice 2".
+- **One finder at a time.** A find holds the bottle for 7 days. Throwing it back, or 7 days without a Keep, returns it to the sea. `findCount` counts the finds, nobody finds the same bottle twice, and the writer is told once (later slices). Resolves "Bottles that drift again".
+- **Small daily-limit holes accepted.** The candidate is pinned in memory for the account and the day. The rules accept a date that's real somewhere on Earth at that moment (UTC−12 to +14). A reinstall makes a fresh guest. Resolves "Keeping it to one bottle a day".
+- **Keep waits for slice 4.** Reveal ships with Share and Throw back only. Not in slice 2: the Keep pill and its helper, the "It'll wait in your chest" snackbar, and Shore B's "Not kept" chip.
+- **Old versions: strict.** The new rules and the production migration ship together at release. 1.1.1 can't find or cast until it updates. Resolves "Old app versions after the data model changes".
+- **The spec wins over the boards** where they differ, and the boards fill in where it's silent, as in slice 1. Resolves "Board or spec where they differ" for slice 2.
+- **Dialog scrim:** `BottlingDialog` turns the platform's dim off and draws the theme's `scrim`, so Dawn gets its #1A2320 at 40%. Resolves "The Dawn dialog scrim".
+- **One PR** for the whole slice.
+- **Icons:** the share, help and refresh Symbols come from the same pinned commit as the rest.
+
+  *Changes spec: §1.7 (the data model), §3.6 and §3.7 (no Keep yet), §3.19 (blocking and the threshold).*
+
+Choices made while building it, which the owner can revisit at review:
+
+- **Casting stays as it is until slice 3.** The rules let any signed-in user cast, guests included, and only a Google account skips today's sign-in sheet. Slice 3 adds a Google-only rule.
+- **Signing in with Google links a guest** (`linkWithCredential`), which keeps the uid and today's find. If that Google account already exists, it signs in instead and the guest's day is lost (slice 3's merge rule).
+- **Admin is a custom claim** (`admin: true`), set per project with `scripts/set_admin_claim.py`. The hard-coded admin uid is gone.
+- **Bottles cast before slice 3** get `lang` "und", `penName` null and `sealable` false, since their writers never saw the choice.
+- **The threshold lives in the queries and the rules** (`reportCount` in [0, 1, 2], and below 3), so no client writes a moderation status. `under_review` means an admin pulled the bottle.
+- **Reports:** only the live holder can report, and the report keeps the hold, so the bottle stays out of the sea for the rest of its 7 days. Undo works inside the window, before anything is written. Blocking is a write of its own. The finder's hidden list is their find marked `reported`.
+- **Timed actions:** undo windows last 5 s, or the system's recommended timeout if longer, and wait for the user while TalkBack is on (spec §4). Throw backs and reports commit from an app-scoped coordinator, and leaving Reveal commits a report still waiting. If the app dies first, the action is lost and the bottle drifts back when its hold ends. Analytics count a throw back or report once it's written, so an undone one doesn't count.
+- **Moderation:** restoring a bottle that a finder still holds clears its reports and gives it back to that finder for the rest of the hold. It goes back to the sea only once the hold has ended, so a bottle never has two holders. The rules insist on both.
+- **A look at the sea** reads on, page by page, from a random point up, then round from the bottom, then through holds that have ended, until it has today's candidate and two to fall back on. It skips the account's own bottles, blocked writers' and any it found before. It reads from the server, so an offline look fails instead of finding a calm sea. The blocked writers are read again for each day's look.
+- **The Shore's bottle is the rig,** as spec §3.3 plans for phase 2. The bottle Lottie stays only on cast success until slice 3, and Discover's Lottie is gone.
+- **The rig** is drawn on a Canvas from TEMPLATE.md's paths. Its seed is SHA-256 of the bottle id: byte 0 mod 3 picks the silhouette, and (byte 1 / 255) · 12 − 6 turns the tint's hue that many degrees. The contract and the web pages port the same formula. It leans 12° with its neck towards the start edge, mirrored in RTL.
+- **Copy with no spec source:**
+  - the share text, `“{message}” — found in a bottle on BottleCast` and the Play link, under "Share this bottle"
+  - bylines that say "cast today", "cast yesterday" or "cast n days, months or years ago"
+  - Discover's calm-sea note, "This didn't use up today's bottle." (slice 4 adds ", and your streak is safe")
+  - "How to uncork" for the help button's label
+  - the reported bar and the thanks after it
+- **Anonymous auto clean-up stays off,** checked at release. Resolves "Guest accounts removed by automatic clean-up".
+- **Where the boards and the spec differ,** the spec wins:
+
+  | Spec value, taken | Board value, not taken |
+  |---|---|
+  | "Shake to uncork" / "Give your phone a few gentle shakes." | "Give it a shake" / "Shake your phone to pop the cork — or press and hold the bottle." |
+  | An outlined "Tap to uncork" and "or press and hold the bottle", with help behind the "?" button | A filled "Tap to uncork", a "No shaking needed?" button and an optional-shaking hint |
+  | Discover's text ends 32dp above the arc and its pill sits 40dp below, as the spec's y≈470 and 600 put them | Text from y 436, the pill at 622 |
+  | Tonal Share and "Throw back" pills 20dp under the card | A pinned Keep pill, an outlined Share and a "Throw it back" text button |
+  | The card at least 220dp tall, 8dp under its overline | 236dp, 12dp under it |
+  | The spec's five report reasons, in its order | "Hateful or harassing", "Spam or a scam" and the board's order |
+
+- **From the boards, where the spec is silent:**
+  - Discover's stars, glints and "n of 3" counter
+  - Reveal's moon, stars and drifting empty bottle
+  - a short message's byline sitting at the foot of its card
+  - the report dialog's "Reason (optional)" heading
+  - the calm Shore's second pill, "Open your chest"
+- **Layout:**
+  - Discover's moon hangs just below the top bar, since the help button sits where the board puts it.
+  - The bottle stays put while the counter comes and goes and "Unrolling…" takes over.
+  - A message runs in its own script's direction, whichever way the app is laid out: Reveal's card and the Shore's excerpt.
+  - At large text, Reveal's card grows with the page, its pills stack, and the drifting bottle steps aside.
+  - Long edge-state titles break into even lines, and the countdown keeps "7h 12m" on one line.
+  - The calm Shore hides the sky's moon, since its illustration brings one.
+

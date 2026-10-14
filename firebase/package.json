@@ -1,0 +1,19 @@
+{
+  "name": "bottlecast-firebase",
+  "private": true,
+  "type": "module",
+  "description": "BottleCast's Firestore rules and indexes, with emulator tests",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "test": "mocha",
+    "test:emulator": "firebase emulators:exec --only firestore --project demo-bottlecast \"npm test\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "5.0.2",
+    "firebase": "12.19.0",
+    "firebase-tools": "15.32.0",
+    "mocha": "12.0.2"
+  }
+}

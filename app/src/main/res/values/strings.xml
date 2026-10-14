@@ -15,8 +15,6 @@
   -->
 
 <resources>
-    <string name="get_message_button_acknowledge">Message explored</string>
-
     <string name="button_back">Back</string>
 
     <string name="nav_shore">Shore</string>
@@ -75,8 +73,8 @@
     <string name="shore_cast">Cast a bottle</string>
     <string name="shore_open_chest">Open your chest</string>
     <string name="shore_next_tide_in">Next tide in</string>
-    <string name="shore_countdown_hours_minutes">%1$dh %2$dm</string>
-    <string name="shore_countdown_minutes">%1$d min</string>
+    <string name="shore_countdown_hours_minutes">%1$dh\u00A0%2$dm</string>
+    <string name="shore_countdown_minutes">%1$d\u00A0min</string>
     <string name="shore_countdown_any_moment">Any moment…</string>
     <plurals name="shore_countdown_hours_description">
         <item quantity="one">%1$d hour</item>
@@ -93,8 +91,88 @@
     <string name="shore_reminder">Remind me at %1$s</string>
     <string name="shore_todays_find">Today\'s find</string>
     <string name="shore_find_excerpt">“%1$s”</string>
-    <string name="shore_find_kept">Kept</string>
-    <string name="shore_find_not_kept">Not kept · %1$dd left</string>
+    <string name="shore_thrown_back">Back to the sea it goes.</string>
+    <string name="shore_undo">Undo</string>
+    <string name="shore_already_found">You\'ve already found today\'s bottle — next tide in %1$s.</string>
+
+    <!-- Shared by the edge states (spec §3.18) -->
+    <string name="try_again">Try again</string>
+    <string name="sea_calm_title">The sea is calm today</string>
+    <string name="sea_calm_body">No bottles are drifting right now. Be the first — cast one for someone to find.</string>
+
+    <!-- Discover (spec §3.6) -->
+    <string name="discover_help">How to uncork</string>
+    <string name="discover_title_shake">Shake to uncork</string>
+    <string name="discover_body_shake">Give your phone a few gentle shakes.</string>
+    <string name="discover_title_tap">Tap to uncork</string>
+    <string name="discover_body_tap">Tap the bottle three times, or press and hold.</string>
+    <string name="discover_title_still">Your bottle is here</string>
+    <string name="discover_tap_to_uncork">Tap to uncork</string>
+    <string name="discover_hold_hint">or press and hold the bottle</string>
+    <string name="discover_open_bottle">Open bottle</string>
+    <string name="discover_progress">%1$d of 3</string>
+    <string name="discover_unrolling">Unrolling…</string>
+    <string name="discover_bottle">Uncork bottle</string>
+    <string name="discover_bottle_action">open</string>
+    <string name="discover_cork_loosening">Cork loosening, %1$d of 3</string>
+    <string name="discover_help_title">No shaking needed</string>
+    <string name="discover_help_body">Tap Uncork, press and hold the bottle, or shake — whichever you like. Leaving now won\'t use up today\'s bottle.</string>
+    <string name="discover_help_got_it">Got it</string>
+    <string name="discover_sea_calm_note">This didn\'t use up today\'s bottle.</string>
+    <string name="discover_offline_title">Fog rolled in</string>
+    <string name="discover_offline_body">Reconnect to find today\'s bottle.</string>
+    <string name="discover_failed_title">The bottle slipped back into the sea</string>
+    <string name="discover_failed_body">Today\'s bottle is still waiting.</string>
+
+    <!-- Reveal (spec §3.7) -->
+    <string name="reveal_found_today">Found today</string>
+    <string name="reveal_report">Report</string>
+    <string name="reveal_report_description">Report this bottle</string>
+    <string name="reveal_reported_description">You\'ve reported this</string>
+    <string name="reveal_byline_stranger">— A stranger at sea</string>
+    <string name="reveal_byline_pen_name">— %1$s</string>
+    <string name="reveal_byline_cast">%1$s · %2$s</string>
+    <string name="reveal_cast_today">cast today</string>
+    <string name="reveal_cast_yesterday">cast yesterday</string>
+    <plurals name="reveal_cast_days">
+        <item quantity="one">cast %1$d day ago</item>
+        <item quantity="other">cast %1$d days ago</item>
+    </plurals>
+    <plurals name="reveal_cast_months">
+        <item quantity="one">cast %1$d month ago</item>
+        <item quantity="other">cast %1$d months ago</item>
+    </plurals>
+    <plurals name="reveal_cast_years">
+        <item quantity="one">cast %1$d year ago</item>
+        <item quantity="other">cast %1$d years ago</item>
+    </plurals>
+    <string name="reveal_share">Share</string>
+    <string name="reveal_throw_back">Throw back</string>
+    <string name="reveal_share_text">“%1$s” — found in a bottle on BottleCast\n%2$s</string>
+    <string name="reveal_share_chooser">Share this bottle</string>
+    <string name="play_store_url" translatable="false">https://play.google.com/store/apps/details?id=com.bottlecast.app</string>
+    <string name="reveal_reported_hidden">You reported this message. It\'s hidden for you.</string>
+    <string name="reveal_undo">Undo</string>
+    <string name="reveal_reported_thanks">Reported. Thanks for keeping the sea kind.</string>
+    <string name="reveal_reported_offline">Reported — we\'ll send it when you\'re back online</string>
+    <string name="reveal_reported_blocked">You won\'t find their bottles again.</string>
+    <string name="reveal_back_to_shore">Back to the shore</string>
+    <string name="adrift_title">Something went adrift</string>
+    <string name="adrift_body">We couldn\'t load this. Check your connection and try again.</string>
+
+    <!-- The Report dialog (spec §3.19) -->
+    <string name="report_title">Report this bottle?</string>
+    <string name="report_body">It disappears for you right away. We\'ll review it, and it leaves the sea for everyone if it breaks the rules.</string>
+    <string name="report_reason_heading">Reason (optional)</string>
+    <string name="report_reason_hurtful">Hurtful or hateful</string>
+    <string name="report_reason_sexual">Sexual content</string>
+    <string name="report_reason_personal_info">Shares someone\'s personal info</string>
+    <string name="report_reason_spam">Spam or ads</string>
+    <string name="report_reason_other">Something else</string>
+    <string name="report_block">Also block this writer</string>
+    <string name="report_block_helper">You won\'t find their bottles again. They won\'t be told.</string>
+    <string name="report_cancel">Cancel</string>
+    <string name="report_confirm">Report</string>
 
     <string name="login_required_title">Your guide to bottling messages</string>
     <string name="login_required_image_description">Safety First, sign in is required</string>
@@ -111,11 +189,21 @@
 
     <string name="view_messages_error_get">There was a problem fetching messages</string>
 
-    <string name="get_message_report">Report message</string>
-    <string name="get_message_report_dialog_title">Report offensive message</string>
-    <string name="get_message_report_dialog_description">Are you sure you want to report this message as offensive? Our team will review it, and if it is found to be offensive, it will be removed from circulation to maintain a safe and enjoyable experience for all users.</string>
-    <string name="get_message_report_dialog_confirm">Report message</string>
-    <string name="get_message_report_dialog_cancel">Cancel</string>
+    <!-- Moderation, for admins (spec §3.19) -->
+    <string name="moderation_empty">No reported bottles are waiting for a look.</string>
+    <plurals name="moderation_reports">
+        <item quantity="one">%1$d report</item>
+        <item quantity="other">%1$d reports</item>
+    </plurals>
+    <string name="moderation_status_afloat">In the sea</string>
+    <string name="moderation_status_found">Held by a finder</string>
+    <string name="moderation_status_under_review">Pulled for a look</string>
+    <string name="moderation_status_removed">Removed</string>
+    <string name="moderation_summary">%1$s · %2$s</string>
+    <string name="moderation_pull">Pull</string>
+    <string name="moderation_remove">Remove</string>
+    <string name="moderation_restore">Restore</string>
+    <string name="moderation_failed">That didn\'t go through, so the bottle hasn\'t changed. Check your connection and try again.</string>
 
     <string name="snack_post_message_failed">Failed to post your message!</string>
     <string name="snack_post_message_requires_auth">You must be logged in to post!</string>

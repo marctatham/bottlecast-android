@@ -3,6 +3,7 @@ package com.bottlecast.app.feature.login
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -10,6 +11,7 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import javax.inject.Inject
@@ -25,15 +27,17 @@ class LoginViewModel @Inject constructor(
     private val _state: MutableStateFlow<State> = MutableStateFlow(State.Loading)
     val state: StateFlow<State> = _state.asStateFlow()
 
+    // Everyone has a silent guest account once they've been to the Shore, so only a Google account,
+    // or choosing to carry on as a guest, counts as signed in here.
+    private val continuingAsGuest = MutableStateFlow(false)
+
     init {
         viewModelScope.launch {
-            authenticationRepository.user.collect {
-                when (it) {
-                    is UserEntity.AuthenticatedUser -> _state.value = State.AuthenticatedUser
-                    UserEntity.UnauthenticatedUser -> _state.value = State.Anonymous
-                }
-            }
-
+            combine(authenticationRepository.user, continuingAsGuest) { user, asGuest ->
+                val signedIn = user is UserEntity.AuthenticatedUser &&
+                    (user.providerType == AuthProviderType.Google || asGuest)
+                if (signedIn) State.AuthenticatedUser else State.Anonymous
+            }.collect { _state.value = it }
         }
     }
 
@@ -53,7 +57,8 @@ class LoginViewModel @Inject constructor(
     fun initiateAnonymousLogin() {
         viewModelScope.launch(exceptionHandler) {
             _state.value = State.Loading
-            authenticationRepository.signInAnonymously()
+            authenticationRepository.ensureSignedIn()
+            continuingAsGuest.value = true
         }
     }
 

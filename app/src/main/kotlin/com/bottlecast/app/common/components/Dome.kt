@@ -44,6 +44,8 @@ value class DomeEdge(val fraction: Float) {
  * @param glowCenter where the moonlight is brightest, as fractions of the circle's bounding square
  *   (the boards' `radial-gradient(circle at x y …)`), measured from the start edge.
  * @param edgeOffset moves the edge from its resting place, read at draw time (the breathing tide).
+ * @param flash how much moonlight washes over the whole dome, from 0 to 1, read at draw time
+ *   (Discover's flash as the cork pops, spec §1.5).
  */
 @Composable
 fun Dome(
@@ -51,6 +53,7 @@ fun Dome(
     modifier: Modifier = Modifier,
     glowCenter: Offset = DomeGlowTopEnd,
     edgeOffset: () -> Dp = { 0.dp },
+    flash: () -> Float = { 0f },
 ) {
     val colors = BottlingTheme.colors
     Spacer(
@@ -93,6 +96,8 @@ fun Dome(
 
                 onDrawBehind {
                     drawCircle(brush = fill, radius = radius, center = center)
+                    val flashAlpha = flash()
+                    if (flashAlpha > 0f) drawCircle(color = colors.domeGlow.copy(alpha = flashAlpha), radius = radius, center = center)
                     drawCircle(brush = moonpath, radius = moonpathRadius, center = center, style = moonpathStroke)
                 }
             }

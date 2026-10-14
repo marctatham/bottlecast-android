@@ -1,8 +1,5 @@
 package com.bottlecast.app.feature.shore
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.ReadOnlyComposable
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 
 /**
@@ -20,15 +17,18 @@ internal object ShoreDimens {
     val streakPillPaddingEnd = 12.dp
     val shieldIcon = 14.dp
 
-    /** The bottle: the Lottie for now, slice 2's rig later (spec §3.3). */
-    val bottleWidth = 260.dp
-    val bottleHeight = 170.dp
+    /** The bottle rig (Main board): 188dp tall, leaning on the tide over 240dp of ripples. */
+    val bottleHeight = 188.dp
+    const val BOTTLE_TILT = -14f
+    val ripplesWidth = 240.dp
+    val ripplesUnderBottle = 12.dp
+
+    /** Its bob: up 6dp, and 5° more upright, at the top of the swell (the boards' float). */
+    val bobHeight = 6.dp
+    const val BOB_TILT = 5f
 
     /** Below this height the bottle drops out. */
     val bottleMinHeight = 96.dp
-
-    /** See [isLargeText]. */
-    const val LARGE_TEXT_SCALE = 1.75f
 
     /** State A: from the body's last line down to the dome's edge. */
     val textAboveArc = 74.dp
@@ -65,17 +65,4 @@ internal object ShoreDimens {
     val findCardPaddingStart = 20.dp
     val findCardPaddingEnd = 12.dp
     val findCardPaddingVertical = 12.dp
-
-    /** Scenery: 2dp stars and 24×2dp glints. */
-    val star = 2.dp
-    val glintWidth = 24.dp
-    val glintHeight = 2.dp
 }
-
-/**
- * Whether the text is large enough, from 175%, for the bottle and the glints to step aside for the
- * words (spec §3.3: the bottle hides at 200%).
- */
-@Composable
-@ReadOnlyComposable
-internal fun isLargeText(): Boolean = LocalDensity.current.fontScale >= ShoreDimens.LARGE_TEXT_SCALE

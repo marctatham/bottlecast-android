@@ -2,28 +2,28 @@ package com.bottlecast.app.fakes
 
 import com.bottlecast.app.common.messages.domain.IMessageRepository
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.messages.domain.ModerationAction
+import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * In-memory stand-in for the Firestore-backed repository, seeded with a single message.
+ * In-memory stand-in for the Firestore-backed repository: records casts, and has nothing to moderate.
  */
 @Singleton
 class FakeMessageRepository @Inject constructor() : IMessageRepository {
 
-    private val messages: MutableList<MessageEntity> = mutableListOf(
-        MessageEntity(message = SEEDED_MESSAGE, userId = "fakeUserId")
-    )
+    private val _cast = CopyOnWriteArrayList<MessageEntity>()
+    val cast: List<MessageEntity> get() = _cast.toList()
 
-    override suspend fun getMessage(): MessageEntity = messages.first()
+    override suspend fun postMessage(message: String, userId: String): MessageEntity =
+        MessageEntity(id = "cast${_cast.size}", message = message, userId = userId).also { _cast += it }
 
-    override suspend fun getMessages(): List<MessageEntity> = messages.toList()
+    override suspend fun getReportedMessages(): List<MessageEntity> = emptyList()
 
-    override suspend fun postMessage(message: MessageEntity) {
-        messages += message
-    }
+    override suspend fun moderate(messageId: String, action: ModerationAction) = Unit
 
     companion object {
-        const val SEEDED_MESSAGE: String = "Ahoy! This bottle washed up from the test sea."
+        const val SEEDED_MESSAGE: String = FakeSeaRepository.SEEDED_MESSAGE
     }
 }

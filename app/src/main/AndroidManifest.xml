@@ -25,6 +25,14 @@
     <!-- the offline banners follow the default network (common/connectivity) -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- haptics compose the spec's primitives (common/ui/Haptics.kt) -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
+    <!-- Discover reads it to shake the cork loose, and offers tap and hold where there's none -->
+    <uses-feature
+        android:name="android.hardware.sensor.accelerometer"
+        android:required="false" />
+
     <application
         android:name=".BottleCastApplication"
         android:allowBackup="true"

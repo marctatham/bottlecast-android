@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -31,6 +32,7 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
  *
  * @param border replaces the theme's edge, e.g. with an `outline` border so an interactive card
  *   reaches 3:1 (spec §4).
+ * @param verticalArrangement where the content sits when the card is taller than it.
  * @param onClick makes the whole card a button, its ripple and focus ring following the card's
  *   shape while the rim and glow stay outside it.
  */
@@ -40,6 +42,7 @@ fun ParchmentCard(
     shape: Shape = BottlingTheme.shapes.parchment,
     border: BorderStroke? = null,
     contentPadding: PaddingValues = PaddingValues(BottlingTheme.spacing.l),
+    verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -76,6 +79,7 @@ fun ParchmentCard(
             .background(colors.parchment, shape)
             .then(if (edge != null) Modifier.border(edge, shape) else Modifier)
             .padding(contentPadding),
+        verticalArrangement = verticalArrangement,
     ) {
         val scope = this
         CompositionLocalProvider(LocalContentColor provides colors.ink) { scope.content() }

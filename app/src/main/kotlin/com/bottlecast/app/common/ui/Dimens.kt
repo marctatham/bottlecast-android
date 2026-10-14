@@ -66,4 +66,14 @@ object BottlingSizes {
 
     /** The corners a full-screen route gains as a back swipe shrinks it away (spec §1.5). */
     val predictiveBackCorner = 32.dp
+
+    /** A full-screen route's transparent top bar (spec §3.7). */
+    val topBarHeight = 64.dp
+
+    /** The smaller pills, such as Reveal's row of two (spec §3.7) and a dialog's actions. */
+    val pillMediumHeight = 48.dp
+
+    /** A dialog keeps this far from the screen's sides, and grows no wider than [dialogMaxWidth]. */
+    val dialogSideMargin = 28.dp
+    val dialogMaxWidth = 560.dp
 }

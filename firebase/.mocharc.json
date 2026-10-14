@@ -1,0 +1,5 @@
+{
+  "spec": "test/**/*.test.mjs",
+  "require": "test/hooks.mjs",
+  "timeout": 30000
+}

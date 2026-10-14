@@ -6,16 +6,6 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.composable
 import androidx.navigation.createGraph
 import androidx.test.core.app.ApplicationProvider
-import com.bottlecast.app.Chest
-import com.bottlecast.app.GetMessage
-import com.bottlecast.app.Me
-import com.bottlecast.app.Moderation
-import com.bottlecast.app.PostMessage
-import com.bottlecast.app.PostMessageLoginRequired
-import com.bottlecast.app.Shore
-import com.bottlecast.app.UNKNOWN_SCREEN_NAME
-import com.bottlecast.app.bottlingRoutes
-import com.bottlecast.app.screenName
 import org.junit.Assert
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -40,7 +30,8 @@ class ScreenNameMappingTest {
             composable<Shore> {}
             composable<Chest> {}
             composable<Me> {}
-            composable<GetMessage> {}
+            composable<Discover> {}
+            composable<Reveal> {}
             composable<PostMessage> {}
             composable<PostMessageLoginRequired> {}
             composable<Moderation> {}
@@ -51,6 +42,6 @@ class ScreenNameMappingTest {
 
         // then
         Assert.assertFalse(screenNames.contains(UNKNOWN_SCREEN_NAME))
-        Assert.assertEquals(bottlingRoutes.map { it.screenName }.toSet(), screenNames.toSet())
+        Assert.assertEquals(routeScreenNames.values.toSet(), screenNames.toSet())
     }
 }

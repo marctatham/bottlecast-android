@@ -9,17 +9,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.bottlecast.app.common.components.DomeEdge
+import com.bottlecast.app.common.components.BOARD_WIDTH
+import com.bottlecast.app.common.components.SceneryGlint
+import com.bottlecast.app.common.components.SceneryStar
+import com.bottlecast.app.common.components.drawGlint
+import com.bottlecast.app.common.components.drawStars
 import com.bottlecast.app.common.components.DomeGlowTopEnd
 import com.bottlecast.app.common.components.DomeScaffold
 import com.bottlecast.app.common.components.MoonDisc
@@ -30,13 +29,19 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
 import com.bottlecast.app.feature.shore.ShoreDimens
 
 /**
- * Which of the Shore's two scenes to draw (spec §3.3).
+ * Which of the Shore's scenes to draw (spec §3.3).
  *
  * @param glowCenter where the dome's moonlight is brightest.
  */
 internal enum class ShoreScene(val glowCenter: Offset) {
     /** State A: the moon sits top-end, with the moonlight behind it, and glints drift on the sea. */
     BottleWaiting(DomeGlowTopEnd),
+
+    /**
+     * State A on a calm sea: the illustration brings its own moon, centred, so the scenery leaves the
+     * moon out and the moonlight sits behind the illustration's (Edge-SeaCalm board). Glints still drift.
+     */
+    SeaCalm(Offset(0.5f, 0.58f)),
 
     /**
      * State B: the moon moves into the tide ring, so the scenery leaves it out, and the moonlight
@@ -69,16 +74,8 @@ internal fun ShoreScenery(
             .clearAndSetSemantics {}
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            val stars = if (scene == ShoreScene.BottleWaiting) WaitingStars else FoundStars
-            stars.forEach { star ->
-                val alpha = if (colors.isNight) star.nightAlpha else star.nightAlpha * DAWN_STAR_DIMMING
-                drawCircle(
-                    color = colors.sceneryAccent.copy(alpha = alpha),
-                    radius = ShoreDimens.star.toPx() / 2f,
-                    center = Offset(startX(star.x * size.width), star.y.toPx()),
-                )
-            }
-            if (scene == ShoreScene.BottleWaiting && !largeText) {
+            drawStars(if (scene == ShoreScene.FoundToday) FoundStars else WaitingStars, colors)
+            if (scene != ShoreScene.FoundToday && !largeText) {
                 val arcY = size.height * DomeEdge.Full.fraction
                 Glints.forEach { glint -> drawGlint(glint, arcY, tide.glintPhase(), colors.sceneryAccent) }
             }
@@ -97,61 +94,28 @@ internal fun ShoreScenery(
     }
 }
 
-/** A glint drifts across the sea and round again, fading out at the screen's edges. */
-private fun DrawScope.drawGlint(glint: Glint, arcY: Float, phase: Float, color: Color) {
-    val width = ShoreDimens.glintWidth.toPx()
-    val height = ShoreDimens.glintHeight.toPx()
-    val travel = size.width
-    val x = ((glint.x + phase) % 1f) * travel
-    val edgeFade = (minOf(x, travel - width - x) / width).coerceIn(0f, 1f)
-    drawRoundRect(
-        color = color.copy(alpha = GLINT_ALPHA * edgeFade),
-        topLeft = Offset(startX(x, width), arcY + glint.belowArc.toPx()),
-        size = Size(width, height),
-        cornerRadius = CornerRadius(height / 2f),
-    )
-}
-
-/** Measures [x] from the start edge, so the scenery mirrors in right-to-left layouts. */
-private fun DrawScope.startX(x: Float, width: Float = 0f): Float =
-    if (layoutDirection == LayoutDirection.Ltr) x else size.width - x - width
-
-/** A star: [x] as a share of the width, [y] from the top of the screen, as on the boards. */
-private class Star(val x: Float, val y: Dp, val nightAlpha: Float)
-
-/** A glint's resting place: [x] as a share of the width, [belowArc] under the dome's edge. */
-private class Glint(val x: Float, val belowArc: Dp)
-
-// the boards' 390dp frame, for turning their x positions into shares of the width
-private const val BOARD_WIDTH = 390f
-
 private val WaitingStars = listOf(
-    Star(49f / BOARD_WIDTH, 139.dp, 0.45f),
-    Star(113f / BOARD_WIDTH, 105.dp, 0.30f),
-    Star(345f / BOARD_WIDTH, 221.dp, 0.35f),
-    Star(31f / BOARD_WIDTH, 263.dp, 0.30f),
+    SceneryStar(49f / BOARD_WIDTH, 139.dp, 0.45f),
+    SceneryStar(113f / BOARD_WIDTH, 105.dp, 0.30f),
+    SceneryStar(345f / BOARD_WIDTH, 221.dp, 0.35f),
+    SceneryStar(31f / BOARD_WIDTH, 263.dp, 0.30f),
 )
 
 private val FoundStars = listOf(
-    Star(49f / BOARD_WIDTH, 139.dp, 0.45f),
-    Star(97f / BOARD_WIDTH, 101.dp, 0.30f),
-    Star(319f / BOARD_WIDTH, 125.dp, 0.35f),
-    Star(345f / BOARD_WIDTH, 221.dp, 0.35f),
-    Star(31f / BOARD_WIDTH, 263.dp, 0.30f),
-    Star(357f / BOARD_WIDTH, 331.dp, 0.25f),
+    SceneryStar(49f / BOARD_WIDTH, 139.dp, 0.45f),
+    SceneryStar(97f / BOARD_WIDTH, 101.dp, 0.30f),
+    SceneryStar(319f / BOARD_WIDTH, 125.dp, 0.35f),
+    SceneryStar(345f / BOARD_WIDTH, 221.dp, 0.35f),
+    SceneryStar(31f / BOARD_WIDTH, 263.dp, 0.30f),
+    SceneryStar(357f / BOARD_WIDTH, 331.dp, 0.25f),
 )
 
 private val Glints = listOf(
-    Glint(182f / BOARD_WIDTH, 12.dp),
-    Glint(60f / BOARD_WIDTH, 16.dp),
-    Glint(300f / BOARD_WIDTH, 22.dp),
+    SceneryGlint(182f / BOARD_WIDTH, 12.dp),
+    SceneryGlint(60f / BOARD_WIDTH, 16.dp),
+    SceneryGlint(300f / BOARD_WIDTH, 22.dp),
 )
 
-// Dawn's stars are glass, a little fainter than Night's moonlit ones (Shore-A-Dawn board)
-private const val DAWN_STAR_DIMMING = 0.56f
-
-// the glints are moon at 40% (spec §1.5)
-private const val GLINT_ALPHA = 0.4f
 
 @NightDawnPreviews
 @Composable

@@ -23,6 +23,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,9 +36,17 @@ import com.bottlecast.app.common.ui.BottlingPreview
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.common.ui.NightDawnPreviews
 
-/** The three pills (spec §1.4): filled sage, outlined sage and tonal. */
+/** The pills (spec §1.4): filled sage, outlined sage and tonal, and errorContainer for a report (spec §3.19). */
 enum class BottlingButtonType {
-    PRIMARY, SECONDARY, TONAL
+    PRIMARY, SECONDARY, TONAL, DESTRUCTIVE
+}
+
+/**
+ * A pill's size: [LARGE] is full width and at least 56dp tall; [MEDIUM] is at least 48dp tall and
+ * as wide as its caller makes it, such as half of a row or a dialog's action.
+ */
+enum class BottlingButtonSize {
+    LARGE, MEDIUM
 }
 
 @Composable
@@ -48,6 +57,7 @@ fun BottlingButton(
     isLoading: Boolean = false,
     buttonType: BottlingButtonType = BottlingButtonType.PRIMARY,
     @DrawableRes leadingIcon: Int? = null,
+    size: BottlingButtonSize = BottlingButtonSize.LARGE,
     onTapHandler: () -> Unit = {},
 ) = BottlingButton(
     text = stringResource(text),
@@ -56,12 +66,13 @@ fun BottlingButton(
     isLoading = isLoading,
     buttonType = buttonType,
     leadingIcon = leadingIcon,
+    size = size,
     onTapHandler = onTapHandler,
 )
 
 /**
- * A full-width pill, at least 56dp tall so it grows with large text. [leadingIcon] is a decorative
- * 20dp glyph before the label.
+ * A pill: full width and at least 56dp tall, or at least 48dp for [BottlingButtonSize.MEDIUM], so it
+ * grows with large text. [leadingIcon] is a decorative 20dp glyph before the label.
  */
 @Composable
 internal fun BottlingButton(
@@ -71,18 +82,25 @@ internal fun BottlingButton(
     isLoading: Boolean = false,
     buttonType: BottlingButtonType = BottlingButtonType.PRIMARY,
     @DrawableRes leadingIcon: Int? = null,
+    size: BottlingButtonSize = BottlingButtonSize.LARGE,
     interactionSource: MutableInteractionSource? = null,
     onTapHandler: () -> Unit = {},
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    val pillModifier = modifier
-        .fillMaxWidth()
-        .heightIn(min = BottlingTheme.sizes.pillMinHeight)
+    val pillModifier = when (size) {
+        BottlingButtonSize.LARGE -> modifier
+            .fillMaxWidth()
+            .heightIn(min = BottlingTheme.sizes.pillMinHeight)
+
+        BottlingButtonSize.MEDIUM -> modifier.heightIn(min = BottlingTheme.sizes.pillMediumHeight)
+    }
     val contentPadding = PaddingValues(
         horizontal = BottlingTheme.spacing.l,
         vertical = BottlingTheme.spacing.xs,
     )
-    val content: @Composable RowScope.() -> Unit = { ButtonContent(text, isLoading, leadingIcon) }
+    val content: @Composable RowScope.() -> Unit = {
+        ButtonContent(text, isLoading, leadingIcon, fillWidth = size == BottlingButtonSize.LARGE)
+    }
 
     when (buttonType) {
         BottlingButtonType.PRIMARY -> Button(
@@ -128,6 +146,38 @@ internal fun BottlingButton(
             interactionSource = interactionSource,
             content = content,
         )
+
+        BottlingButtonType.DESTRUCTIVE -> Button(
+            onClick = onTapHandler,
+            modifier = pillModifier,
+            enabled = enabled,
+            shape = BottlingTheme.shapes.pill,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = colorScheme.errorContainer,
+                contentColor = colorScheme.onErrorContainer,
+            ),
+            contentPadding = contentPadding,
+            interactionSource = interactionSource,
+            content = content,
+        )
+    }
+}
+
+/** A text button: a 48dp target with a sage label, for a dialog's Cancel or a state's second choice. */
+@Composable
+fun BottlingTextButton(
+    @StringRes text: Int,
+    onTapHandler: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TextButton(
+        onClick = onTapHandler,
+        modifier = modifier.heightIn(min = BottlingTheme.sizes.touchTarget),
+        shape = BottlingTheme.shapes.pill,
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+        contentPadding = PaddingValues(horizontal = BottlingTheme.spacing.m),
+    ) {
+        Text(text = stringResource(text), style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
     }
 }
 
@@ -136,9 +186,10 @@ private fun ButtonContent(
     text: String,
     isLoading: Boolean,
     @DrawableRes leadingIcon: Int?,
+    fillWidth: Boolean,
 ) {
     val sizes = BottlingTheme.sizes
-    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+    Box(modifier = if (fillWidth) Modifier.fillMaxWidth() else Modifier, contentAlignment = Alignment.Center) {
         // while loading, the spinner sits at the end and the label keeps clear of it on both sides,
         // so it stays centred
         val spinnerClearance = if (isLoading) sizes.icon + sizes.pillIconGap else 0.dp

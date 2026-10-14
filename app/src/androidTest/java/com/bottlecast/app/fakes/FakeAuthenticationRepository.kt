@@ -20,7 +20,12 @@ class FakeAuthenticationRepository @Inject constructor() : IAuthenticationReposi
 
     override suspend fun firebaseAuthWithGoogle(idToken: String) = signIn(AuthProviderType.Google)
 
-    override suspend fun signInAnonymously() = signIn(AuthProviderType.Anonymous)
+    // the app's silent guest: an anonymous account, made the first time one is needed
+    override suspend fun ensureSignedIn(): String {
+        (user.value as? UserEntity.AuthenticatedUser)?.let { return it.userId }
+        signIn(AuthProviderType.Anonymous)
+        return FAKE_USER_ID
+    }
 
     override suspend fun signOut() {
         _user.value = UserEntity.UnauthenticatedUser
@@ -40,8 +45,12 @@ class FakeAuthenticationRepository @Inject constructor() : IAuthenticationReposi
         _user.value = UserEntity.AuthenticatedUser(
             providerType = providerType,
             jwtToken = "fakeToken",
-            userId = "fakeUserId",
+            userId = FAKE_USER_ID,
             isAdmin = false
         )
+    }
+
+    companion object {
+        const val FAKE_USER_ID: String = "fakeUserId"
     }
 }

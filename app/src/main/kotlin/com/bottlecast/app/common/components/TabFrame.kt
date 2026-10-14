@@ -17,7 +17,7 @@ import com.bottlecast.app.TopLevelDestination
  * back gesture reveals it, and the Shore's content never jumps as the bar comes and goes.
  *
  * [content] draws edge to edge and receives the bar's height (system navigation bar included) as
- * its bottom padding.
+ * its bottom padding. Snackbars from [snackbarHost] sit just above the bar.
  *
  * The bar only switches tabs while its tab root is started, which means on top, even
  * mid-transition. A root stays drawn while a screen opens over it: taps can't reach it there, but a
@@ -30,6 +30,7 @@ fun TabFrame(
     modifier: Modifier = Modifier,
     chestBadge: Boolean = false,
     navigationBarInsets: WindowInsets = NavigationBarDefaults.windowInsets,
+    snackbarHost: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -37,6 +38,7 @@ fun TabFrame(
         modifier = modifier,
         containerColor = MaterialTheme.colorScheme.background,
         contentWindowInsets = WindowInsets(0),
+        snackbarHost = snackbarHost,
         bottomBar = {
             BottlingNavigationBar(
                 selected = selected,
