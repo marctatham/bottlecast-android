@@ -8,15 +8,8 @@ internal object RevealDimens {
     /** The compact dome: its edge at y≈230 of the spec's 800 (spec §3.7). */
     val dome = DomeEdge(230f / 800f)
 
-    /** The parchment card: at least 220dp tall, and no more than 60% of the screen (spec §3.7). */
-    val cardMinHeight = 220.dp
+    /** The parchment card: no more than 60% of the screen (spec §3.7). */
     const val CARD_MAX_SHARE = 0.6f
-
-    /** Messages longer than this use the smaller titleLargeLong (spec §3.7). */
-    const val LONG_MESSAGE = 120
-
-    /** The fade at the top and bottom of a long message that scrolls inside the card. */
-    val cardFade = 16.dp
 
     /** The gap from the card to the actions (spec §3.7). */
     val actionsGap = 20.dp

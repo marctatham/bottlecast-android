@@ -36,6 +36,12 @@ interface BottlingHaptics {
     /** A light tick, such as the tide turning at midnight. */
     fun tick()
 
+    /** Something heavy lands: the cork going on, the splash (spec §1.5). */
+    fun thud()
+
+    /** Writing reaches the character limit (spec §3.4). */
+    fun limit()
+
     fun confirm()
 
     fun reject()
@@ -64,6 +70,8 @@ private object NoHaptics : BottlingHaptics {
     override fun holdTick() = Unit
     override fun corkPop(afterStep: Boolean) = Unit
     override fun tick() = Unit
+    override fun thud() = Unit
+    override fun limit() = Unit
     override fun confirm() = Unit
     override fun reject() = Unit
 }
@@ -79,6 +87,9 @@ private class VibratorHaptics(private val view: View, private val vibrator: Vibr
         Composition.PRIMITIVE_QUICK_RISE,
         Composition.PRIMITIVE_CLICK,
     )
+
+    // the thud plays alone, so it needs only its own primitive
+    private val hasThud = canVibrate && vibrator!!.areAllPrimitivesSupported(Composition.PRIMITIVE_THUD)
 
     private val touch = VibrationAttributes.createForUsage(VibrationAttributes.USAGE_TOUCH)
 
@@ -99,6 +110,21 @@ private class VibratorHaptics(private val view: View, private val vibrator: Vibr
 
     override fun tick() = play(VibrationEffect.EFFECT_TICK) {
         addPrimitive(Composition.PRIMITIVE_TICK)
+    }
+
+    override fun thud() {
+        if (!canVibrate) return
+        val effect = if (hasThud) {
+            VibrationEffect.startComposition().addPrimitive(Composition.PRIMITIVE_THUD).compose()
+        } else {
+            VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK)
+        }
+        vibrator!!.vibrate(effect, touch)
+    }
+
+    // SEGMENT_TICK arrived in API 34; the compat constant falls back to CLOCK_TICK before that
+    override fun limit() {
+        ViewCompat.performHapticFeedback(view, HapticFeedbackConstantsCompat.SEGMENT_TICK)
     }
 
     override fun confirm() {

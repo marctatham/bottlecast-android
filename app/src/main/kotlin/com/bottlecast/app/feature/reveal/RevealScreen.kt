@@ -66,6 +66,7 @@ import com.bottlecast.app.common.components.DomeEdge
 import com.bottlecast.app.common.components.DomeScaffold
 import com.bottlecast.app.common.components.EmptyState
 import com.bottlecast.app.common.components.ImmersiveTopBar
+import com.bottlecast.app.common.components.MessageCard
 import com.bottlecast.app.common.components.OverlineText
 import com.bottlecast.app.common.components.bleed
 import com.bottlecast.app.common.components.bottle.bottleLookFor
@@ -79,11 +80,11 @@ import com.bottlecast.app.common.ui.isLargeText
 import com.bottlecast.app.common.ui.rememberReducedMotion
 import com.bottlecast.app.common.ui.rememberTimedControlMillis
 import com.bottlecast.app.feature.reveal.components.DriftingBottle
-import com.bottlecast.app.feature.reveal.components.MessageCard
 import com.bottlecast.app.feature.reveal.components.ReportDialog
 import com.bottlecast.app.feature.reveal.components.ReportedBar
 import com.bottlecast.app.feature.reveal.components.ReportedThanks
 import com.bottlecast.app.feature.reveal.components.RevealScenery
+import com.bottlecast.app.feature.reveal.components.revealByline
 import com.bottlecast.app.feature.reveal.domain.CastAgo
 import kotlinx.coroutines.delay
 
@@ -238,7 +239,12 @@ internal fun RevealScreen(
                         label = "report",
                     ) { report ->
                         when (report) {
-                            RevealReport.None -> MessageCard(bottle = uiState.bottle, maxHeight = cap, sheen = sheen)
+                            RevealReport.None -> MessageCard(
+                                text = uiState.bottle.text,
+                                byline = revealByline(uiState.bottle),
+                                maxHeight = cap,
+                                sheen = sheen,
+                            )
                             RevealReport.Pending -> ReportedBar(onUndoHandler = onUndoReportHandler)
                             is RevealReport.Reported -> ReportedThanks(
                                 blocked = report.blocked,

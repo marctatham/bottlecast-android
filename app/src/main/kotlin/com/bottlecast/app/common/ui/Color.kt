@@ -72,6 +72,7 @@ private val DawnGoogleButtonContent = Color(0xFF1F1F1F)
 // shared by both themes
 private val Ink = Color(0xFF2B241A)
 private val InkLink = Color(0xFF006688)
+private val InkError = Color(0xFFB3261E)
 private val BrandSeed = Color(0xFF00C2FF)
 private val TintAmber = Color(0xFFE8A93A)
 private val TintMoonglass = Color(0xFFE9E4D6)
@@ -233,6 +234,8 @@ data class BottlingColors(
     val inkMuted: Color,
     /** Links and the cursor on parchment. */
     val inkLink: Color,
+    /** An error on parchment, such as Compose's minimum (spec §3.4): 4.5:1 or more on both parchments. */
+    val inkError: Color,
     /** The bottle's glass fill and the notification accent. Never text. */
     val brandSeed: Color,
     /** Bottle tints: illustration only. */
@@ -308,6 +311,7 @@ internal val NightBottlingColors = BottlingColors(
     ink = Ink,
     inkMuted = NightInkMuted,
     inkLink = InkLink,
+    inkError = InkError,
     brandSeed = BrandSeed,
     tintSeaGlass = BrandSeed,
     tintAmber = TintAmber,
@@ -339,6 +343,7 @@ internal val DawnBottlingColors = BottlingColors(
     ink = Ink,
     inkMuted = DawnInkMuted,
     inkLink = InkLink,
+    inkError = InkError,
     brandSeed = BrandSeed,
     tintSeaGlass = BrandSeed,
     tintAmber = TintAmber,

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The wax seal, the one visual that means "on-chain" (spec §1.6), from docs/design/boards/TEMPLATE.md
+     ("Wax seal"): a scalloped moon disc, an inner ring, an embossed bottle and the verified writer's
+     check. It's an object, so it keeps its colours in both themes; drawn untinted. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="64dp"
+    android:height="64dp"
+    android:viewportWidth="64"
+    android:viewportHeight="64">
+    <path
+        android:fillColor="#F0E0C4"
+        android:pathData="M32,4A6.73,6.73 0,0 1,44.15 6.77A6.73,6.73 0,0 1,53.89 14.54A6.73,6.73 0,0 1,59.3 25.77A6.73,6.73 0,0 1,59.3 38.23A6.73,6.73 0,0 1,53.89 49.46A6.73,6.73 0,0 1,44.15 57.23A6.73,6.73 0,0 1,32 60A6.73,6.73 0,0 1,19.85 57.23A6.73,6.73 0,0 1,10.11 49.46A6.73,6.73 0,0 1,4.7 38.23A6.73,6.73 0,0 1,4.7 25.77A6.73,6.73 0,0 1,10.11 14.54A6.73,6.73 0,0 1,19.85 6.77A6.73,6.73 0,0 1,32 4Z" />
+    <path
+        android:pathData="M13,32a19,19 0,1 0,38 0a19,19 0,1 0,-38 0"
+        android:strokeColor="#C9B48E"
+        android:strokeWidth="2" />
+    <path
+        android:pathData="M29.5,20h5M30,20v4c0,1 -4,2 -4,6v9a2,2 0,0 0,2 2h8a2,2 0,0 0,2 -2v-9c0,-4 -4,-5 -4,-6v-4"
+        android:strokeColor="#8C7350"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="2" />
+    <path
+        android:fillColor="#2B241A"
+        android:pathData="M39,48a9,9 0,1 0,18 0a9,9 0,1 0,-18 0" />
+    <path
+        android:pathData="M44,48l3,3 5,-6"
+        android:strokeColor="#F0E0C4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="2" />
+</vector>

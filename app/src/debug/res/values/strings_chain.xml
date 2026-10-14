@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds seal on Base Sepolia, a test network, so they never claim permanence (spec §1.8). -->
+<resources>
+    <string name="preview_consent_chain">If they keep and seal it, your words go on a test network, just for testing</string>
+    <string name="preview_sealable_helper">If they keep it, your words go on a test network, marked “Bottled by a verified account”. Test-network keepsakes may be reset. Your name and email never do.</string>
+</resources>

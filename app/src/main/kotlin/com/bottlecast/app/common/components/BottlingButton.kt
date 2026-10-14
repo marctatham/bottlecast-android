@@ -3,6 +3,7 @@ package com.bottlecast.app.common.components
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -58,6 +60,7 @@ fun BottlingButton(
     buttonType: BottlingButtonType = BottlingButtonType.PRIMARY,
     @DrawableRes leadingIcon: Int? = null,
     size: BottlingButtonSize = BottlingButtonSize.LARGE,
+    onDisabledTapHandler: (() -> Unit)? = null,
     onTapHandler: () -> Unit = {},
 ) = BottlingButton(
     text = stringResource(text),
@@ -67,12 +70,16 @@ fun BottlingButton(
     buttonType = buttonType,
     leadingIcon = leadingIcon,
     size = size,
+    onDisabledTapHandler = onDisabledTapHandler,
     onTapHandler = onTapHandler,
 )
 
 /**
  * A pill: full width and at least 56dp tall, or at least 48dp for [BottlingButtonSize.MEDIUM], so it
  * grows with large text. [leadingIcon] is a decorative 20dp glyph before the label.
+ *
+ * @param onDisabledTapHandler a tap on the pill while it's disabled, such as Compose's Preview
+ * explaining why it can't go on yet (spec §3.4). The pill still looks and reads as disabled.
  */
 @Composable
 internal fun BottlingButton(
@@ -84,15 +91,25 @@ internal fun BottlingButton(
     @DrawableRes leadingIcon: Int? = null,
     size: BottlingButtonSize = BottlingButtonSize.LARGE,
     interactionSource: MutableInteractionSource? = null,
+    onDisabledTapHandler: (() -> Unit)? = null,
     onTapHandler: () -> Unit = {},
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    // a disabled button lets taps through, so this sees them; an enabled one takes them itself
+    val tapWhileDisabled = if (!enabled && onDisabledTapHandler != null) {
+        Modifier.pointerInput(onDisabledTapHandler) { detectTapGestures { onDisabledTapHandler() } }
+    } else {
+        Modifier
+    }
     val pillModifier = when (size) {
         BottlingButtonSize.LARGE -> modifier
+            .then(tapWhileDisabled)
             .fillMaxWidth()
             .heightIn(min = BottlingTheme.sizes.pillMinHeight)
 
-        BottlingButtonSize.MEDIUM -> modifier.heightIn(min = BottlingTheme.sizes.pillMediumHeight)
+        BottlingButtonSize.MEDIUM -> modifier
+            .then(tapWhileDisabled)
+            .heightIn(min = BottlingTheme.sizes.pillMediumHeight)
     }
     val contentPadding = PaddingValues(
         horizontal = BottlingTheme.spacing.l,
