@@ -38,7 +38,10 @@ class FakeAuthenticationRepository @Inject constructor() : IAuthenticationReposi
         }
     }
 
-    override suspend fun switchToGoogle(idToken: String) = signIn(AuthProviderType.Google, GOOGLE_USER_ID)
+    override suspend fun switchToGoogle(idToken: String): String {
+        signIn(AuthProviderType.Google, GOOGLE_USER_ID)
+        return GOOGLE_USER_ID
+    }
 
     // the app's silent guest: an anonymous account, made the first time one is needed
     override suspend fun ensureSignedIn(): String {

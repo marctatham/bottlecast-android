@@ -68,6 +68,19 @@ class PenNameViewModelTest {
         Assert.assertEquals(PenNameUiState.Editing("A".repeat(20), showError = false), viewModel.state.value)
     }
 
+    // an emoji is two UTF-16 units, as the rules count it, and half of one isn't a character
+    @Test
+    fun `an emoji that doesn't fit at the end is left out whole`() = runTest {
+        // given
+        val viewModel = PenNameViewModel(profile, Random(1))
+
+        // when
+        viewModel.onNameChange("A".repeat(19) + "\uD83C\uDF0A")
+
+        // then
+        Assert.assertEquals("A".repeat(19), (viewModel.state.value as PenNameUiState.Editing).name)
+    }
+
     @Test
     fun `surprise me suggests a different name each time, and a saved suggestion says so`() = runTest {
         // given

@@ -3,8 +3,8 @@ package com.bottlecast.app.feature.penname
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bottlecast.app.common.profile.domain.IProfileRepository
-import com.bottlecast.app.common.profile.domain.PEN_NAME_MAX
 import com.bottlecast.app.common.profile.domain.isValidPenName
+import com.bottlecast.app.common.profile.domain.limitPenName
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +45,7 @@ class PenNameViewModel @Inject constructor(
 
     fun onNameChange(name: String) {
         val editing = editing() ?: return
-        _state.value = editing.copy(name = name.take(PEN_NAME_MAX), showError = false)
+        _state.value = editing.copy(name = limitPenName(name), showError = false)
     }
 
     /** "Surprise me": one of [suggestions], never the name already there. */

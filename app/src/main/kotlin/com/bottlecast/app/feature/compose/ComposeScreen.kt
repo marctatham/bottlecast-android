@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.max
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.dropUnlessResumed
 import com.bottlecast.app.R
 import com.bottlecast.app.common.components.Banner
 import com.bottlecast.app.common.components.BottlingSnackbarHost
@@ -87,6 +88,9 @@ fun ComposeScreen(
     val startFresh = stringResource(R.string.compose_start_fresh)
     val signedIn = stringResource(R.string.sign_in_signed_in)
     val pickOne = stringResource(R.string.sign_in_pick_pen_name)
+    // a second tap while the first is still leaving would open Preview twice, or close twice
+    val openPreview = dropUnlessResumed { onPreviewHandler() }
+    val close = dropUnlessResumed { onCloseHandler() }
 
     LaunchedEffect(viewModel) {
         viewModel.effects.collect { effect ->
@@ -102,8 +106,8 @@ fun ComposeScreen(
                     }
                 }
                 ComposeEffect.Rejected -> haptics.reject()
-                ComposeEffect.OpenPreview -> onPreviewHandler()
-                ComposeEffect.Close -> onCloseHandler()
+                ComposeEffect.OpenPreview -> openPreview()
+                ComposeEffect.Close -> close()
             }
         }
     }

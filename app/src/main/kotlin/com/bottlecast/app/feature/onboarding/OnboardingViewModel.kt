@@ -2,9 +2,8 @@ package com.bottlecast.app.feature.onboarding
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
-import com.bottlecast.app.common.authentication.domain.UserEntity
+import com.bottlecast.app.common.authentication.domain.googleUid
 import com.bottlecast.app.common.preferences.IOnboardingStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -42,8 +41,7 @@ class OnboardingViewModel @Inject constructor(
     init {
         viewModelScope.launch(exceptionHandler) {
             authenticationRepository.user.collect { user ->
-                val google = (user as? UserEntity.AuthenticatedUser)?.providerType == AuthProviderType.Google
-                _state.value = OnboardingUiState(signInToCast = !google)
+                _state.value = OnboardingUiState(signInToCast = user.googleUid == null)
             }
         }
     }

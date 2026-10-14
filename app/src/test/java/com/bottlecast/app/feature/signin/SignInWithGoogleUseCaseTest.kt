@@ -22,7 +22,7 @@ import org.junit.Test
 class SignInWithGoogleUseCaseTest {
 
     private val authentication = mockk<IAuthenticationRepository> {
-        coEvery { switchToGoogle(any()) } just Runs
+        coEvery { switchToGoogle(any()) } returns GOOGLE_UID
     }
     private val sea = mockk<ISeaRepository>()
     private val seaActions = mockk<ISeaActions> { coEvery { settle() } just Runs }
@@ -62,7 +62,7 @@ class SignInWithGoogleUseCaseTest {
         // given
         coEvery { authentication.linkGoogle("idToken") } returns GoogleLinkResult.AccountExists
         coEvery { sea.prepareHandover() } returns handover
-        coEvery { sea.claimHandover(handover) } returns HandoverResult.HandedOver
+        coEvery { sea.claimHandover(handover, GOOGLE_UID) } returns HandoverResult.HandedOver
 
         // when
         val outcome = useCase("idToken")
@@ -73,7 +73,7 @@ class SignInWithGoogleUseCaseTest {
             seaActions.settle()
             sea.prepareHandover()
             authentication.switchToGoogle("idToken")
-            sea.claimHandover(handover)
+            sea.claimHandover(handover, GOOGLE_UID)
         }
     }
 
@@ -89,7 +89,7 @@ class SignInWithGoogleUseCaseTest {
         // then
         Assert.assertEquals(SignInOutcome.Switched, outcome)
         coVerify { authentication.switchToGoogle("idToken") }
-        coVerify(exactly = 0) { sea.claimHandover(any()) }
+        coVerify(exactly = 0) { sea.claimHandover(any(), any()) }
     }
 
     @Test
@@ -97,7 +97,7 @@ class SignInWithGoogleUseCaseTest {
         // given
         coEvery { authentication.linkGoogle("idToken") } returns GoogleLinkResult.AccountExists
         coEvery { sea.prepareHandover() } returns handover
-        coEvery { sea.claimHandover(handover) } returns HandoverResult.KeptOwnFind
+        coEvery { sea.claimHandover(handover, GOOGLE_UID) } returns HandoverResult.KeptOwnFind
 
         // when
         val outcome = useCase("idToken")
@@ -118,6 +118,8 @@ class SignInWithGoogleUseCaseTest {
 
         // then
         Assert.assertTrue(failure is IllegalStateException)
-        coVerify(exactly = 0) { sea.claimHandover(any()) }
+        coVerify(exactly = 0) { sea.claimHandover(any(), any()) }
     }
 }
+
+private const val GOOGLE_UID = "gail"

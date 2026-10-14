@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.dropUnlessResumed
 import com.bottlecast.app.R
 import com.bottlecast.app.common.components.Banner
 import com.bottlecast.app.common.components.BottlingButton
@@ -82,6 +83,8 @@ fun ComposePreviewScreen(
     val scope = rememberCoroutineScope()
     var signingIn by rememberSaveable { mutableStateOf(false) }
     var pickingPenName by rememberSaveable { mutableStateOf(false) }
+    // Edit pops, so a second tap while Preview leaves would close Compose too
+    val edit = dropUnlessResumed { onEditHandler() }
     val currentOnEdit by rememberUpdatedState(onEditHandler)
     val failedMillis = rememberTimedControlMillis(UNDO_WINDOW_MILLIS, hasAction = true)
     val failed = stringResource(R.string.preview_cast_failed)
@@ -104,7 +107,7 @@ fun ComposePreviewScreen(
     when (val state = uiState) {
         is ComposePreviewUiState.Ready -> ComposePreviewScreen(
             uiState = state,
-            onEdit = onEditHandler,
+            onEdit = edit,
             onCast = viewModel::onCast,
             onSignWithPenName = viewModel::onSignWithPenName,
             onSetPenName = viewModel::onSetPenName,

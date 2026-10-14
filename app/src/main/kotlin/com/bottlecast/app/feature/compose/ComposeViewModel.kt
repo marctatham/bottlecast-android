@@ -59,8 +59,10 @@ class ComposeViewModel @Inject constructor(
     private var minimumTapped = false
     private var lang: String? = null
 
+    // The editor still opens if the saved draft can't be read, so writing never waits on it.
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
         Timber.e(throwable, "[compose] Something went wrong while writing")
+        if (_state.value == ComposeUiState.Loading) _state.value = ComposeUiState.Writing(placeholder = placeholder)
     }
 
     init {
@@ -81,6 +83,7 @@ class ComposeViewModel @Inject constructor(
             refresh()
             launch { followEditor() }
             launch { followLanguage() }
+            launch { followRestores() }
             castCoordinator.castsLeftToday.collect { left -> update { it.copy(castsLeft = left) } }
         }
     }
@@ -90,6 +93,17 @@ class ComposeViewModel @Inject constructor(
             // nothing written yet isn't a draft
             if (text.isNotEmpty() || drafts.draft.value != null) drafts.update(text)
             refresh()
+        }
+    }
+
+    // A cast the server refused after Preview had gone comes back as the draft (spec §3.4b). It only
+    // comes back when nothing newer is written, so an empty editor takes it.
+    private suspend fun followRestores() {
+        drafts.draft.collect { draft ->
+            if (draft != null && draft.text.isNotBlank() && editor.text.isEmpty()) {
+                editor.setTextAndPlaceCursorAtEnd(draft.text)
+                _effects.send(ComposeEffect.RestoredDraft)
+            }
         }
     }
 

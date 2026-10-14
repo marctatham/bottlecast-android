@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -20,8 +21,13 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import timber.log.Timber
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 import kotlin.coroutines.resume
+
+/** How long a cast waits to read its tally from the server before the cached one does. */
+private const val TALLY_READ_TIMEOUT_SECONDS = 3L
 
 class CastFirestoreSource @Inject constructor(
     private val firestore: FirebaseFirestore,
@@ -39,7 +45,18 @@ class CastFirestoreSource @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    override fun readTally(uid: String): CastTally? = Tasks.await(tallies.document(uid).get()).toTally()
+    // A slow server mustn't hold the cast up: past the timeout, what this phone last heard will do,
+    // since the tally's listener keeps it fresh. The rules have the last word either way.
+    override fun readTally(uid: String): CastTally? {
+        val tally = tallies.document(uid)
+        val snapshot = try {
+            Tasks.await(tally.get(), TALLY_READ_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        } catch (_: TimeoutException) {
+            Timber.w("[readTally] The server was slow, so the cached tally will do")
+            Tasks.await(tally.get(Source.CACHE))
+        }
+        return snapshot.toTally()
+    }
 
     override fun writeCast(uid: String, cast: NewCast, rand: Double, tally: TallyWrite): PendingCast {
         val batch = firestore.batch()

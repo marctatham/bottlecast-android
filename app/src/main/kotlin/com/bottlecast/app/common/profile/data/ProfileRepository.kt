@@ -1,8 +1,7 @@
 package com.bottlecast.app.common.profile.data
 
-import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
-import com.bottlecast.app.common.authentication.domain.UserEntity
+import com.bottlecast.app.common.authentication.domain.googleUid
 import com.bottlecast.app.common.profile.domain.IProfileRepository
 import com.bottlecast.app.common.profile.domain.UserProfile
 import com.bottlecast.app.common.threading.DispatcherIO
@@ -25,7 +24,7 @@ class ProfileRepository @Inject constructor(
 
     // only Google accounts have a profile; a guest's would be refused
     private val googleUid: Flow<String?> = authenticationRepository.user
-        .map { user -> (user as? UserEntity.AuthenticatedUser)?.takeIf { it.providerType == AuthProviderType.Google }?.userId }
+        .map { it.googleUid }
         .distinctUntilChanged()
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -34,8 +33,7 @@ class ProfileRepository @Inject constructor(
     }
 
     override suspend fun savePenName(name: String) = withContext(dispatcher) {
-        val uid = (authenticationRepository.user.value as? UserEntity.AuthenticatedUser)
-            ?.takeIf { it.providerType == AuthProviderType.Google }?.userId
+        val uid = authenticationRepository.user.value.googleUid
         if (uid == null) {
             Timber.e("[savePenName] Only a Google account has a pen name")
             return@withContext

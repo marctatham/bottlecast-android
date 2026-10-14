@@ -16,5 +16,15 @@ data class UserProfile(
     val acceptedTerms: Boolean get() = (termsVersion ?: 0) >= TERMS_VERSION
 }
 
-/** Whether [name], once trimmed, can be a pen name. */
+/**
+ * Whether [name], once trimmed, can be a pen name. Its length is in UTF-16 units, as the rules'
+ * size() counts it, so an emoji counts as two.
+ */
 fun isValidPenName(name: String): Boolean = name.trim().length in PEN_NAME_MIN..PEN_NAME_MAX
+
+/** [name] cut to the longest a pen name can be, never splitting an emoji into half a character. */
+fun limitPenName(name: String): String {
+    if (name.length <= PEN_NAME_MAX) return name
+    val end = if (Character.isHighSurrogate(name[PEN_NAME_MAX - 1])) PEN_NAME_MAX - 1 else PEN_NAME_MAX
+    return name.substring(0, end)
+}

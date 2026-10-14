@@ -19,7 +19,13 @@ class MlKitLanguageDetector @Inject constructor() : ILanguageDetector {
 
     private val identifier by lazy { LanguageIdentification.getClient() }
 
+    // Compose detects as the writer pauses, and Preview asks again for the same words as it casts,
+    // so the last answer is kept rather than waiting on ML Kit twice. It stays in memory only.
+    @Volatile
+    private var last: Pair<String, String>? = null
+
     override suspend fun detect(text: String): String {
+        last?.let { (seen, tag) -> if (seen == text) return tag }
         val tag = withTimeoutOrNull(TIMEOUT_MILLIS) {
             suspendCancellableCoroutine { continuation ->
                 identifier.identifyLanguage(text)
@@ -31,7 +37,10 @@ class MlKitLanguageDetector @Inject constructor() : ILanguageDetector {
             }
         }
         // only a tag the rules accept: "en", "zh-Latn" and the like
-        return tag?.takeIf { it.matches(BCP_47) } ?: LANG_UNDETERMINED
+        val answer = tag?.takeIf { it.matches(BCP_47) } ?: LANG_UNDETERMINED
+        // a timeout isn't kept, since ML Kit may answer next time
+        if (tag != null) last = text to answer
+        return answer
     }
 
     private companion object {

@@ -38,8 +38,10 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Test
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneOffset
 import kotlin.random.Random
 
 /** Unit tests for [CastCoordinator]: the tally, the server's answer and what it does to the draft. */
@@ -99,6 +101,60 @@ class CastCoordinatorTest {
 
         // then
         Assert.assertEquals(listOf(TallyWrite.Start(today), TallyWrite.Increment(today)), source.writes.map { it.second })
+    }
+
+    // a writer who cast in Tokyo, then flew west to where it's still the day before
+    @Test
+    fun `a tally dated later than today, from a time zone further east, counts on and caps there`() = runTest {
+        // given
+        val coordinator = coordinator()
+        source.tally = CastTally(today.plusDays(1), 2)
+        source.answerAtOnce(CastAck.Confirmed)
+
+        // when
+        coordinator.cast(cast)
+        source.tally = CastTally(today.plusDays(1), 5)
+        val atTheCap = coordinator.cast(cast.copy(messageId = "bottle00000000000002"))
+
+        // then
+        Assert.assertEquals(TallyWrite.Increment(today.plusDays(1)), source.writes.single().second)
+        Assert.assertEquals(CastOutcome.LimitReached, atTheCap)
+    }
+
+    @Test
+    fun `a write that fails brings the words back`() = runTest {
+        // given
+        source.failWrite = true
+
+        // when
+        val failure = runCatching { coordinator().cast(cast) }.exceptionOrNull()
+
+        // then
+        Assert.assertTrue(failure is IllegalStateException)
+        coVerifyOrder {
+            drafts.setAside(cast.messageId)
+            drafts.restore(cast.messageId)
+        }
+    }
+
+    @Test
+    fun `a cast whose Preview goes while it's being written is still written and followed`() = runTest {
+        // given
+        val setAside = CompletableDeferred<Unit>()
+        coEvery { drafts.setAside(any()) } coAnswers { setAside.await() }
+        source.answerAtOnce(CastAck.Refused)
+        val coordinator = coordinator()
+        val preview = launch { coordinator.cast(cast) }
+        runCurrent()
+
+        // when
+        preview.cancel()
+        setAside.complete(Unit)
+        runCurrent()
+
+        // then
+        Assert.assertEquals(1, source.writes.size)
+        coVerify { drafts.restore(cast.messageId) }
     }
 
     @Test
@@ -184,6 +240,24 @@ class CastCoordinatorTest {
     }
 
     @Test
+    fun `a cast confirmed after Preview showed it as queued counts as queued`() = runTest {
+        // given
+        val answer = CompletableDeferred<CastAck>()
+        source.answer = answer
+        val coordinator = coordinator()
+
+        // when
+        val outcome = async { coordinator.cast(cast) }
+        advanceTimeBy(CAST_ACK_WINDOW_MILLIS + 1)
+        outcome.await()
+        answer.complete(CastAck.Confirmed)
+        runCurrent()
+
+        // then
+        verify { tracker.trackEvent(AnalyticsEvent.BottleCast, match { it[AnalyticsEvent.PARAM_QUEUED] == "true" }) }
+    }
+
+    @Test
     fun `casts left count down from 5 for today only`() = runTest {
         // given
         val coordinator = coordinator()
@@ -201,6 +275,25 @@ class CastCoordinatorTest {
         Assert.assertEquals(listOf(5, 1, 5), collected.filterNotNull())
     }
 
+    @Test
+    fun `casts left start afresh at midnight, with no new tally`() = runTest {
+        // given
+        val coordinator = coordinator()
+        val collected = mutableListOf<Int?>()
+        source.tallyFlow.value = CastTally(today, 5)
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { coordinator.castsLeftToday.collect { collected += it } }
+        runCurrent()
+
+        // when
+        val untilMidnight = Duration.between(clock.instant(), today.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant())
+        clock.advance(untilMidnight.plusSeconds(2))
+        advanceTimeBy(untilMidnight.plusSeconds(2).toMillis())
+        runCurrent()
+
+        // then
+        Assert.assertEquals(listOf(0, 5), collected.filterNotNull())
+    }
+
     private fun TestScope.coordinator() = CastCoordinator(
         source, drafts, auth, connectivity, clock, Random(1), tracker, backgroundScope, StandardTestDispatcher(testScheduler),
     )
@@ -210,6 +303,7 @@ class CastCoordinatorTest {
     private class FakeCastDataSource : ICastDataSource {
         var tally: CastTally? = null
         var failRead = false
+        var failWrite = false
         val tallyFlow = MutableStateFlow<CastTally?>(null)
         val writes = mutableListOf<Pair<NewCast, TallyWrite>>()
         var answer = CompletableDeferred<CastAck>()
@@ -226,6 +320,7 @@ class CastCoordinatorTest {
         }
 
         override fun writeCast(uid: String, cast: NewCast, rand: Double, tally: TallyWrite): PendingCast {
+            if (failWrite) throw IllegalStateException("the batch couldn't be built")
             writes += cast to tally
             val answer = answer
             return PendingCast { answer.await() }

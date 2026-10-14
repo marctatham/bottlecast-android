@@ -115,11 +115,13 @@ class AuthenticationRepository constructor(
         }
     }
 
-    override suspend fun switchToGoogle(idToken: String) = withContext(dispatcherNetwork) {
+    override suspend fun switchToGoogle(idToken: String): String = withContext(dispatcherNetwork) {
         signInMutex.withLock {
             val authCredential = GoogleAuthProvider.getCredential(idToken, null)
-            refreshed(Tasks.await(firebaseAuth.signInWithCredential(authCredential)).user!!)
+            val account = Tasks.await(firebaseAuth.signInWithCredential(authCredential)).user!!
+            refreshed(account)
             Timber.i("[switchToGoogle] Switched to the Google account")
+            account.uid
         }
     }
 

@@ -31,6 +31,8 @@ import timber.log.Timber
 import java.time.Instant
 import java.time.LocalDate
 import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 import kotlin.coroutines.resume
 
@@ -206,7 +208,7 @@ class SeaFirestoreSource @Inject constructor(
     }
 
     override fun armHandoff(messageId: String, fromUid: String, date: LocalDate, tokenHash: ByteArray) {
-        await(
+        awaitServer(
             handoffs.document(messageId).set(
                 mapOf(
                     HandoffFields.FROM to fromUid,
@@ -253,7 +255,7 @@ class SeaFirestoreSource @Inject constructor(
                 DailyFields.FOUND_AT to FieldValue.serverTimestamp(),
             ),
         )
-        await(batch.commit())
+        awaitServer(batch.commit())
     }
 
     private fun DocumentSnapshot.toMessage(): MessageEntity? = data?.let { mapper.mapFrom(id, it) }
@@ -277,9 +279,21 @@ class SeaFirestoreSource @Inject constructor(
     }
 }
 
+/** How long a handover's write waits for the server, which offline would never answer. */
+internal const val SERVER_WRITE_TIMEOUT_SECONDS = 10L
+
+// Waits for a write to reach the server. A write only completes once the server has it, so offline,
+// or on a stalled connection, it would wait for good; past the timeout it counts as unavailable, and
+// stays queued on the phone.
+private fun <T> awaitServer(task: Task<T>): T = try {
+    await(task, SERVER_WRITE_TIMEOUT_SECONDS)
+} catch (exception: TimeoutException) {
+    throw SeaUnavailableException(exception)
+}
+
 // Waits for a task, turning Firestore's errors into the sea's own, so the repository needn't know them.
-private fun <T> await(task: Task<T>): T = try {
-    Tasks.await(task)
+private fun <T> await(task: Task<T>, timeoutSeconds: Long? = null): T = try {
+    if (timeoutSeconds == null) Tasks.await(task) else Tasks.await(task, timeoutSeconds, TimeUnit.SECONDS)
 } catch (exception: ExecutionException) {
     val cause = exception.cause ?: exception
     throw when ((cause as? FirebaseFirestoreException)?.code) {

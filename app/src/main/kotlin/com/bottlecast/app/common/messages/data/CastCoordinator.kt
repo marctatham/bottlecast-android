@@ -2,9 +2,8 @@ package com.bottlecast.app.common.messages.data
 
 import com.bottlecast.app.common.analytics.AnalyticsEvent
 import com.bottlecast.app.common.analytics.ITracker
-import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
-import com.bottlecast.app.common.authentication.domain.UserEntity
+import com.bottlecast.app.common.authentication.domain.googleUid
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
 import com.bottlecast.app.common.messages.domain.CastOutcome
 import com.bottlecast.app.common.messages.domain.CastStatus
@@ -16,13 +15,19 @@ import com.bottlecast.app.common.threading.ApplicationScope
 import com.bottlecast.app.common.threading.DispatcherIO
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -31,7 +36,9 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.time.Clock
+import java.time.Duration
 import java.time.LocalDate
+import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
@@ -62,16 +69,28 @@ class CastCoordinator @Inject constructor(
 ) : ICastCoordinator {
 
     private val googleUid: Flow<String?> = authenticationRepository.user
-        .map { googleUidOf(it) }
+        .map { it.googleUid }
         .distinctUntilChanged()
+
+    // the local date, then again just after each midnight, so a new day's casts show without a new tally
+    private val today: Flow<LocalDate> = flow {
+        while (true) {
+            val now = ZonedDateTime.now(clock)
+            emit(now.toLocalDate())
+            val nextDay = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
+            delay(Duration.between(now, nextDay).toMillis() + MIDNIGHT_SLACK_MILLIS)
+        }
+    }.distinctUntilChanged()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val castsLeftToday: StateFlow<Int?> = googleUid
-        .flatMapLatest { uid -> if (uid == null) flowOf(null) else source.observeTally(uid).map { castsLeft(it) } }
+        .flatMapLatest { uid ->
+            if (uid == null) flowOf(null) else combine(source.observeTally(uid), today) { tally, date -> castsLeft(tally, date) }
+        }
         .stateIn(scope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), null)
 
     override suspend fun cast(cast: NewCast): CastOutcome {
-        val uid = googleUidOf(authenticationRepository.user.value) ?: return CastOutcome.NotSignedIn
+        val uid = authenticationRepository.user.value.googleUid ?: return CastOutcome.NotSignedIn
         val today = LocalDate.now(clock)
         val tally = try {
             withContext(dispatcher) { source.readTally(uid) }
@@ -80,16 +99,46 @@ class CastCoordinator @Inject constructor(
             Timber.w(exception, "[cast] Couldn't read the cast tally")
             null
         }
-        val sameDay = tally?.date == today
-        if (sameDay && tally!!.count >= MessageLimits.CASTS_PER_DAY) return CastOutcome.LimitReached
+        // The tally's day: today, or a later date it was given in a time zone further east, which the
+        // rules still count as now. Starting today's afresh would move its date back, which they refuse.
+        val tallyDay = tally?.takeIf { it.date >= today }
+        if (tallyDay != null && tallyDay.count >= MessageLimits.CASTS_PER_DAY) return CastOutcome.LimitReached
+        val tallyWrite = if (tallyDay != null) TallyWrite.Increment(tallyDay.date) else TallyWrite.Start(today)
 
         val offline = !connectivityMonitor.isOnline.value
-        drafts.setAside(cast.messageId)
-        val pending = withContext(dispatcher) {
-            source.writeCast(uid, cast, random.nextDouble(), if (sameDay) TallyWrite.Increment(today) else TallyWrite.Start(today))
+        // Once the words step aside, they're cast and followed, or they come back, even if Preview goes
+        // meanwhile: a cancelled withContext still runs its block to the end.
+        val (answeredInTime, settled) = withContext(NonCancellable + dispatcher) {
+            drafts.setAside(cast.messageId)
+            val pending = try {
+                source.writeCast(uid, cast, random.nextDouble(), tallyWrite)
+            } catch (exception: Exception) {
+                drafts.restore(cast.messageId)
+                throw exception
+            }
+            follow(cast, pending, offline)
         }
+
+        if (offline) return CastOutcome.Cast(queued = true)
+        return when (answeredInTime.await()) {
+            CastAck.Confirmed -> CastOutcome.Cast(queued = false)
+            CastAck.Refused -> {
+                // the words are back in the draft before Preview offers to try again
+                settled.join()
+                CastOutcome.Refused
+            }
+            null -> CastOutcome.Cast(queued = true)
+        }
+    }
+
+    /**
+     * Follows a written cast in the app's scope. Returns the answer in time for Preview (null once
+     * it's waited long enough to show the cast as queued), and the job that handles the answer
+     * whenever it comes, whether or not Preview is still waiting.
+     */
+    private fun follow(cast: NewCast, pending: PendingCast, offline: Boolean): Pair<Deferred<CastAck?>, Job> {
         val ack = scope.async { pending.awaitServer() }
-        // the answer is handled here whenever it comes, whether or not Preview is still waiting
+        val answeredInTime = scope.async { if (offline) null else withTimeoutOrNull(CAST_ACK_WINDOW_MILLIS) { ack.await() } }
         val settled = scope.launch {
             when (ack.await()) {
                 CastAck.Confirmed -> {
@@ -97,7 +146,8 @@ class CastCoordinator @Inject constructor(
                     tracker.trackEvent(
                         AnalyticsEvent.BottleCast,
                         mapOf(
-                            AnalyticsEvent.PARAM_QUEUED to offline.toString(),
+                            // queued as Preview showed it: offline, or not answered in time
+                            AnalyticsEvent.PARAM_QUEUED to (answeredInTime.await() == null).toString(),
                             AnalyticsEvent.PARAM_SIGNED to (cast.penName != null).toString(),
                             AnalyticsEvent.PARAM_SEALABLE to cast.sealable.toString(),
                         ),
@@ -109,31 +159,21 @@ class CastCoordinator @Inject constructor(
                 }
             }
         }
-
-        if (offline) return CastOutcome.Cast(queued = true)
-        return when (withTimeoutOrNull(CAST_ACK_WINDOW_MILLIS) { ack.await() }) {
-            CastAck.Confirmed -> CastOutcome.Cast(queued = false)
-            CastAck.Refused -> {
-                // the words are back in the draft before Preview offers to try again
-                settled.join()
-                CastOutcome.Refused
-            }
-            null -> CastOutcome.Cast(queued = true)
-        }
+        return answeredInTime to settled
     }
 
     override fun status(messageId: String): Flow<CastStatus> = source.observeCast(messageId)
 
-    private fun castsLeft(tally: CastTally?): Int {
-        val today = LocalDate.now(clock)
-        val castToday = if (tally?.date == today) tally.count else 0
+    // a tally dated later than today still counts, as cast() treats it
+    private fun castsLeft(tally: CastTally?, today: LocalDate): Int {
+        val castToday = if (tally != null && tally.date >= today) tally.count else 0
         return (MessageLimits.CASTS_PER_DAY - castToday).coerceAtLeast(0)
     }
 
-    private fun googleUidOf(user: UserEntity): String? =
-        (user as? UserEntity.AuthenticatedUser)?.takeIf { it.providerType == AuthProviderType.Google }?.userId
-
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
+
+        // wakes a moment after midnight, so the new date has surely begun
+        const val MIDNIGHT_SLACK_MILLIS = 1_000L
     }
 }

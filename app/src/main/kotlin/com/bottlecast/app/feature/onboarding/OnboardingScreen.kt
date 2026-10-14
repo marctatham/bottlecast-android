@@ -41,6 +41,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.dropUnlessResumed
 import com.bottlecast.app.R
 import com.bottlecast.app.common.analytics.AnalyticsEvent
 import com.bottlecast.app.common.analytics.LocalTracker
@@ -103,16 +104,17 @@ fun OnboardingScreen(
     OnboardingScreen(
         pagerState = pagerState,
         motion = OnboardingMotion(bob = tide.bob, sealStamp = { stamp.value }, haloAlpha = tide.haloAlpha),
-        onSkip = {
+        // each exit navigates, so a second tap while onboarding leaves is dropped
+        onSkip = dropUnlessResumed {
             finish(OnboardingExit.Skip)
             onSkipHandler()
         },
         onNext = { scope.launch { pagerState.animateScrollToPage(pagerState.currentPage + 1) } },
-        onFindFirst = {
+        onFindFirst = dropUnlessResumed {
             finish(OnboardingExit.FindFirst)
             onFindFirstHandler()
         },
-        onCastInstead = {
+        onCastInstead = dropUnlessResumed {
             if (uiState.signInToCast) {
                 signingIn = true
             } else {

@@ -2,9 +2,8 @@ package com.bottlecast.app
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
-import com.bottlecast.app.common.authentication.domain.UserEntity
+import com.bottlecast.app.common.authentication.domain.googleUid
 import com.bottlecast.app.common.preferences.IOnboardingStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -42,7 +41,6 @@ class AppNavigationStateViewModel @Inject constructor(
 
     /** Casting needs Google (spec §2, flow 3): anyone else sees the sign-in sheet first. */
     fun needsSignInToCast(): Boolean {
-        val user = authenticationRepository.user.value
-        return !(user is UserEntity.AuthenticatedUser && user.providerType == AuthProviderType.Google)
+        return authenticationRepository.user.value.googleUid == null
     }
 }

@@ -35,6 +35,9 @@ interface ISeaRepository {
      */
     suspend fun prepareHandover(): Handover?
 
-    /** As the Google account, just signed in: takes over the guest's hold, unless it has a find today. */
-    suspend fun claimHandover(handover: Handover): HandoverResult
+    /**
+     * As the Google account [uid], just signed in: takes over the guest's hold, unless it has a find
+     * today. The uid comes from the sign-in itself, since the signed-in user may not have caught up.
+     */
+    suspend fun claimHandover(handover: Handover, uid: String): HandoverResult
 }

@@ -87,7 +87,7 @@ class FakeSeaRepository @Inject constructor(
         return Handover(find.messageId, guest.userId, "fakeToken")
     }
 
-    override suspend fun claimHandover(handover: Handover): HandoverResult {
+    override suspend fun claimHandover(handover: Handover, uid: String): HandoverResult {
         handovers += 1
         return HandoverResult.HandedOver
     }

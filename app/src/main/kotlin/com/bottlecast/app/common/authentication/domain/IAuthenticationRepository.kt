@@ -13,8 +13,11 @@ interface IAuthenticationRepository {
      */
     suspend fun linkGoogle(idToken: String): GoogleLinkResult
 
-    /** Signs in to the Google account, leaving the guest behind. */
-    suspend fun switchToGoogle(idToken: String)
+    /**
+     * Signs in to the Google account, leaving the guest behind, and returns its uid. [user] follows a
+     * moment later, from Firebase's listener on the main thread, so use the uid returned here.
+     */
+    suspend fun switchToGoogle(idToken: String): String
 
     /**
      * Returns the signed-in user's uid, first signing in a silent guest if nobody is. Call it where

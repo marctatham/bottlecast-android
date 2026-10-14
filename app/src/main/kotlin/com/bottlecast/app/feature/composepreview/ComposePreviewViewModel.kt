@@ -3,9 +3,8 @@ package com.bottlecast.app.feature.composepreview
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
-import com.bottlecast.app.common.authentication.domain.UserEntity
+import com.bottlecast.app.common.authentication.domain.googleUid
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
 import com.bottlecast.app.common.messages.domain.CastOutcome
 import com.bottlecast.app.common.messages.domain.ICastCoordinator
@@ -113,8 +112,7 @@ class ComposePreviewViewModel @Inject constructor(
     fun onCast() {
         val ready = _state.value as? ComposePreviewUiState.Ready ?: return
         if (!ready.canCast) return
-        val google = (authenticationRepository.user.value as? UserEntity.AuthenticatedUser)?.providerType == AuthProviderType.Google
-        if (!google) {
+        if (authenticationRepository.user.value.googleUid == null) {
             _effects.trySend(ComposePreviewEffect.NeedsSignIn)
             return
         }

@@ -1,5 +1,6 @@
 package com.bottlecast.app.feature.signin
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.rememberScrollState
@@ -82,8 +83,10 @@ fun SignInSheet(
     val sheetState = rememberBottlingSheetState(canHide = { !busy })
     val contentAlpha = remember { Animatable(1f) }
 
-    // the next opening starts from Idle, whatever this one ended on
-    DisposableEffect(viewModel) { onDispose { viewModel.reset() } }
+    // The next opening starts from Idle, whatever this one ended on. A rotation isn't a new opening:
+    // a sign-in that finished as the activity was recreated still carries the action on.
+    val activity = LocalActivity.current
+    DisposableEffect(viewModel) { onDispose { if (activity?.isChangingConfigurations != true) viewModel.reset() } }
 
     LaunchedEffect(uiState.phase) {
         when (val phase = uiState.phase) {

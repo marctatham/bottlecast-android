@@ -274,10 +274,11 @@ class SeaRepository @Inject constructor(
         }
     }
 
-    override suspend fun claimHandover(handover: Handover): HandoverResult = withContext(dispatcher) {
-        val account = authenticationRepository.user.value as? UserEntity.AuthenticatedUser
-        if (account == null || account.userId == handover.fromUid) return@withContext HandoverResult.Failed
-        val uid = account.userId
+    override suspend fun claimHandover(handover: Handover, uid: String): HandoverResult = withContext(dispatcher) {
+        if (uid == handover.fromUid) {
+            Timber.w("[claimHandover] The guest can't hand its find to itself")
+            return@withContext HandoverResult.Failed
+        }
         try {
             val date = LocalDate.now(clock)
             if (source.dailyMessageId(uid, date) != null) return@withContext HandoverResult.KeptOwnFind

@@ -43,8 +43,8 @@ class SignInWithGoogleUseCase @Inject constructor(
         // Firestore keeps each account's writes apart, so the guest's go first, while it's the guest
         seaActions.settle()
         val handover = sea.prepareHandover()
-        authentication.switchToGoogle(idToken)
+        val uid = authentication.switchToGoogle(idToken)
         if (handover == null) return SignInOutcome.Switched
-        return if (sea.claimHandover(handover) == HandoverResult.HandedOver) SignInOutcome.HandedOver else SignInOutcome.Switched
+        return if (sea.claimHandover(handover, uid) == HandoverResult.HandedOver) SignInOutcome.HandedOver else SignInOutcome.Switched
     }
 }

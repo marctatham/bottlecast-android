@@ -58,6 +58,46 @@ class ComposeViewModelTest {
     }
 
     @Test
+    fun `a cast refused while Compose is open comes back into the empty editor, and says so`() = runTest {
+        // given
+        coEvery { drafts.load() } returns null
+        val viewModel = viewModel()
+
+        // when
+        draft.value = Draft("bottle00000000000001", "Leave the porch light on")
+
+        // then
+        Assert.assertEquals("Leave the porch light on", viewModel.editor.text.toString())
+        Assert.assertEquals(ComposeEffect.RestoredDraft, viewModel.effects.first())
+    }
+
+    @Test
+    fun `words being written aren't replaced by a draft`() = runTest {
+        // given
+        coEvery { drafts.load() } returns null
+        val viewModel = viewModel()
+        viewModel.write("Something new")
+
+        // when
+        draft.value = Draft("bottle00000000000001", "Leave the porch light on")
+
+        // then
+        Assert.assertEquals("Something new", viewModel.editor.text.toString())
+    }
+
+    @Test
+    fun `the editor opens even when the saved draft can't be read`() = runTest {
+        // given
+        coEvery { drafts.load() } throws IllegalStateException("disk")
+
+        // when
+        val viewModel = viewModel()
+
+        // then
+        Assert.assertTrue(viewModel.state.value is ComposeUiState.Writing)
+    }
+
+    @Test
     fun `just signed in, it offers a pen name`() = runTest {
         // given
         coEvery { drafts.load() } returns null

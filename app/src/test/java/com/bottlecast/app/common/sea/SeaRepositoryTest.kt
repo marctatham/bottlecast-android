@@ -521,11 +521,39 @@ class SeaRepositoryTest {
         val handover = Handover("today", "finn", "token")
 
         // when
-        val result = repository.claimHandover(handover)
+        val result = repository.claimHandover(handover, "gail")
 
         // then
         Assert.assertEquals(HandoverResult.HandedOver, result)
         Assert.assertEquals(listOf("today" to "token"), source.claims)
+    }
+
+    // Firebase tells the app about the new account on the main thread, a moment after the switch
+    @Test
+    fun `the claim goes to the uid the switch returned, even before the signed-in user catches up`() = runTest {
+        // given
+        user.value = guest("finn")
+        val repository = repository()
+
+        // when
+        val result = repository.claimHandover(Handover("today", "finn", "token"), "gail")
+
+        // then
+        Assert.assertEquals(HandoverResult.HandedOver, result)
+        Assert.assertEquals(listOf("today" to "token"), source.claims)
+    }
+
+    @Test
+    fun `a guest never claims its own handover`() = runTest {
+        // given
+        val repository = repository()
+
+        // when
+        val result = repository.claimHandover(Handover("today", "finn", "token"), "finn")
+
+        // then
+        Assert.assertEquals(HandoverResult.Failed, result)
+        Assert.assertTrue(source.claims.isEmpty())
     }
 
     @Test
@@ -536,7 +564,7 @@ class SeaRepositoryTest {
         val repository = repository()
 
         // when
-        val result = repository.claimHandover(Handover("today", "finn", "token"))
+        val result = repository.claimHandover(Handover("today", "finn", "token"), "gail")
 
         // then
         Assert.assertEquals(HandoverResult.KeptOwnFind, result)
@@ -551,10 +579,10 @@ class SeaRepositoryTest {
         val repository = repository()
 
         // when
-        val foundBefore = repository.claimHandover(Handover("today", "finn", "token"))
+        val foundBefore = repository.claimHandover(Handover("today", "finn", "token"), "gail")
         source.foundBefore.clear()
         source.refuseClaim = true
-        val refused = repository().claimHandover(Handover("today", "finn", "token"))
+        val refused = repository().claimHandover(Handover("today", "finn", "token"), "gail")
 
         // then
         Assert.assertEquals(HandoverResult.Failed, foundBefore)

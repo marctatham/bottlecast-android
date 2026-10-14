@@ -33,6 +33,17 @@ describe('my profile', () => {
     });
   }
 
+  // size() counts UTF-16 code units, as the app's String.length does, so an emoji counts twice
+  for (const penName of ['A\u{1F30A}', `${'a'.repeat(18)}\u{1F30A}`]) {
+    it(`accepts the pen name ${JSON.stringify(penName)}, counting an emoji as two`, async () => {
+      await assertSucceeds(setDoc(profile(google('alice'), 'alice'), { penName }));
+    });
+  }
+
+  it('refuses a pen name that an emoji takes past 20', async () => {
+    await assertFails(setDoc(profile(google('alice'), 'alice'), { penName: `${'a'.repeat(19)}\u{1F30A}` }));
+  });
+
   it('refuses an extra key', async () => {
     await assertFails(setDoc(profile(google('alice'), 'alice'), { penName: 'Driftwood', name: 'Alice' }));
   });
