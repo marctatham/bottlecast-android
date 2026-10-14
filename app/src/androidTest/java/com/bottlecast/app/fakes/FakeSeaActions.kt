@@ -46,6 +46,9 @@ class FakeSeaActions @Inject constructor(
         outcomes.tryEmit(SeaActionOutcome(action, queuedOffline = false))
     }
 
+    // whatever waits is written, and the fake's server has it at once
+    override suspend fun settle() = expireAll()
+
     /** Ends the undo window of whatever is waiting, as time running out would. */
     fun expireAll() {
         pending.value?.let { commit(it.id) }

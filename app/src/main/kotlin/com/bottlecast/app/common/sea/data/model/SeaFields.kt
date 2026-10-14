@@ -49,3 +49,19 @@ object BlockedWriterFields {
     const val AT = "at"
     const val MESSAGE_ID = "messageId"
 }
+
+/**
+ * handoffs/{messageId}: a guest's live hold, waiting to be claimed by the Google account it's signing in
+ * to (spec §3.2). Nobody can read one; the rules check the claim's token against [TOKEN_HASH].
+ */
+object HandoffFields {
+    const val COLLECTION = "handoffs"
+
+    const val FROM = "from"
+    const val DATE = "date"
+    const val TOKEN_HASH = "tokenHash"
+    const val CREATED_AT = "createdAt"
+    const val TOKEN = "token"
+    const val CLAIMED_BY = "claimedBy"
+    const val CLAIMED_AT = "claimedAt"
+}

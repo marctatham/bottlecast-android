@@ -1,5 +1,6 @@
 package com.bottlecast.app.common.sea.data
 
+import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
@@ -7,9 +8,12 @@ import com.bottlecast.app.common.messages.domain.HOLD_DAYS
 import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.messages.domain.REPORT_THRESHOLD
+import com.bottlecast.app.common.messages.domain.isHoldLive
 import com.bottlecast.app.common.sea.domain.CandidateState
 import com.bottlecast.app.common.sea.domain.FindResult
 import com.bottlecast.app.common.sea.domain.FindStatus
+import com.bottlecast.app.common.sea.domain.Handover
+import com.bottlecast.app.common.sea.domain.HandoverResult
 import com.bottlecast.app.common.sea.domain.ISeaRepository
 import com.bottlecast.app.common.sea.domain.TodayFind
 import com.bottlecast.app.common.threading.DispatcherIO
@@ -29,10 +33,13 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.security.MessageDigest
+import java.security.SecureRandom
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.util.Base64
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import kotlin.random.Random
@@ -57,6 +64,7 @@ class SeaRepository @Inject constructor(
     private val connectivityMonitor: IConnectivityMonitor,
     private val clock: Clock,
     private val random: Random,
+    private val secureRandom: SecureRandom,
     @param:DispatcherIO private val dispatcher: CoroutineDispatcher,
 ) : ISeaRepository {
 
@@ -239,7 +247,66 @@ class SeaRepository @Inject constructor(
     override suspend fun getMessage(messageId: String): MessageEntity? =
         cachedMessage(messageId) ?: withContext(dispatcher) { source.getMessage(messageId) }
 
+    // Neither handover step takes the sea's lock: a look for the new account may hold it a while.
+
+    override suspend fun prepareHandover(): Handover? = withContext(dispatcher) {
+        val guest = authenticationRepository.user.value as? UserEntity.AuthenticatedUser
+        if (guest == null || guest.providerType != AuthProviderType.Anonymous) return@withContext null
+        try {
+            val date = LocalDate.now(clock)
+            val messageId = source.dailyMessageId(guest.userId, date) ?: return@withContext null
+            val find = source.findOf(messageId, guest.userId)
+            val message = source.serverMessage(messageId)
+            // only a hold the guest still has: not thrown back, reported or run out
+            if (find?.status != FindStatus.Held || message?.foundAt == null || find.foundAt != message.foundAt ||
+                !message.isHoldLive(clock.instant())
+            ) {
+                return@withContext null
+            }
+            val token = newHandoverToken()
+            source.armHandoff(messageId, guest.userId, date, sha256(token))
+            Handover(messageId, guest.userId, token)
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            Timber.w(exception, "[prepareHandover] Couldn't arm a handover of today's find")
+            null
+        }
+    }
+
+    override suspend fun claimHandover(handover: Handover): HandoverResult = withContext(dispatcher) {
+        val account = authenticationRepository.user.value as? UserEntity.AuthenticatedUser
+        if (account == null || account.userId == handover.fromUid) return@withContext HandoverResult.Failed
+        val uid = account.userId
+        try {
+            val date = LocalDate.now(clock)
+            if (source.dailyMessageId(uid, date) != null) return@withContext HandoverResult.KeptOwnFind
+            if (hasFound(handover.messageId, uid)) return@withContext HandoverResult.Failed
+            source.claimHandoff(handover.messageId, uid, handover.token, date, clock.zone.id)
+            // held from now, as the claim left it, so a throw back sees a live hold
+            justFound[handover.messageId]?.let { justFound[handover.messageId] = it.copy(foundAt = clock.instant()) }
+            foundBefore.getOrPut(uid) { ConcurrentHashMap.newKeySet() } += handover.messageId
+            HandoverResult.HandedOver
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            Timber.w(exception, "[claimHandover] Couldn't take over the guest's find")
+            HandoverResult.Failed
+        }
+    }
+
+    // 32 random bytes, which only this phone knows until the claim presents them
+    private fun newHandoverToken(): String {
+        val bytes = ByteArray(HANDOVER_TOKEN_BYTES).also(secureRandom::nextBytes)
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+    }
+
 }
+
+private const val HANDOVER_TOKEN_BYTES = 32
+
+/** The commitment a handoff carries: the SHA-256 of the token's UTF-8, which firestore.rules checks. */
+internal fun sha256(token: String): ByteArray = MessageDigest.getInstance("SHA-256").digest(token.toByteArray(Charsets.UTF_8))
 
 /** A bottle from before its find, as the find left it: held from [now]. */
 private fun MessageEntity.heldFrom(now: Instant): MessageEntity =

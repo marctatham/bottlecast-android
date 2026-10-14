@@ -4,8 +4,10 @@ import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.sea.data.EXPIRED_BATCH_SIZE
 import com.bottlecast.app.common.sea.data.FindOutcome
+import com.bottlecast.app.common.sea.data.FindRecord
 import com.bottlecast.app.common.sea.data.ISeaDataSource
 import com.bottlecast.app.common.sea.data.SEA_BATCH_SIZE
+import com.bottlecast.app.common.sea.data.SeaRefusedException
 import com.bottlecast.app.common.sea.data.SeaUnavailableException
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ReportReason
@@ -97,6 +99,40 @@ class FakeSeaDataSource : ISeaDataSource {
 
     override fun blockWriter(uid: String, writerUid: String, messageId: String) {
         blocks += writerUid
+    }
+
+    var pendingWritesAwaited = 0
+
+    override suspend fun awaitPendingWrites() {
+        pendingWritesAwaited++
+    }
+
+    // the server's daily records, finds and bottles, for a handover's reads
+    val dailyRecords = mutableMapOf<Pair<String, LocalDate>, String>()
+    val findRecords = mutableMapOf<Pair<String, String>, FindRecord>()
+    val serverMessages = mutableMapOf<String, MessageEntity>()
+    val armed = mutableListOf<Triple<String, String, ByteArray>>()
+    val claims = mutableListOf<Pair<String, String>>()
+
+    /** The server turns the next claim down. */
+    var refuseClaim = false
+
+    override fun dailyMessageId(uid: String, date: LocalDate): String? = reach().let { dailyRecords[uid to date] }
+
+    override fun findOf(messageId: String, uid: String): FindRecord? = reach().let { findRecords[messageId to uid] }
+
+    override fun serverMessage(messageId: String): MessageEntity? = reach().let { serverMessages[messageId] }
+
+    override fun armHandoff(messageId: String, fromUid: String, date: LocalDate, tokenHash: ByteArray) {
+        reach()
+        armed += Triple(messageId, fromUid, tokenHash)
+    }
+
+    override fun claimHandoff(messageId: String, uid: String, token: String, date: LocalDate, zone: String) {
+        reach()
+        if (refuseClaim) throw SeaRefusedException(IllegalStateException("refused"))
+        claims += messageId to token
+        dailyRecords[uid to date] = messageId
     }
 
     private fun reach() {

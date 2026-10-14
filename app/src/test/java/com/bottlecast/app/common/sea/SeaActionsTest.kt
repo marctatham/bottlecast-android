@@ -72,6 +72,21 @@ class SeaActionsTest {
     }
 
     @Test
+    fun `settling writes whatever waits and waits for the server`() = runTest {
+        // given
+        val actions = actions()
+        actions.throwBack(held, windowMillis = 5_000)
+
+        // when
+        actions.settle()
+
+        // then
+        Assert.assertEquals(listOf(Triple("today", "finn", true)), source.throwBacks)
+        Assert.assertNull(actions.pending.value)
+        Assert.assertEquals(1, source.pendingWritesAwaited)
+    }
+
+    @Test
     fun `while it waits, the action is pending`() = runTest {
         // given
         val actions = actions()

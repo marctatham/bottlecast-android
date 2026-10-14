@@ -56,7 +56,31 @@ interface ISeaDataSource {
     fun commitReport(messageId: String, uid: String, reason: ReportReason?, blockedWriter: Boolean)
 
     fun blockWriter(uid: String, writerUid: String, messageId: String)
+
+    /** Waits until the server has every write this account queued, such as a throw back just written. */
+    suspend fun awaitPendingWrites()
+
+    // Handing today's find over to a Google account that already exists (spec §3.2). These read from
+    // the server and wait for it, since the account is about to switch.
+
+    /** The message id of the account's find on [date], or null while there's none. */
+    fun dailyMessageId(uid: String, date: LocalDate): String?
+
+    /** The account's find of this bottle, or null when there's none. */
+    fun findOf(messageId: String, uid: String): FindRecord?
+
+    /** The bottle as the server has it now, or null when it can't be read. */
+    fun serverMessage(messageId: String): MessageEntity?
+
+    /** Leaves the SHA-256 of the guest's token for the Google account to claim. */
+    fun armHandoff(messageId: String, fromUid: String, date: LocalDate, tokenHash: ByteArray)
+
+    /** One commit: claims the handoff with its token, holds the bottle from now, and records this account's find. */
+    fun claimHandoff(messageId: String, uid: String, token: String, date: LocalDate, zone: String)
 }
+
+/** A find, as far as a handover needs it. */
+data class FindRecord(val status: FindStatus?, val foundAt: Instant?)
 
 sealed interface FindOutcome {
     data class Found(val message: MessageEntity) : FindOutcome
