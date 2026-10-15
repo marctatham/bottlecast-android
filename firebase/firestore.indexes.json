@@ -27,6 +27,14 @@
       ]
     },
     {
+      "collectionGroup": "messages",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "findCount", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "finds",
       "queryScope": "COLLECTION",
       "fields": [
