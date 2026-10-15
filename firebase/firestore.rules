@@ -2,8 +2,8 @@ rules_version = '2';
 
 // BottleCast's Cloud Firestore security rules.
 //
-// Collections: messages, finds, daily, reports, handoffs, castTally, claims, streakDays, users and
-// users/{uid}/blockedWriters. Anything else is denied, because rules deny by default. Tests:
+// Collections: messages, finds, daily, reports, handoffs, castTally, claims, streakDays, deletions,
+// users and users/{uid}/blockedWriters. Anything else is denied, because rules deny by default. Tests:
 // firebase/test, run with `npm run test:emulator`.
 //
 // The report threshold (3) also lives in the app's sea queries (reportCount in [0, 1, 2]), the Terms
@@ -91,6 +91,16 @@ service cloud.firestore {
       return /databases/$(database)/documents/claims/$(messageId);
     }
 
+    function deletionDoc(uid) {
+      return /databases/$(database)/documents/deletions/$(uid);
+    }
+
+    // My account is being deleted (spec §3.17): it can't find or cast any more, and may delete the
+    // records that are otherwise kept for good.
+    function isDeleting() {
+      return exists(deletionDoc(me()));
+    }
+
     // The Terms version a cast needs (the app's TERMS_VERSION).
     function currentTermsVersion() {
       return 1;
@@ -122,6 +132,17 @@ service cloud.firestore {
       return m.status == 'found' && request.time < holdEnds(m);
     }
 
+    // A live hold, including one on a bottle whose writer deleted their account while it was held
+    // (orphaned): its finder can still keep it, report it or hand it over, but it never drifts again.
+    function isHeld(m) {
+      return m.status in ['found', 'orphaned'] && request.time < holdEnds(m);
+    }
+
+    // An orphan someone still holds, which they can read like a bottle in the sea.
+    function isLiveOrphan(m) {
+      return m.status == 'orphaned' && m.reportCount < 3 && request.time < holdEnds(m);
+    }
+
     function isFindable(m) {
       return m.reportCount < 3
         && (m.status == 'afloat' || (m.status == 'found' && request.time >= holdEnds(m)));
@@ -151,7 +172,8 @@ service cloud.firestore {
         && (m.penName == null || isPenName(m.penName))
         && getAfter(castTallyDoc(me())).data.messageId == messageId
         && getAfter(userDoc(me())).data.get('termsVersion', 0) >= currentTermsVersion()
-        && (m.penName == null || getAfter(userDoc(me())).data.get('penName', null) == m.penName);
+        && (m.penName == null || getAfter(userDoc(me())).data.get('penName', null) == m.penName)
+        && !isDeleting();
     }
 
     // The pop: one commit holds the bottle and creates my find and today's daily record.
@@ -187,7 +209,7 @@ service cloud.firestore {
       let before = existing();
       return changedKeys().hasOnly(['reportCount'])
         && incoming().reportCount == before.reportCount + 1
-        && holdIsLive(before)
+        && isHeld(before)
         && getAfter(findDoc(pairId(messageId))).data.foundAt == before.foundAt
         && getAfter(findDoc(pairId(messageId))).data.status == 'reported'
         && getAfter(reportDoc(pairId(messageId))).data.createdAt == request.time;
@@ -200,7 +222,7 @@ service cloud.firestore {
       let before = existing();
       let after = incoming();
       return hasGoogle()
-        && holdIsLive(before)
+        && isHeld(before)
         && changedKeys().hasOnly(['status', 'keptAt'])
         && after.status == 'kept'
         && after.keptAt == request.time
@@ -229,19 +251,37 @@ service cloud.firestore {
 
     // Moderation: pull a bottle (under_review) or remove it, keeping its hold time, or restore it.
     // Restoring puts it back in the sea, or, while a finder's hold runs, back to that finder with its
-    // reports cleared, so it never has two holders. A kept bottle only ever goes back to its keeper.
+    // reports cleared, so it never has two holders. A kept bottle only ever goes back to its keeper,
+    // and one whose writer deleted their account never goes back to the sea.
     function isModeration() {
       let before = existing();
       let after = incoming();
       return isAdmin()
         && changedKeys().hasOnly(['status', 'reportCount', 'foundAt'])
-        && after.status in ['afloat', 'found', 'kept', 'under_review', 'removed']
+        && after.status in ['afloat', 'found', 'kept', 'orphaned', 'under_review', 'removed']
         && after.reportCount is int && after.reportCount >= 0
         && ((wasKept(before) && after.status in ['kept', 'under_review', 'removed'])
-            || (!wasKept(before) && after.status != 'kept'))
+            || (!wasKept(before) && before.userId == null && after.status in ['orphaned', 'under_review', 'removed'])
+            || (!wasKept(before) && before.userId != null && !(after.status in ['kept', 'orphaned'])))
+        && (after.status != 'orphaned' || holdRunning(before))
         && ((after.status == 'afloat' && after.foundAt == null && !holdRunning(before))
             || (after.status != 'afloat' && after.foundAt == before.foundAt))
         && (after.status != 'found' || holdRunning(before));
+    }
+
+    // Deleting an account (spec §3.17, decided 2026-10-15): a bottle someone else holds or kept stays
+    // with them, with the writer's uid and pen name taken off. A held one becomes orphaned, so it never
+    // drifts again. Nothing else changes, and no access call is made, so a batch can hold hundreds.
+    function isAnonymise() {
+      let before = existing();
+      let after = incoming();
+      return before.userId == me()
+        && changedKeys().hasOnly(['userId', 'penName', 'status'])
+        && after.userId == null
+        && after.penName == null
+        && (holdRunning(before) || wasKept(before))
+        && ((before.status == 'found' && after.status == 'orphaned')
+            || (before.status != 'found' && after.status == before.status));
     }
 
     // Handover (spec §3.2): a guest who signs in to a Google account that already exists hands today's
@@ -251,7 +291,7 @@ service cloud.firestore {
     function isHandover(messageId) {
       let before = existing();
       return before.userId != me()
-        && holdIsLive(before)
+        && isHeld(before)
         && changedKeys().hasOnly(['foundAt'])
         && incoming().foundAt == request.time
         && getAfter(handoffDoc(messageId)).data.claimedBy == me()
@@ -268,6 +308,7 @@ service cloud.firestore {
             || isAdmin()
             || resource.data.userId == me()
             || isInSea(resource.data)
+            || isLiveOrphan(resource.data)
             || isMyKept(messageId, resource.data));
       allow list: if signedIn()
         && (isAdmin()
@@ -276,11 +317,14 @@ service cloud.firestore {
       allow create: if signedIn() && isValidCast(messageId);
       allow update: if signedIn()
         && (isFind(messageId) || isThrowBack(messageId) || isReport(messageId) || isModeration()
-            || isHandover(messageId) || isKeep(messageId));
+            || isHandover(messageId) || isKeep(messageId) || isAnonymise());
       // The writer may pull a bottle while it drifts, so no one finds it (spec §3.11). One that's held,
-      // kept or reported out of the sea stays, so nobody loses a bottle or dodges a review.
+      // kept or reported out of the sea stays, so nobody loses a bottle or dodges a review, until the
+      // writer deletes their account: then only a held or kept one stays, anonymised.
       allow delete: if isAdmin()
-        || (signedIn() && resource.data.userId == me() && isFindable(resource.data));
+        || (signedIn() && resource.data.userId == me()
+            && (isFindable(resource.data)
+                || (!holdRunning(resource.data) && !wasKept(resource.data) && isDeleting())));
     }
 
     // ---------- finds/{messageId}_{finderUid} ----------
@@ -321,7 +365,8 @@ service cloud.firestore {
       allow list: if signedIn() && resource.data.finderUid == me();
       allow create: if signedIn() && isValidFind(findId);
       allow update: if signedIn() && resource.data.finderUid == me() && isFindStatusChange(findId);
-      // No delete: a find is forever, so nobody finds the same bottle twice.
+      // A find is forever, so nobody finds the same bottle twice, until its finder deletes their account.
+      allow delete: if signedIn() && resource.data.finderUid == me() && isDeleting();
     }
 
     // ---------- daily/{uid}_{yyyy-MM-dd} ----------
@@ -349,14 +394,17 @@ service cloud.firestore {
         && d.zone is string && d.zone.size() > 0 && d.zone.size() <= 64
         && d.messageId is string
         && d.foundAt == request.time
-        && getAfter(findDoc(pairId(d.messageId))).data.foundAt == request.time;
+        && getAfter(findDoc(pairId(d.messageId))).data.foundAt == request.time
+        && !isDeleting();
     }
 
     match /daily/{dailyId} {
       allow get: if signedIn() && dailyId.matches('^' + me() + '_.+$');
       allow list: if signedIn() && resource.data.uid == me();
       allow create: if signedIn() && isValidDaily(dailyId);
-      // Create-only, so there is one find per local date.
+      // Create-only, so there is one find per local date, until the account is being deleted, when
+      // it can't find any more.
+      allow delete: if signedIn() && resource.data.uid == me() && isDeleting();
     }
 
     // ---------- reports/{messageId}_{reporterUid} ----------
@@ -397,7 +445,7 @@ service cloud.firestore {
         && get(dailyDoc(me() + '_' + h.date)).data.messageId == messageId
         && get(findDoc(pairId(messageId))).data.status == 'held'
         && get(findDoc(pairId(messageId))).data.foundAt == get(messageDoc(messageId)).data.foundAt
-        && holdIsLive(get(messageDoc(messageId)).data);
+        && isHeld(get(messageDoc(messageId)).data);
     }
 
     // The claim: once, within 10 minutes, by a Google account other than the guest, presenting the
@@ -449,6 +497,7 @@ service cloud.firestore {
         && ((incoming().date == existing().date && incoming().count == existing().count + 1)
             || (incoming().date > existing().date && incoming().count == 1))
         && countsMyCast();
+      allow delete: if signedIn() && me() == userId && isDeleting();
     }
 
     // ---------- claims/{messageId} ----------
@@ -471,6 +520,9 @@ service cloud.firestore {
       allow get: if isAdmin() || (signedIn() && resource.data.keeperUid == me());
       allow list: if isAdmin() || (signedIn() && resource.data.keeperUid == me());
       allow create: if signedIn() && isValidClaim(messageId);
+      // Only as the keeper's account is deleted; a seal under way (slice 6) finishes.
+      allow delete: if signedIn() && resource.data.keeperUid == me() && resource.data.status == 'pending_wallet'
+        && isDeleting();
     }
 
     // ---------- streakDays/{uid}_{yyyy-MM-dd} ----------
@@ -507,6 +559,18 @@ service cloud.firestore {
         && incoming().keys().hasAll(existing().keys())
         && incoming().get('carried', 0) >= existing().get('carried', 0)
         && ('cast' in existing() || !('cast' in incoming()) || startsMyCastDay(incoming().date));
+      allow delete: if signedIn() && resource.data.uid == me() && isDeleting();
+    }
+
+    // ---------- deletions/{uid} ----------
+
+    // The tombstone of an account being deleted (spec §3.17), made once the user has signed in again
+    // and never removed. While it exists the account can't find or cast, and may delete its records,
+    // so a deletion that stops part-way carries on where it stopped.
+    match /deletions/{userId} {
+      allow get: if signedIn() && me() == userId;
+      allow create: if signedIn() && me() == userId && hasGoogle()
+        && hasExactly(['createdAt']) && incoming().createdAt == request.time;
     }
 
     // ---------- users/{uid} ----------
@@ -541,6 +605,7 @@ service cloud.firestore {
       allow update: if signedIn() && isValidProfile(userId)
         && (keepsTerms()
             || ('termsVersion' in incoming() && acceptsTerms(existing().get('termsVersion', 1))));
+      allow delete: if signedIn() && me() == userId && isDeleting();
     }
 
     // ---------- users/{uid}/blockedWriters/{writerUid} ----------
