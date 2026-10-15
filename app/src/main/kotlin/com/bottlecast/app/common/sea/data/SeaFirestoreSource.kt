@@ -11,6 +11,7 @@ import com.bottlecast.app.common.sea.data.model.DailyFields
 import com.bottlecast.app.common.sea.data.model.FindFields
 import com.bottlecast.app.common.sea.data.model.HandoffFields
 import com.bottlecast.app.common.sea.data.model.ReportFields
+import com.bottlecast.app.common.sea.domain.BlockedWriter
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ReportReason
 import com.google.android.gms.tasks.Task
@@ -22,6 +23,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -82,6 +84,24 @@ class SeaFirestoreSource @Inject constructor(
 
     override fun blockedWriters(uid: String): Set<String> =
         await(blockedWritersOf(uid).get()).documents.map { it.id }.toSet()
+
+    override fun observeBlockedWriters(uid: String): Flow<List<BlockedWriter>> = callbackFlow {
+        val registration = blockedWritersOf(uid)
+            .orderBy(BlockedWriterFields.AT, Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Timber.w(error, "Stopped listening to the blocked writers")
+                    trySend(emptyList())
+                } else {
+                    trySend(snapshot?.documents.orEmpty().map { BlockedWriter(it.id, it.getTimestamp(BlockedWriterFields.AT)?.toInstant()) })
+                }
+            }
+        awaitClose { registration.remove() }
+    }
+
+    override fun unblock(uid: String, writerUid: String) {
+        blockedWritersOf(uid).document(writerUid).delete().logFailure("unblock")
+    }
 
     override fun recordFind(messageId: String, uid: String, date: LocalDate, zone: String, now: Instant): FindOutcome {
         val messageRef = messages.document(messageId)

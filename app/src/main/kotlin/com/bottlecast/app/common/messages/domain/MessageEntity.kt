@@ -38,7 +38,7 @@ const val REPORT_THRESHOLD = 3
 
 /** When the current hold ends and the bottle drifts back, or null when nobody holds it. */
 fun MessageEntity.holdEnds(): Instant? =
-    foundAt?.takeIf { status == MessageStatus.Found }?.plus(HOLD_DAYS, ChronoUnit.DAYS)
+    foundAt?.takeIf { status == MessageStatus.Found || status == MessageStatus.Orphaned }?.plus(HOLD_DAYS, ChronoUnit.DAYS)
 
 fun MessageEntity.isHoldLive(now: Instant): Boolean = holdEnds()?.let { now.isBefore(it) } == true
 
@@ -55,6 +55,12 @@ enum class MessageStatus(val value: String) {
 
     /** Its finder kept it: it's in their chest for good, and never drifts again. */
     Kept("kept"),
+
+    /**
+     * Its writer deleted their account while someone held it: it stays with its finder, without the
+     * writer's name, until the hold ends, and never drifts again (decided 2026-10-15).
+     */
+    Orphaned("orphaned"),
     UnderReview("under_review"),
     Removed("removed");
 

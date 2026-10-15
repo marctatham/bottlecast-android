@@ -9,10 +9,12 @@ import com.bottlecast.app.common.sea.data.ISeaDataSource
 import com.bottlecast.app.common.sea.data.SEA_BATCH_SIZE
 import com.bottlecast.app.common.sea.data.SeaRefusedException
 import com.bottlecast.app.common.sea.data.SeaUnavailableException
+import com.bottlecast.app.common.sea.domain.BlockedWriter
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ReportReason
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import java.time.Instant
 import java.time.LocalDate
 
@@ -71,6 +73,12 @@ class FakeSeaDataSource : ISeaDataSource {
     }
 
     override fun blockedWriters(uid: String): Set<String> = blocked.also { blockedReads++ }
+
+    override fun observeBlockedWriters(uid: String): Flow<List<BlockedWriter>> = flowOf(blocked.map { BlockedWriter(it, null) })
+
+    override fun unblock(uid: String, writerUid: String) {
+        blocked = blocked - writerUid
+    }
 
     override fun recordFind(messageId: String, uid: String, date: LocalDate, zone: String, now: Instant): FindOutcome {
         findAttempts += messageId

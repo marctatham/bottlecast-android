@@ -363,4 +363,9 @@ private class MemorySeenStore : IChestSeenStore {
         this.seen.value = this.seen.value + (uid to seen)
         return Job().apply { complete() }
     }
+
+    override fun clear(): Job {
+        seen.value = emptyMap()
+        return Job().apply { complete() }
+    }
 }

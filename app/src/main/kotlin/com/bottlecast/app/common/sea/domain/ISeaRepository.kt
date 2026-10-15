@@ -3,6 +3,7 @@ package com.bottlecast.app.common.sea.domain
 import com.bottlecast.app.common.messages.domain.MessageEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
+import java.time.Instant
 import java.time.LocalDate
 
 /** The finder's side of the sea: today's candidate, the find, and today's record. */
@@ -30,6 +31,12 @@ interface ISeaRepository {
     suspend fun getMessage(messageId: String): MessageEntity?
 
     /**
+     * Whether the signed-in account has found today's bottle, as the server says, for the daily
+     * reminder. False when there's nobody signed in or the server can't be reached.
+     */
+    suspend fun hasFoundToday(): Boolean
+
+    /**
      * As the guest, before it signs in to a Google account that already exists: arms a handoff of
      * today's live hold, or returns null when there's none to hand over (spec §3.2).
      */
@@ -40,4 +47,13 @@ interface ISeaRepository {
      * today. The uid comes from the sign-in itself, since the signed-in user may not have caught up.
      */
     suspend fun claimHandover(handover: Handover, uid: String): HandoverResult
+
+    /** The writers the signed-in account blocked, newest first, following the account (spec §3.17). */
+    val blockedWriters: Flow<List<BlockedWriter>>
+
+    /** Lets [writerUid]'s bottles reach the account again, from the next look at the sea. */
+    suspend fun unblock(writerUid: String)
 }
+
+/** A writer the account blocked from the Report dialog. Their uid is never shown, only when. */
+data class BlockedWriter(val writerUid: String, val blockedAt: Instant?)

@@ -15,13 +15,19 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.TransformOrigin
@@ -40,8 +47,8 @@ import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavBackStackEntry
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavOptionsBuilder
 import androidx.navigation.compose.NavHost
@@ -54,15 +61,18 @@ import com.bottlecast.app.common.ui.BottlingMotion
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.feature.castsuccess.CastSuccessScreen
 import com.bottlecast.app.feature.chest.ChestScreen
+import com.bottlecast.app.feature.chest.ChestTab
+import com.bottlecast.app.feature.chest.ChestViewModel
 import com.bottlecast.app.feature.compose.ComposeScreen
 import com.bottlecast.app.feature.composepreview.ComposePreviewScreen
 import com.bottlecast.app.feature.discover.DiscoverScreen
+import com.bottlecast.app.feature.goodbye.GoodbyeScreen
+import com.bottlecast.app.feature.keepsake.KeepsakeScreen
 import com.bottlecast.app.feature.me.MeScreen
 import com.bottlecast.app.feature.onboarding.OnboardingScreen
 import com.bottlecast.app.feature.reveal.RevealScreen
-import com.bottlecast.app.feature.chest.ChestTab
-import com.bottlecast.app.feature.chest.ChestViewModel
-import com.bottlecast.app.feature.keepsake.KeepsakeScreen
+import com.bottlecast.app.feature.settings.LicencesScreen
+import com.bottlecast.app.feature.settings.SettingsScreen
 import com.bottlecast.app.feature.shore.ShoreScreen
 import com.bottlecast.app.feature.signin.SignInReason
 import com.bottlecast.app.feature.signin.SignInSheet
@@ -74,12 +84,17 @@ import java.time.LocalDate
  * themselves in a [TabFrame] with the navigation bar; every other route is immersive (spec §2).
  */
 @Composable
-fun MessageInABottleApp(analyticsProvider: ITracker) {
+fun MessageInABottleApp(
+    analyticsProvider: ITracker,
+    launchTarget: LaunchTarget? = null,
+    onLaunchTargetOpened: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val viewModel: AppNavigationStateViewModel = hiltViewModel()
     // read once, while the first frame waits (MainActivity)
     val startDestination = viewModel.startDestination.collectAsStateWithLifecycle().value ?: return
     val chestBadge by viewModel.chestBadge.collectAsStateWithLifecycle()
+    val meInitial by viewModel.meInitial.collectAsStateWithLifecycle()
     TrackScreens(navController, analyticsProvider, viewModel)
     SystemBarAppearance()
 
@@ -102,6 +117,19 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
             launchSingleTop = true
             restoreState = true
         }
+    }
+
+    // The daily reminder (spec §2, flow 7): a tap opens the Shore, and Find it Discover over the Shore,
+    // which sends a day that's already found back to the Shore with its notice. Onboarding comes first.
+    LaunchedEffect(launchTarget) {
+        val target = launchTarget ?: return@LaunchedEffect
+        if (startDestination == Shore) {
+            when (target) {
+                LaunchTarget.Shore -> navController.popBackStack<Shore>(inclusive = false)
+                LaunchTarget.Discover -> navController.navigate(Discover) { popUpTo<Shore>() }
+            }
+        }
+        onLaunchTargetOpened()
     }
 
     NavHost(
@@ -157,6 +185,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                 selected = TopLevelDestination.SHORE,
                 onSelect = tabHandler,
                 chestBadge = chestBadge,
+                meInitial = meInitial,
                 snackbarHost = { BottlingSnackbarHost(snackbarHostState) },
             ) { contentPadding ->
                 ShoreScreen(
@@ -202,6 +231,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                 selected = TopLevelDestination.CHEST,
                 onSelect = tabHandler,
                 chestBadge = chestBadge,
+                meInitial = meInitial,
                 snackbarHost = { BottlingSnackbarHost(snackbarHostState) },
             ) { contentPadding ->
                 ChestScreen(
@@ -222,9 +252,9 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
             }
         }
         composable<Me> {
-            TabFrame(selected = TopLevelDestination.ME, onSelect = tabHandler, chestBadge = chestBadge) { contentPadding ->
+            TabFrame(selected = TopLevelDestination.ME, onSelect = tabHandler, chestBadge = chestBadge, meInitial = meInitial) { contentPadding ->
                 MeScreen(
-                    onGoToShoreHandler = { tabHandler(TopLevelDestination.SHORE) },
+                    onOpenSettingsHandler = { navController.navigate(Settings) },
                     contentPadding = contentPadding,
                 )
             }
@@ -285,6 +315,34 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
         }
         immersive<Keepsake> {
             KeepsakeScreen(onBackHandler = backHandler, onLeaveHandler = backHandler)
+        }
+        immersive<Settings> {
+            val snackbarHostState = remember { SnackbarHostState() }
+            Box {
+                SettingsScreen(
+                    onBackHandler = backHandler,
+                    onHowItWorksHandler = { navController.navigate(HowItWorks) },
+                    onLicencesHandler = { navController.navigate(Licences) },
+                    // the account is gone, so nothing behind the goodbye is worth going back to
+                    onDeletedHandler = { navController.navigate(Goodbye) { popUpTo<Shore>() } },
+                    snackbarHostState = snackbarHostState,
+                )
+                BottlingSnackbarHost(
+                    snackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom)),
+                )
+            }
+        }
+        immersive<HowItWorks> {
+            OnboardingScreen(onSkipHandler = backHandler, onFindFirstHandler = backHandler, onCastHandler = { backHandler() }, replay = true)
+        }
+        immersive<Licences> {
+            LicencesScreen(onBackHandler = backHandler)
+        }
+        immersive<Goodbye> {
+            GoodbyeScreen(onBackToShoreHandler = homeHandler)
         }
         immersive<Moderation> {
             LegacyScreen { ViewMessagesScreen() }

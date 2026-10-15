@@ -7,6 +7,9 @@ interface IGoogleCredentials {
 
     /** Shows the picker over [context], an activity, and returns the chosen account's ID token. */
     suspend fun requestIdToken(context: Context): GoogleCredentialResult
+
+    /** Forgets the account chosen last, on signing out, so the picker asks again next time. */
+    suspend fun forgetAccount()
 }
 
 sealed interface GoogleCredentialResult {

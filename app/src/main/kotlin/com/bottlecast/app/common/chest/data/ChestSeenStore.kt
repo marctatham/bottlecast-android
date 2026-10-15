@@ -33,6 +33,11 @@ class ChestSeenStore @Inject constructor(
             .onFailure { Timber.w(it, "[save] Couldn't save when the chest was seen") }
     }
 
+    override fun clear(): Job = scope.launch {
+        runCatching { dataStore.edit { it.remove(SEEN) } }
+            .onFailure { Timber.w(it, "[clear] Couldn't forget when the chest was seen") }
+    }
+
     private companion object {
         val SEEN = stringPreferencesKey("chest_seen")
         const val SEPARATOR = "|"

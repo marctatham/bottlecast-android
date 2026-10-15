@@ -8,6 +8,7 @@ import com.bottlecast.app.common.chest.domain.ChestCounts
 import com.bottlecast.app.common.chest.domain.IChestRepository
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.sea.domain.CandidateState
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ISeaActions
@@ -17,10 +18,11 @@ import com.bottlecast.app.common.sea.domain.TodayFind
 import com.bottlecast.app.common.streak.domain.IStreakRepository
 import com.bottlecast.app.common.streak.domain.Streak
 import com.bottlecast.app.common.streak.domain.StreakEvent
-import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.feature.shore.domain.ShoreNotice
 import com.bottlecast.app.feature.shore.domain.ShoreNotices
+import com.bottlecast.app.testing.FakeNotificationAccess
 import com.bottlecast.app.testing.MainDispatcherRule
+import com.bottlecast.app.testing.MemoryReminderStore
 import com.bottlecast.app.testing.MutableClock
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -43,6 +45,7 @@ import org.junit.Test
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 
 class ShoreViewModelTest {
 
@@ -83,6 +86,8 @@ class ShoreViewModelTest {
         every { castFindsSinceViewed } returns this@ShoreViewModelTest.awayFinds
     }
     private val shoreNotices = ShoreNotices()
+    private val reminderStore = MemoryReminderStore()
+    private val notificationAccess = FakeNotificationAccess()
 
     @Test
     fun `today's bottle waits, with no streak or stats until they're recorded`() = runTest {
@@ -312,10 +317,73 @@ class ShoreViewModelTest {
     }
 
     @Test
+    fun `with reminders off, the Shore shows their chip, and offers the sheet once after the first find`() = runTest {
+        // given
+        finds.value = mapOf(today to found("today"))
+        val viewModel = shore()
+        runCurrent()
+        val first = viewModel.state.value as ShoreUiState.FoundToday
+
+        // when
+        reminderStore.markRationaleOffered()
+        runCurrent()
+
+        // then
+        Assert.assertEquals(LocalTime.of(9, 0), first.reminderTime)
+        Assert.assertTrue(first.offerReminders)
+        val later = viewModel.state.value as ShoreUiState.FoundToday
+        Assert.assertEquals(LocalTime.of(9, 0), later.reminderTime)
+        Assert.assertFalse(later.offerReminders)
+        close(viewModel)
+    }
+
+    @Test
+    fun `reminders that are on and allowed need no chip, until Android's settings turn them off`() = runTest {
+        // given
+        finds.value = mapOf(today to found("today"))
+        reminderStore.setEnabled(true)
+        notificationAccess.allowed = true
+        val viewModel = shore()
+        runCurrent()
+        val on = viewModel.state.value as ShoreUiState.FoundToday
+
+        // when
+        notificationAccess.allowed = false
+        viewModel.onResume()
+        runCurrent()
+
+        // then
+        Assert.assertNull(on.reminderTime)
+        Assert.assertFalse(on.offerReminders)
+        Assert.assertEquals(LocalTime.of(9, 0), (viewModel.state.value as ShoreUiState.FoundToday).reminderTime)
+        close(viewModel)
+    }
+
+    @Test
+    fun `a refusal keeps the chip away for a week`() = runTest {
+        // given
+        finds.value = mapOf(today to found("today"))
+        reminderStore.markDenied(clock.instant().minus(Duration.ofDays(6)))
+        val viewModel = shore()
+        runCurrent()
+        val paused = viewModel.state.value as ShoreUiState.FoundToday
+
+        // when
+        reminderStore.markDenied(clock.instant().minus(Duration.ofDays(7)))
+        runCurrent()
+
+        // then
+        Assert.assertNull(paused.reminderTime)
+        Assert.assertFalse(paused.offerReminders)
+        Assert.assertEquals(LocalTime.of(9, 0), (viewModel.state.value as ShoreUiState.FoundToday).reminderTime)
+        close(viewModel)
+    }
+
+    @Test
     fun `the minute's tick stops while nobody watches the Shore, and starts again from the clock`() = runTest {
         // given
         finds.value = mapOf(today to found("today"))
-        val viewModel = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, streakRepository, chestRepository, shoreNotices, clock)
+        val viewModel = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, streakRepository, chestRepository, shoreNotices, reminderStore, notificationAccess, clock)
         val watching = backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
 
@@ -413,7 +481,7 @@ class ShoreViewModelTest {
     }
 
     // the Shore, watched as it is on screen
-    private fun TestScope.shore() = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, streakRepository, chestRepository, shoreNotices, clock)
+    private fun TestScope.shore() = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, streakRepository, chestRepository, shoreNotices, reminderStore, notificationAccess, clock)
         .also { viewModel -> backgroundScope.launch { viewModel.state.collect {} } }
 
     private fun todayFor(date: LocalDate): Flow<TodayFind?> = finds.map { it[date] }

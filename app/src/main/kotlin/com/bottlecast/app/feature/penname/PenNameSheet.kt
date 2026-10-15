@@ -1,16 +1,17 @@
 package com.bottlecast.app.feature.penname
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -18,6 +19,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -55,6 +57,10 @@ fun PenNameSheet(
     val sheetState = rememberBottlingSheetState()
     val currentOnSaved by rememberUpdatedState(onSaved)
     val suggestions = stringArrayResource(R.array.pen_name_suggestions).toList()
+
+    // The next opening starts afresh, whatever this one ended on. A rotation isn't a new opening.
+    val activity = LocalActivity.current
+    DisposableEffect(viewModel) { onDispose { if (activity?.isChangingConfigurations != true) viewModel.reset() } }
 
     LaunchedEffect(uiState) {
         val saved = uiState as? PenNameUiState.Saved ?: return@LaunchedEffect

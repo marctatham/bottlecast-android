@@ -20,4 +20,7 @@ interface IStreakCheckpointStore {
     fun noticeSeenThrough(uid: String): Flow<LocalDate?>
 
     fun markNoticeSeen(uid: String, date: LocalDate): Job
+
+    /** Forgets the account's checkpoint and news, as it's deleted. */
+    fun clear(): Job
 }

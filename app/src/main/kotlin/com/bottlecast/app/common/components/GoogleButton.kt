@@ -1,4 +1,4 @@
-package com.bottlecast.app.feature.signin.components
+package com.bottlecast.app.common.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -23,14 +23,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import com.bottlecast.app.R
 import com.bottlecast.app.common.ui.BottlingTheme
-import com.bottlecast.app.feature.signin.SignInDimens
 
 /**
  * "Continue with Google" (spec §3.2): a 56dp full-width pill in Google's brand colours, with the 20dp
  * G. While it works, the label gives way to a spinner.
  */
 @Composable
-internal fun GoogleButton(
+fun GoogleButton(
     onClick: () -> Unit,
     enabled: Boolean,
     isLoading: Boolean,
@@ -66,13 +65,13 @@ internal fun GoogleButton(
             )
         } else {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(SignInDimens.googleLogoGap),
+                horizontalArrangement = Arrangement.spacedBy(BottlingTheme.sizes.googleLogoGap),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Image(
                     painter = painterResource(R.drawable.ic_glyph_google),
                     contentDescription = null,
-                    modifier = Modifier.size(SignInDimens.googleLogo),
+                    modifier = Modifier.size(BottlingTheme.sizes.googleLogo),
                     alpha = if (enabled) 1f else DISABLED_ALPHA,
                 )
                 Text(text = label, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium))

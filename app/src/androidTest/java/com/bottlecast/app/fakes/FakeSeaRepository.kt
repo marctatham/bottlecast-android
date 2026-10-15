@@ -4,6 +4,7 @@ import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.UserEntity
 import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.common.messages.domain.MessageStatus
+import com.bottlecast.app.common.sea.domain.BlockedWriter
 import com.bottlecast.app.common.sea.domain.CandidateState
 import com.bottlecast.app.common.sea.domain.FindResult
 import com.bottlecast.app.common.sea.domain.FindStatus
@@ -90,6 +91,17 @@ class FakeSeaRepository @Inject constructor(
     override suspend fun claimHandover(handover: Handover, uid: String): HandoverResult {
         handovers += 1
         return HandoverResult.HandedOver
+    }
+
+    override suspend fun hasFoundToday(): Boolean = today.value != null
+
+    /** The writers the account blocked; Settings lists them and can unblock one. */
+    val blocked = MutableStateFlow<List<BlockedWriter>>(emptyList())
+
+    override val blockedWriters: Flow<List<BlockedWriter>> = blocked
+
+    override suspend fun unblock(writerUid: String) {
+        blocked.value = blocked.value.filterNot { it.writerUid == writerUid }
     }
 
     /** Today's bottle was found on another phone, and it was another bottle, [messageId]. */

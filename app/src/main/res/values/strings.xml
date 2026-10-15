@@ -125,9 +125,112 @@
     <string name="keepsake_gone_body">It isn\'t in your chest any more.</string>
     <string name="keepsake_back_to_chest">Back to your chest</string>
 
-    <!-- Me, until slice 4 brings the profile (spec §3.12) -->
-    <string name="me_placeholder_title">Your profile is on its way</string>
-    <string name="me_placeholder_body">Your streak, badges and pen name will live here soon.</string>
+    <!-- Me (spec §3.12) -->
+    <string name="me_settings">Settings</string>
+    <string name="me_guest_name">Guest sailor</string>
+    <string name="me_anonymous_name">Anonymous sailor</string>
+    <string name="me_set_pen_name">Set a pen name</string>
+    <!-- Oct 2026 -->
+    <string name="me_casting_since">Casting since %1$s</string>
+    <string name="me_guest_body">Sign in to keep bottles and carry your streak to any phone.</string>
+    <string name="me_stat_streak">Streak</string>
+    <string name="me_stat_best">best %1$d</string>
+    <plurals name="me_stat_shields">
+        <item quantity="one">%d shield</item>
+        <item quantity="other">%d shields</item>
+    </plurals>
+    <plurals name="me_streak_days">
+        <item quantity="one">%d-day streak</item>
+        <item quantity="other">%d-day streak</item>
+    </plurals>
+    <!-- 6-day streak, best 14, 1 shield -->
+    <string name="me_streak_description">%1$s, best %2$d, %3$s</string>
+    <!-- shown for a number that isn't known yet, such as offline -->
+    <string name="me_stat_unknown">–</string>
+    <string name="me_stat_unknown_description">%1$s: not known yet</string>
+
+    <!-- Settings (spec §3.17) -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_section_reminders">Reminders</string>
+    <string name="settings_section_privacy">Privacy</string>
+    <string name="settings_section_feel">Appearance &amp; feel</string>
+    <string name="settings_section_about">About</string>
+    <string name="settings_section_account">Account</string>
+    <string name="settings_notifications_off">Notifications are off</string>
+    <string name="settings_notifications_turn_on">Turn on</string>
+    <string name="settings_daily_reminder">Daily bottle reminder</string>
+    <string name="settings_remind_me_at">Remind me at</string>
+    <string name="settings_quiet_hours">Quiet hours</string>
+    <!-- 10 PM – 8 AM -->
+    <string name="settings_quiet_hours_value">%1$s – %2$s</string>
+    <string name="settings_quiet_hours_body">Nothing from BottleCast arrives between these times, the daily reminder included.</string>
+    <string name="settings_quiet_from">From</string>
+    <string name="settings_quiet_until">Until</string>
+    <string name="settings_quiet_from_title">Quiet hours from</string>
+    <string name="settings_quiet_until_title">Quiet hours until</string>
+    <string name="settings_done">Done</string>
+    <string name="settings_found_notifications">When my bottles are found</string>
+    <string name="settings_coming_soon">Coming soon</string>
+    <string name="settings_pen_name">Pen name</string>
+    <string name="settings_pen_name_none">Not set</string>
+    <string name="settings_sign_in_first">Sign in first</string>
+    <string name="settings_sign_with_pen_name">Sign new bottles with my pen name</string>
+    <string name="settings_blocked">Blocked writers</string>
+    <string name="settings_blocked_none">You haven\'t blocked anyone.</string>
+    <!-- 5 Oct -->
+    <string name="settings_blocked_on">A writer you blocked on %1$s</string>
+    <string name="settings_blocked_writer">A writer you blocked</string>
+    <string name="settings_unblock">Unblock</string>
+    <string name="settings_theme">Theme</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_night">Night</string>
+    <string name="settings_theme_dawn">Dawn</string>
+    <string name="settings_reduce_motion">Reduce motion</string>
+    <string name="settings_reduce_motion_system">Follows system</string>
+    <string name="settings_shake">Shake to uncork</string>
+    <string name="settings_haptics">Haptics</string>
+    <string name="settings_how_it_works">How BottleCast works</string>
+    <string name="settings_guidelines">Community guidelines</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_terms">Terms</string>
+    <string name="settings_licences">Open-source licences</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_signed_in_google">Signed in with Google</string>
+    <string name="settings_sign_out">Sign out</string>
+    <string name="settings_delete_account">Delete account</string>
+    <string name="settings_cancel">Cancel</string>
+    <string name="settings_sign_out_title">Sign out?</string>
+    <string name="settings_sign_out_body">You\'ll go back to guest mode on this phone.</string>
+    <string name="settings_sign_out_confirm">Sign out</string>
+    <string name="settings_signing_out">Signing out…</string>
+    <string name="settings_signed_out">Signed out. You\'re a guest on this phone now.</string>
+    <string name="settings_delete_title">Delete your account?</string>
+    <string name="settings_delete_body">Your profile, chest, streak and drifting bottles will be removed. Bottles someone else has found or kept stay with them, without your name.</string>
+    <string name="settings_delete_understand">I understand this can\'t be undone</string>
+    <string name="settings_delete_confirm">Delete account</string>
+    <string name="settings_deleting">Deleting your account…</string>
+    <string name="settings_delete_offline">Deleting your account needs a connection. Nothing was removed — try again once you\'re back online.</string>
+    <string name="settings_delete_wrong_account">That\'s a different Google account. Nothing was removed — choose the one you\'re signed in with.</string>
+    <string name="settings_delete_failed">Your account isn\'t fully deleted yet. Check your connection and try again — it picks up where it stopped.</string>
+    <string name="settings_failed">That didn\'t go through. Your settings are as they were — try again.</string>
+
+    <!-- After deleting an account (spec §3.17) -->
+    <string name="goodbye_title">Fair winds.</string>
+    <string name="goodbye_body">Your account is deleted. Bottles someone else found or kept stay with them, without your name.</string>
+    <string name="goodbye_back">Back to the shore</string>
+
+    <!-- Open-source licences (spec §3.17) -->
+    <string name="licences_title">Open-source licences</string>
+    <string name="licences_bundled">Fonts and icons</string>
+    <string name="licences_libraries">Libraries</string>
+    <!-- 1.13.0 · Apache License 2.0 -->
+    <string name="licences_library_detail">%1$s · %2$s</string>
+    <string name="licences_roboto_flex" translatable="false">Roboto Flex</string>
+    <string name="licences_roboto_mono" translatable="false">Roboto Mono</string>
+    <string name="licences_roboto_slab" translatable="false">Roboto Slab</string>
+    <string name="licences_material_symbols" translatable="false">Material Symbols</string>
+    <string name="licences_ofl" translatable="false">SIL Open Font License 1.1</string>
+    <string name="licences_apache" translatable="false">Apache License, Version 2.0</string>
 
     <!-- The Shore (spec §3.3) -->
     <string name="shore_wordmark" translatable="false">BottleCast</string>
@@ -301,10 +404,44 @@
     <string name="onboarding_3_art">A kept message on parchment, stamped with a wax seal</string>
     <string name="onboarding_3_message">Leave the porch light on for the people still finding their way home.</string>
 
+    <!-- Notifications (spec §3.16b) -->
+    <string name="notification_channel_daily">Daily bottle</string>
+    <string name="notification_channel_daily_description">One reminder a day, when today\'s bottle is waiting.</string>
+    <string name="notification_daily_title">A new bottle washed ashore</string>
+    <string name="notification_daily_text">Today\'s message is waiting.</string>
+    <plurals name="notification_daily_text_streak">
+        <item quantity="one">Today\'s message is waiting. Keep your %1$d-day streak going.</item>
+        <item quantity="other">Today\'s message is waiting. Keep your %1$d-day streak going.</item>
+    </plurals>
+    <string name="notification_daily_find">Find it</string>
+
+    <!-- The reminder sheet (spec §3.16a) -->
+    <string name="reminder_sheet_title">Want a daily nudge?</string>
+    <string name="reminder_sheet_body">One gentle reminder a day, at a time you pick. That\'s it — no spam.</string>
+    <string name="reminder_sheet_body_rationale">You can turn it off anytime.</string>
+    <string name="reminder_sheet_blocked">Reminders are turned off for BottleCast in Android settings.</string>
+    <string name="reminder_sheet_turn_on">Turn on reminders</string>
+    <string name="reminder_sheet_open_settings">Open settings</string>
+    <string name="reminder_sheet_not_now">Not now</string>
+    <string name="reminder_time_label">Remind me at</string>
+    <string name="reminder_time_description">Reminder time, %1$s</string>
+    <string name="reminder_time_change">Change time</string>
+    <string name="reminder_time_title">Remind me at</string>
+    <!-- 10 PM, 8 AM -->
+    <string name="reminder_quiet_caption">Quiet hours: nothing between %1$s and %2$s.</string>
+    <string name="reminder_turned_on">Reminders on — we\'ll nudge you at %1$s</string>
+
+    <!-- The time picker -->
+    <string name="time_picker_cancel">Cancel</string>
+    <string name="time_picker_ok">OK</string>
+    <string name="time_picker_type">Type the time</string>
+    <string name="time_picker_dial">Pick the time on a dial</string>
+
     <!-- The sign-in sheet (spec §3.2) -->
     <string name="sign_in_title_cast">Sign in to cast your bottle</string>
     <string name="sign_in_title_keep">Sign in to keep this bottle</string>
     <string name="sign_in_title_track">Sign in to track your bottles</string>
+    <string name="sign_in_title_account">Sign in with Google</string>
     <string name="sign_in_body">We use your Google account so your chest and streak follow you to any phone. Your name never appears on bottles unless you choose a pen name.</string>
     <string name="sign_in_carry_find">Today\'s find comes with you</string>
     <plurals name="sign_in_carry_streak_and_find">
@@ -455,6 +592,7 @@
     <string name="moderation_status_afloat">In the sea</string>
     <string name="moderation_status_found">Held by a finder</string>
     <string name="moderation_status_kept">Kept by its finder</string>
+    <string name="moderation_status_orphaned">Held, writer gone</string>
     <string name="moderation_status_under_review">Pulled for a look</string>
     <string name="moderation_status_removed">Removed</string>
     <string name="moderation_summary">%1$s · %2$s</string>

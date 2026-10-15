@@ -15,6 +15,9 @@ interface IChestSeenStore {
     fun seen(uid: String): Flow<ChestSeen?>
 
     fun save(uid: String, seen: ChestSeen): Job
+
+    /** Forgets what the account had seen, as it's deleted. */
+    fun clear(): Job
 }
 
 /** [castFinds] counts every find of the account's bottles, null for a guest. */

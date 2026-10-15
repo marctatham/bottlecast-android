@@ -50,7 +50,9 @@ class MessageFirestoreSource @Inject constructor(
 
     // Back to the sea with its reports cleared, unless a finder's hold still runs: then back to that
     // finder for the rest of it, so the bottle never has two holders. A kept bottle only ever goes back
-    // to its keeper (firestore.rules insists on both).
+    // to its keeper, and one whose writer deleted their account never goes back to the sea: it goes
+    // back to its finder while the hold runs, and is removed once nobody holds it (firestore.rules
+    // insists on all three).
     private fun restore(document: DocumentReference) {
         Tasks.await(
             firestore.runTransaction { transaction ->
@@ -59,6 +61,9 @@ class MessageFirestoreSource @Inject constructor(
                 val holdRunning = holdStarted != null && Instant.now().isBefore(holdStarted.plus(HOLD_DAYS, ChronoUnit.DAYS))
                 val changes: Map<String, Any?> = if (bottle.getTimestamp(MessageFields.KEPT_AT) != null) {
                     mapOf(MessageFields.STATUS to MessageStatus.Kept.value, MessageFields.REPORT_COUNT to 0)
+                } else if (bottle.getString(MessageFields.USER_ID) == null) {
+                    val status = if (holdRunning) MessageStatus.Orphaned else MessageStatus.Removed
+                    mapOf(MessageFields.STATUS to status.value, MessageFields.REPORT_COUNT to 0)
                 } else if (holdRunning) {
                     mapOf(MessageFields.STATUS to MessageStatus.Found.value, MessageFields.REPORT_COUNT to 0)
                 } else {

@@ -50,6 +50,15 @@ class StreakCheckpointStore @Inject constructor(
             .onFailure { Timber.w(it, "[markNoticeSeen] Couldn't save that the streak's news was seen") }
     }
 
+    override fun clear(): Job = scope.launch {
+        runCatching {
+            dataStore.edit {
+                it.remove(CHECKPOINT)
+                it.remove(NOTICE_SEEN)
+            }
+        }.onFailure { Timber.w(it, "[clear] Couldn't forget the streak's checkpoint") }
+    }
+
     private companion object {
         val CHECKPOINT = stringPreferencesKey("streak_checkpoint")
         val NOTICE_SEEN = stringPreferencesKey("streak_notice_seen")

@@ -29,6 +29,7 @@ fun TabFrame(
     onSelect: (TopLevelDestination) -> Unit,
     modifier: Modifier = Modifier,
     chestBadge: Boolean = false,
+    meInitial: String? = null,
     navigationBarInsets: WindowInsets = NavigationBarDefaults.windowInsets,
     snackbarHost: @Composable () -> Unit = {},
     content: @Composable (PaddingValues) -> Unit,
@@ -46,6 +47,7 @@ fun TabFrame(
                     if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) onSelect(destination)
                 },
                 chestBadge = chestBadge,
+                meInitial = meInitial,
                 windowInsets = navigationBarInsets,
             )
         },

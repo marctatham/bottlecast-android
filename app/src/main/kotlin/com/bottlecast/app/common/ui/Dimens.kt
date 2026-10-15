@@ -77,6 +77,10 @@ object BottlingSizes {
     val dialogSideMargin = 28.dp
     val dialogMaxWidth = 560.dp
 
+    /** "Continue with Google": the G and its label 12dp apart, the G at 20dp (Google's guidelines, spec §3.2). */
+    val googleLogo = 20.dp
+    val googleLogoGap = 12.dp
+
     /** A bottle's glyph in a list (spec §3.10): the rig, this tall, on a circle this wide (Chest boards). */
     val bottleGlyph = 40.dp
     val bottleGlyphRig = 28.dp

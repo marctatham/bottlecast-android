@@ -47,6 +47,15 @@ sealed class AnalyticsEvent(val eventName: String) {
     /** The server turned a cast down, and its words went back to the draft. */
     data object CastRefused : AnalyticsEvent("cast_refused")
 
+    /** The daily reminder was turned on; param [PARAM_SOURCE]: first_find, shore or settings. */
+    data object RemindersTurnedOn : AnalyticsEvent("reminders_turned_on")
+
+    /** The account signed out, back to a guest on this phone. */
+    data object SignedOut : AnalyticsEvent("signed_out")
+
+    /** The account and its data were deleted. */
+    data object AccountDeleted : AnalyticsEvent("account_deleted")
+
     companion object {
         const val PARAM_METHOD = "method"
         const val PARAM_BLOCKED = "blocked"

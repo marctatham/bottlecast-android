@@ -12,8 +12,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -22,6 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import com.bottlecast.app.R
+import com.bottlecast.app.common.components.BottlingSwitch
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.feature.composepreview.ComposePreviewDimens
 
@@ -105,29 +104,7 @@ private fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean
                     .weight(1f)
                     .padding(end = spacing.m),
             )
-            Switch(
-                checked = checked,
-                onCheckedChange = null,
-                thumbContent = if (checked) {
-                    {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_symbol_check),
-                            contentDescription = null,
-                            modifier = Modifier.size(SwitchDefaults.IconSize),
-                        )
-                    }
-                } else {
-                    null
-                },
-                colors = SwitchDefaults.colors(
-                    checkedTrackColor = MaterialTheme.colorScheme.primary,
-                    checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                    checkedIconColor = MaterialTheme.colorScheme.primary,
-                    uncheckedTrackColor = BottlingTheme.colors.surfaceHigh,
-                    uncheckedBorderColor = MaterialTheme.colorScheme.outline,
-                    uncheckedThumbColor = MaterialTheme.colorScheme.outline,
-                ),
-            )
+            BottlingSwitch(checked = checked, onCheckedChange = null)
         }
         if (helper != null) {
             Text(

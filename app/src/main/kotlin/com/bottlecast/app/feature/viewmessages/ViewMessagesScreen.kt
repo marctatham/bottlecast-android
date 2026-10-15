@@ -180,6 +180,7 @@ private fun MessageStatus.label(): Int = when (this) {
     MessageStatus.Afloat -> R.string.moderation_status_afloat
     MessageStatus.Found -> R.string.moderation_status_found
     MessageStatus.Kept -> R.string.moderation_status_kept
+    MessageStatus.Orphaned -> R.string.moderation_status_orphaned
     MessageStatus.UnderReview -> R.string.moderation_status_under_review
     MessageStatus.Removed -> R.string.moderation_status_removed
 }

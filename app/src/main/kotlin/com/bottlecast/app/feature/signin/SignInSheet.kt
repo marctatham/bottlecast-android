@@ -3,8 +3,6 @@ package com.bottlecast.app.feature.signin
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.background
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,7 +16,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +51,7 @@ import com.bottlecast.app.common.analytics.AnalyticsEvent
 import com.bottlecast.app.common.analytics.LocalTracker
 import com.bottlecast.app.common.components.BottlingBottomSheet
 import com.bottlecast.app.common.components.BottlingTextButton
+import com.bottlecast.app.common.components.GoogleButton
 import com.bottlecast.app.common.components.LinkedText
 import com.bottlecast.app.common.components.TextLink
 import com.bottlecast.app.common.components.rememberBottlingSheetState
@@ -58,7 +59,6 @@ import com.bottlecast.app.common.legal.LegalLinks
 import com.bottlecast.app.common.ui.BottlingMotion
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.common.ui.cssBlur
-import com.bottlecast.app.feature.signin.components.GoogleButton
 import com.bottlecast.app.feature.signin.domain.SignInOutcome
 import kotlinx.coroutines.launch
 

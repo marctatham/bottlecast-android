@@ -24,6 +24,10 @@ class BottlingRouteTest {
             CastSuccess::class to "cast_success",
             Keepsake::class to "keepsake",
             Moderation::class to "view_messages",
+            Settings::class to "settings",
+            HowItWorks::class to "how_it_works",
+            Licences::class to "licences",
+            Goodbye::class to "goodbye",
         )
 
         // when

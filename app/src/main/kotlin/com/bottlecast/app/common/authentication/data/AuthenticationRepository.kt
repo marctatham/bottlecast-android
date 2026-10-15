@@ -9,6 +9,7 @@ import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuth.IdTokenListener
+import com.google.firebase.auth.FirebaseAuthInvalidUserException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GetTokenResult
@@ -22,10 +23,14 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
+import java.time.Instant
 import java.util.concurrent.ExecutionException
 
 // the custom claim set by scripts/set_admin_claim.py, which firestore.rules also reads
 private const val CLAIM_ADMIN = "admin"
+
+// Firebase Auth's code for signing in again with another account than the one signed in
+private const val ERROR_USER_MISMATCH = "ERROR_USER_MISMATCH"
 
 // Serves as a single source of truth to indicate whether the
 // user is currently signed into the application
@@ -50,6 +55,8 @@ class AuthenticationRepository constructor(
         if (currentUser == null) {
             Timber.i("[onIdTokenChanged] - no token")
             _user.value = UserEntity.UnauthenticatedUser
+            // crashes from here on aren't the signed-out (or deleted) account's
+            Firebase.crashlytics.setUserId("")
             return
         }
 
@@ -62,6 +69,8 @@ class AuthenticationRepository constructor(
             jwtToken = known?.jwtToken.orEmpty(),
             userId = currentUser.uid,
             isAdmin = known?.isAdmin == true,
+            createdAt = createdAtOf(currentUser),
+            googleName = googleNameOf(currentUser),
         )
         Firebase.crashlytics.setUserId(currentUser.uid)
 
@@ -78,6 +87,8 @@ class AuthenticationRepository constructor(
                     jwtToken = tokenResult.token.orEmpty(),
                     userId = currentUser.uid,
                     isAdmin = tokenResult.claims[CLAIM_ADMIN] == true,
+                    createdAt = createdAtOf(currentUser),
+                    googleName = googleNameOf(currentUser),
                 )
             }
             .addOnFailureListener { Timber.w(it, "[onIdTokenChanged] - couldn't read the user's token") }
@@ -91,6 +102,14 @@ class AuthenticationRepository constructor(
         } else {
             AuthProviderType.Anonymous
         }
+
+    private fun createdAtOf(user: FirebaseUser): Instant? =
+        user.metadata?.creationTimestamp?.takeIf { it > 0 }?.let(Instant::ofEpochMilli)
+
+    // a guest that linked Google may not have taken the Google profile's name onto the account itself
+    private fun googleNameOf(user: FirebaseUser): String? =
+        user.providerData.firstOrNull { it.providerId == GoogleAuthProvider.PROVIDER_ID }?.displayName?.takeIf { it.isNotBlank() }
+            ?: user.displayName?.takeIf { it.isNotBlank() }
 
     // Under the same lock as a guest sign-in, so one starting in the background can't land after
     // this and replace the Google account.
@@ -143,6 +162,27 @@ class AuthenticationRepository constructor(
         firebaseAuth.signOut()
         _user.value = UserEntity.UnauthenticatedUser
         Timber.i("[signOut] Signed out complete.")
+    }
+
+    override suspend fun reauthenticateWithGoogle(idToken: String): Boolean = withContext(dispatcherNetwork) {
+        val account = checkNotNull(firebaseAuth.currentUser) { "Nobody is signed in" }
+        try {
+            Tasks.await(account.reauthenticate(GoogleAuthProvider.getCredential(idToken, null)))
+            Timber.i("[reauthenticateWithGoogle] Signed in again")
+            true
+        } catch (exception: ExecutionException) {
+            // another Google account than this one
+            if ((exception.cause as? FirebaseAuthInvalidUserException)?.errorCode != ERROR_USER_MISMATCH) throw exception
+            Timber.i("[reauthenticateWithGoogle] That was another Google account")
+            false
+        }
+    }
+
+    override suspend fun deleteUser() = withContext(dispatcherNetwork) {
+        val account = checkNotNull(firebaseAuth.currentUser) { "Nobody is signed in" }
+        Tasks.await(account.delete())
+        _user.value = UserEntity.UnauthenticatedUser
+        Timber.i("[deleteUser] Deleted the account")
     }
 
 }
