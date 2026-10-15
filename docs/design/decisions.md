@@ -299,3 +299,44 @@ Choices made while building the first PR, which the owner can revisit at review:
   | Reveal's Share and Throw back under the card, Keep pinned at the foot | Keep first |
 
 - **From the boards, where the spec is silent:** the Chest's moon, the filter row scrolling sideways edge to edge, the bottle glyph's circle in its tint's container colour, Keepsake detail's compact dome (edge at 236) and its 20dp section gaps.
+
+Choices made while building the second PR (Me, Settings and reminders), which the owner can revisit at review:
+
+- **Deleting an account** (spec §3.17), in this order:
+  1. It needs a connection, and a fresh sign-in with the same Google account, since Firebase needs one to delete an account. Offline, with the picker closed or with another account, nothing changes.
+  2. Any throw back or report still waiting is written first.
+  3. The account leaves a tombstone, `deletions/{uid}`, which holds only when. While it exists the rules refuse the account's finds and casts, and let it delete the records they otherwise keep for good. It's never removed.
+  4. Its bottles: one someone kept, or whose finder's hold still runs, loses its writer's uid and pen name, and a held one becomes `orphaned`, which stays with its finder until the hold ends and never drifts again. Every other bottle is deleted.
+  5. Its finds, unsealed claims, daily records, streak days, cast tally, blocked writers and profile are deleted. Its reports and handoffs stay, since only an admin removes those (open-issues.md, slice 9).
+  6. The Firebase account is deleted, and the phone forgets the streak's checkpoint, what the chest had seen and the unsent draft. Settings and the reminder stay with the phone.
+
+  Each step waits for the server. If one fails part way, the account stays, can't find or cast, and running the deletion again picks up where it stopped. Firestore's offline cache isn't cleared: the deletes the app wrote take its documents out of it.
+- **An orphan** can still be read, kept, reported or thrown back by its finder; a throw back only marks the find. Moderation puts one under review and back, or removes it once nobody holds it, but never back in the sea.
+- **Signing out** writes whatever's waiting first, then forgets the account Credential Manager picked, and the phone is a guest again.
+- **The daily reminder** is off until it's turned on. It's one WorkManager job, scheduled again at each start of the app (so a new time zone counts), after each run and whenever its settings change. A run more than 2 hours late, or inside quiet hours, posts nothing and is scheduled again. A time inside quiet hours goes out when they end, and the "Reminders on" snackbar says that time.
+- **The reminder sheet** opens by itself once, after a find, when the Shore is back on top; after that only from the Shore's chip or Settings. The chip shows while reminders are off or Android holds them back, and hides for a week after Android's prompt is refused. Once Android won't ask any more, or notifications are off in its settings, the sheet says so with [Open settings], and coming back with them allowed turns the reminder on.
+- **The theme** is applied with `UiModeManager.setApplicationNightMode`, so the splash and window colours follow it too. **Reduce motion** forces reduced motion on; off, it "Follows system".
+- **Open-source licences** come from the AboutLibraries Gradle plugin, data only and offline, so each library's licence is named and linked rather than copied, behind the app's own screen. The bundled fonts' and icons' licence texts ship as assets.
+- **The goodbye screen** says "Fair winds." and leads back to the Shore as a guest. The link to a data-deletion page waits for that page (open-issues.md, slice 9).
+- **Copy with no spec source:**
+  - the reminder sheet's [Open settings], and the time chip's spoken "Reminder time, 9:00 AM" and "Change time"
+  - the Me tab's unknown number, a dash, spoken "Bottled: not known yet"
+  - Settings: "Notifications are off" [Turn on], "Not set" for no pen name, "Sign in first", "Coming soon", "Version", the quiet-hours sheet ("Nothing from BottleCast arrives between these times, the daily reminder included.", From, Until, Done), the blocked writers' rows ("A writer you blocked on 5 Oct" [Unblock], "You haven't blocked anyone."), "Signed out. You're a guest on this phone now.", "Signing out…", "Deleting your account…"
+  - the delete dialog's body, which leaves out the spec's on-chain sentence until slice 6 and mainnet: "Your profile, chest, streak and drifting bottles will be removed. Bottles someone else has found or kept stay with them, without your name."
+  - the deletion errors: "Deleting your account needs a connection. Nothing was removed — try again once you're back online.", "That's a different Google account. Nothing was removed — choose the one you're signed in with." and "Your account isn't fully deleted yet. Check your connection and try again — it picks up where it stopped."
+  - the goodbye's "Your account is deleted. Bottles someone else found or kept stay with them, without your name." [Back to the shore]
+  - the sign-in sheet's title from the Me tab and Settings, "Sign in with Google"
+  - moderation's "Held, writer gone" for an orphan
+- **Where the boards and the spec differ,** the spec wins:
+
+  | Spec value, taken | Board value, not taken |
+  |---|---|
+  | The reminder sheet's "Want a daily nudge?" copy and "Quiet hours: nothing between…" | "Want a nudge when the tide turns?", a body promising "found" notes, "never between" |
+  | A 96dp bottle with a bell and the moon | A 72dp disc with a bell and a moon dot (its glassContainer disc is kept) |
+  | Me: a 96dp avatar with a 3dp moon rim, centred, the pen name as heading, dome edge at y≈260 | A 72dp avatar with a 2dp rim beside "Marc T.", the pen name in a chip, edge at 236 |
+  | Me: a settings gear | A sliders icon |
+  | Me: "best 14" and the shields under the streak column | A footer row, "Best streak 14 days · 1 calm-sea shield" |
+  | Settings: the spec's sections, order, rows and copy, with rows at least 56dp | The board's order (Appearance first), "Discovering", 48dp rows, "Daily reminder" with its time chip |
+  | Settings: "Version" as a row | "BottleCast 1.2.0" under the list |
+
+- **From the boards, where the spec is silent:** the reminder sheet's outlined "Remind me at" row and its time chip, Settings' overline headers, surface groups, full-bleed dividers and segmented Theme buttons, and the Account rows' icons. Material gives each Theme button the widest one's width, so on a 390dp phone they sit under "Theme" rather than beside it.
