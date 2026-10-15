@@ -8,4 +8,6 @@
     <color name="window_background">#F6F4EE</color> <!-- background -->
     <color name="splash_background">#D5E4E3</color> <!-- dome -->
     <color name="splash_glyph">#006688</color> <!-- glass -->
+    <!-- the notifications' accent: brandSeed (spec §3.16b) -->
+    <color name="notification_accent">#FF00C2FF</color>
 </resources>

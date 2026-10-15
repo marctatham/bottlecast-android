@@ -26,4 +26,13 @@ interface IAuthenticationRepository {
     suspend fun ensureSignedIn(): String
 
     suspend fun signOut()
+
+    /**
+     * Signs the Google account in again with [idToken], as deleting it needs a recent sign-in. Returns
+     * false when [idToken] is another Google account's: nothing changes then.
+     */
+    suspend fun reauthenticateWithGoogle(idToken: String): Boolean
+
+    /** Deletes the signed-in account from Firebase Auth, which signs it out. Its records go first. */
+    suspend fun deleteUser()
 }

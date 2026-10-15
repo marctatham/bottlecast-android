@@ -100,11 +100,38 @@ data class Keepsake(val messageId: String) : BottlingRoute {
     }
 }
 
+/** Settings (spec §3.17), from the Me tab's gear. */
+@Serializable
+data object Settings : BottlingRoute {
+    override val screenName: String get() = "settings"
+}
+
+/** "How BottleCast works": onboarding again, from Settings, which it goes back to (spec §3.17). */
+@Serializable
+data object HowItWorks : BottlingRoute {
+    override val screenName: String get() = "how_it_works"
+}
+
+/** Open-source licences, from Settings (spec §3.17). */
+@Serializable
+data object Licences : BottlingRoute {
+    override val screenName: String get() = "licences"
+}
+
+/** "Fair winds.": the account has been deleted (spec §3.17). */
+@Serializable
+data object Goodbye : BottlingRoute {
+    override val screenName: String get() = "goodbye"
+}
+
 /** The admin's list of reported and pulled bottles (spec §3.3: "Moderation"). */
 @Serializable
 data object Moderation : BottlingRoute {
     override val screenName: String get() = "view_messages"
 }
+
+/** Where a notification asks the app to go as it opens. */
+enum class LaunchTarget { Shore, Discover }
 
 /** The navigation bar's tabs, in order (spec §2). Other routes are immersive and hide the bar. */
 enum class TopLevelDestination(val route: BottlingRoute, @StringRes val label: Int) {
@@ -129,6 +156,10 @@ val routeScreenNames: Map<KClass<out BottlingRoute>, String> = mapOf(
     CastSuccess::class to CastSuccess.SCREEN_NAME,
     Keepsake::class to Keepsake.SCREEN_NAME,
     Moderation::class to Moderation.screenName,
+    Settings::class to Settings.screenName,
+    HowItWorks::class to HowItWorks.screenName,
+    Licences::class to Licences.screenName,
+    Goodbye::class to Goodbye.screenName,
 )
 
 /** True for the tab roots, which show the navigation bar; every other route is immersive. */

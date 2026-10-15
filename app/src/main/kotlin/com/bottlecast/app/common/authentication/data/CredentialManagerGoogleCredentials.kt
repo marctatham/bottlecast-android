@@ -1,9 +1,11 @@
 package com.bottlecast.app.common.authentication.data
 
 import android.content.Context
+import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.ClearCredentialException
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialException
 import androidx.credentials.exceptions.GetCredentialProviderConfigurationException
@@ -15,10 +17,13 @@ import com.bottlecast.app.common.authentication.domain.IGoogleCredentials
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import dagger.hilt.android.qualifiers.ApplicationContext
 import timber.log.Timber
 import javax.inject.Inject
 
-class CredentialManagerGoogleCredentials @Inject constructor() : IGoogleCredentials {
+class CredentialManagerGoogleCredentials @Inject constructor(
+    @param:ApplicationContext private val appContext: Context,
+) : IGoogleCredentials {
 
     override suspend fun requestIdToken(context: Context): GoogleCredentialResult {
         val googleIdOption = GetGoogleIdOption.Builder()
@@ -55,6 +60,14 @@ class CredentialManagerGoogleCredentials @Inject constructor() : IGoogleCredenti
         } catch (exception: GoogleIdTokenParsingException) {
             Timber.e(exception, "[requestIdToken] Received an invalid Google ID token credential")
             GoogleCredentialResult.Failed
+        }
+    }
+
+    override suspend fun forgetAccount() {
+        try {
+            CredentialManager.create(appContext).clearCredentialState(ClearCredentialStateRequest())
+        } catch (exception: ClearCredentialException) {
+            Timber.w(exception, "[forgetAccount] Couldn't clear Credential Manager's state")
         }
     }
 }

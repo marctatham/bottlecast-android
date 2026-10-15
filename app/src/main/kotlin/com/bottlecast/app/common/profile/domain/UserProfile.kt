@@ -28,3 +28,9 @@ fun limitPenName(name: String): String {
     val end = if (Character.isHighSurrogate(name[PEN_NAME_MAX - 1])) PEN_NAME_MAX - 1 else PEN_NAME_MAX
     return name.substring(0, end)
 }
+
+/** A name's first letter, as an avatar shows it: "D" for "Driftwood". An emoji counts as one letter. */
+fun initialOf(name: String?): String? {
+    val trimmed = name?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    return String(Character.toChars(trimmed.codePointAt(0))).uppercase()
+}

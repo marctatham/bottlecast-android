@@ -77,6 +77,7 @@ import com.bottlecast.app.common.components.illustrations.SlippedBackIllustratio
 import com.bottlecast.app.common.ui.BottlingMotion
 import com.bottlecast.app.common.ui.BottlingPreview
 import com.bottlecast.app.common.ui.BottlingTheme
+import com.bottlecast.app.common.ui.LocalFeelPreferences
 import com.bottlecast.app.common.ui.NightDawnPreviews
 import com.bottlecast.app.common.ui.rememberBreathingTide
 import com.bottlecast.app.common.ui.rememberHaptics
@@ -113,7 +114,9 @@ fun DiscoverScreen(
     val ringProgress by viewModel.ringProgress.collectAsStateWithLifecycle()
     val reducedMotion = rememberReducedMotion()
     val idleMotion = rememberIdleMotionEnabled(reducedMotion)
-    val hasAccelerometer = rememberHasAccelerometer()
+    // with Settings' "Shake to uncork" off, Discover is the tap-and-hold version a phone without an
+    // accelerometer gets (G16)
+    val hasAccelerometer = rememberHasAccelerometer() && LocalFeelPreferences.current.shakeToUncork
     val haptics = rememberHaptics()
     val tracker = LocalTracker.current
     val scope = rememberCoroutineScope()
@@ -198,7 +201,7 @@ fun DiscoverScreen(
         }
     }
 
-    ShakeEffect(enabled = ready != null && !popped && !showHelp, onShake = viewModel::onShake)
+    ShakeEffect(enabled = hasAccelerometer && ready != null && !popped && !showHelp, onShake = viewModel::onShake)
 
     DiscoverScreen(
         uiState = uiState,

@@ -6,11 +6,15 @@ import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.googleUid
 import com.bottlecast.app.common.chest.domain.IChestRepository
 import com.bottlecast.app.common.preferences.IOnboardingStore
+import com.bottlecast.app.common.profile.domain.IProfileRepository
+import com.bottlecast.app.common.profile.domain.initialOf
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import timber.log.Timber
 import javax.inject.Inject
@@ -20,10 +24,17 @@ class AppNavigationStateViewModel @Inject constructor(
     private val authenticationRepository: IAuthenticationRepository,
     onboardingStore: IOnboardingStore,
     chestRepository: IChestRepository,
+    profileRepository: IProfileRepository,
 ) : ViewModel() {
 
     /** The Chest tab's dot: a bottle not kept yet, or a cast found, since the Chest was last viewed (spec §2). */
     val chestBadge: StateFlow<Boolean> = chestRepository.badge
+
+    /** The pen name's initial, for the Me tab's avatar; null for guests and accounts without one. */
+    val meInitial: StateFlow<String?> = profileRepository.profile
+        .map { initialOf(it?.penName) }
+        .catch { emit(null) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(INITIAL_STOP_MILLIS), null)
 
     /**
      * Where the app starts: onboarding until it's been seen (spec §3.1), then the Shore. Null until
@@ -49,3 +60,5 @@ class AppNavigationStateViewModel @Inject constructor(
         return authenticationRepository.user.value.googleUid == null
     }
 }
+
+private const val INITIAL_STOP_MILLIS = 5_000L

@@ -19,4 +19,11 @@ class FakeGoogleCredentials @Inject constructor() : IGoogleCredentials {
         requests += 1
         return next
     }
+
+    var forgotten = 0
+        private set
+
+    override suspend fun forgetAccount() {
+        forgotten += 1
+    }
 }

@@ -54,6 +54,19 @@ class FakeAuthenticationRepository @Inject constructor() : IAuthenticationReposi
         _user.value = UserEntity.UnauthenticatedUser
     }
 
+    /** Signing in again picks this account, unless a test says another one was picked. */
+    var reauthenticatesAs: Boolean = true
+
+    var deleted = false
+        private set
+
+    override suspend fun reauthenticateWithGoogle(idToken: String): Boolean = reauthenticatesAs
+
+    override suspend fun deleteUser() {
+        deleted = true
+        _user.value = UserEntity.UnauthenticatedUser
+    }
+
     /** Signs in as the admin, who's offered the Shore's moderation menu. */
     fun signInAsAdmin() {
         _user.value = UserEntity.AuthenticatedUser(
@@ -77,7 +90,8 @@ class FakeAuthenticationRepository @Inject constructor() : IAuthenticationReposi
             providerType = providerType,
             jwtToken = "fakeToken",
             userId = userId,
-            isAdmin = false
+            isAdmin = false,
+            googleName = "Gail Storm".takeIf { providerType == AuthProviderType.Google },
         )
     }
 

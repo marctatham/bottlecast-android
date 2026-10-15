@@ -13,6 +13,8 @@ import com.bottlecast.app.common.messages.domain.ILanguageDetector
 import com.bottlecast.app.common.messages.domain.NewCast
 import com.bottlecast.app.common.profile.domain.IProfileRepository
 import com.bottlecast.app.common.profile.domain.UserProfile
+import com.bottlecast.app.common.settings.domain.AppSettings
+import com.bottlecast.app.common.settings.domain.ISettingsStore
 import com.bottlecast.app.testing.MainDispatcherRule
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -43,7 +45,9 @@ class ComposePreviewViewModelTest {
     private val auth = mockk<IAuthenticationRepository> { every { this@mockk.user } returns this@ComposePreviewViewModelTest.user }
     private val connectivity = mockk<IConnectivityMonitor> { every { isOnline } returns MutableStateFlow(true) }
 
-    private fun viewModel() = ComposePreviewViewModel(drafts, casts, profiles, languages, auth, connectivity, SavedStateHandle())
+    private val settings = mockk<ISettingsStore> { every { this@mockk.settings } returns MutableStateFlow(AppSettings()) }
+
+    private fun viewModel() = ComposePreviewViewModel(drafts, casts, profiles, languages, auth, connectivity, settings, SavedStateHandle())
 
     private fun ComposePreviewViewModel.ready() = state.value as ComposePreviewUiState.Ready
 

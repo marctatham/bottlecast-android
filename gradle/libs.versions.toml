@@ -4,6 +4,7 @@ pluginKotlin = "2.4.21"
 pluginKsp = "2.3.12"
 pluginHilt = "2.60.1"
 pluginGoogleServices = "4.5.0"
+aboutLibraries = "15.2.0"
 pluginFirebaseCrashlytics = "3.0.8"
 coroutines = "1.11.0"
 androidxCore = "1.19.1"
@@ -17,6 +18,7 @@ kotlinxSerialization = "1.8.1" # the version Firebase already resolves; navigati
 androidxCredentials = "1.6.0"
 androidxDataStore = "1.2.1"
 androidxBrowser = "1.10.0"
+androidxWork = "2.11.2"
 mlkitLanguageId = "17.0.0"
 androidxTest = "1.7.0"
 androidxTestExt = "1.3.0"
@@ -32,6 +34,7 @@ roborazzi = "1.76.0"
 robolectric = "4.17"
 
 [libraries]
+aboutlibraries-core = { module = "com.mikepenz:aboutlibraries-core", version.ref = "aboutLibraries" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "pluginKotlin" } # AGP bundles an older KGP; this pins the one used by built-in Kotlin
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidxActivity" }
@@ -48,6 +51,10 @@ androidx-datastore-preferences = { module = "androidx.datastore:datastore-prefer
 androidx-browser = { module = "androidx.browser:browser", version.ref = "androidxBrowser" } # Custom Tabs for the Terms and Privacy pages
 mlkit-language-id = { module = "com.google.android.gms:play-services-mlkit-language-id", version.ref = "mlkitLanguageId" } # unbundled: Play services keeps the model, so the APK doesn't
 androidx-hilt-lifecycle-viewmodel-compose = { module = "androidx.hilt:hilt-lifecycle-viewmodel-compose", version.ref = "androidxHilt" }
+androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "androidxHilt" } # @HiltWorker, for the daily reminder
+androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "androidxHilt" }
+androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "androidxWork" } # the daily reminder (spec §3.16b)
+androidx-lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "androidxLifecycle" } # whether the app is in front, so the reminder stays quiet
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "androidxLifecycle" }
 androidx-lifecycle-runtime-ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "androidxLifecycle" }
@@ -86,3 +93,4 @@ hilt-gradle = { id = "com.google.dagger.hilt.android", version.ref = "pluginHilt
 google-services = { id = "com.google.gms.google-services", version.ref = "pluginGoogleServices" }
 firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "pluginFirebaseCrashlytics" }
 roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
+aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin.android", version.ref = "aboutLibraries" } # the licences screen's data, read behind our own UI

@@ -9,6 +9,7 @@ import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.messages.domain.REPORT_THRESHOLD
 import com.bottlecast.app.common.messages.domain.isHoldLive
+import com.bottlecast.app.common.sea.domain.BlockedWriter
 import com.bottlecast.app.common.sea.domain.CandidateState
 import com.bottlecast.app.common.sea.domain.FindResult
 import com.bottlecast.app.common.sea.domain.FindStatus
@@ -27,12 +28,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.security.MessageDigest
 import java.security.SecureRandom
@@ -47,6 +50,9 @@ import kotlin.random.Random
 
 // how many candidates to try at the pop when others take them first
 private const val MAX_FIND_ATTEMPTS = 3
+
+// how long a check for today's find waits for the signed-in user to be known
+private const val SIGNED_IN_WAIT_MILLIS = 5_000L
 
 // a calm sea is looked at again after this, in case someone has cast since
 private val SEA_CALM_RECHECK: Duration = Duration.ofMinutes(10)
@@ -252,6 +258,21 @@ class SeaRepository @Inject constructor(
     override suspend fun getMessage(messageId: String): MessageEntity? =
         cachedMessage(messageId) ?: withContext(dispatcher) { source.getMessage(messageId) }
 
+    // A process started for the reminder learns who's signed in a moment after it starts.
+    override suspend fun hasFoundToday(): Boolean = withContext(dispatcher) {
+        val user = withTimeoutOrNull(SIGNED_IN_WAIT_MILLIS) {
+            authenticationRepository.user.first { it is UserEntity.AuthenticatedUser }
+        } as? UserEntity.AuthenticatedUser ?: return@withContext false
+        try {
+            source.dailyMessageId(user.userId, LocalDate.now(clock)) != null
+        } catch (exception: CancellationException) {
+            throw exception
+        } catch (exception: Exception) {
+            Timber.w(exception, "[hasFoundToday] Couldn't read today's record")
+            false
+        }
+    }
+
     // Neither handover step takes the sea's lock: a look for the new account may hold it a while.
 
     override suspend fun prepareHandover(): Handover? = withContext(dispatcher) {
@@ -299,6 +320,19 @@ class SeaRepository @Inject constructor(
             Timber.w(exception, "[claimHandover] Couldn't take over the guest's find")
             HandoverResult.Failed
         }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override val blockedWriters: Flow<List<BlockedWriter>> = authenticationRepository.user
+        .map { (it as? UserEntity.AuthenticatedUser)?.userId }
+        .distinctUntilChanged()
+        .flatMapLatest { uid -> if (uid == null) flowOf(emptyList()) else source.observeBlockedWriters(uid) }
+
+    override suspend fun unblock(writerUid: String) {
+        val uid = (authenticationRepository.user.value as? UserEntity.AuthenticatedUser)?.userId ?: return
+        source.unblock(uid, writerUid)
+        // the next look at the sea reads the blocks afresh
+        blocked = null
     }
 
     // 32 random bytes, which only this phone knows until the claim presents them

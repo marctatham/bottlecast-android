@@ -6,6 +6,7 @@ import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.messages.domain.isHoldLive
 import com.bottlecast.app.common.sea.domain.ISeaActions
 import com.bottlecast.app.common.sea.domain.PendingSeaAction
@@ -70,8 +71,9 @@ class SeaActions @Inject constructor(
     override fun throwBack(message: MessageEntity, windowMillis: Long?): String =
         schedule(PendingSeaAction.ThrowBack(newId(), message.id), windowMillis) { uid ->
             // Once the hold has ended the bottle is already back in the sea, and the rules won't
-            // release it again, so only the find is marked.
-            source.commitThrowBack(message.id, uid, releaseHold = message.isHoldLive(clock.instant()))
+            // release it again, so only the find is marked. An orphan never goes back to the sea.
+            val releaseHold = message.status == MessageStatus.Found && message.isHoldLive(clock.instant())
+            source.commitThrowBack(message.id, uid, releaseHold = releaseHold)
         }
 
     override fun report(

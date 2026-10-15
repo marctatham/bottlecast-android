@@ -9,6 +9,9 @@ import com.bottlecast.app.common.chest.domain.IChestRepository
 import com.bottlecast.app.common.chest.domain.daysLeftUntil
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
 import com.bottlecast.app.common.messages.domain.holdEnds
+import com.bottlecast.app.common.reminders.domain.INotificationAccess
+import com.bottlecast.app.common.reminders.domain.IReminderStore
+import com.bottlecast.app.common.reminders.domain.mayOffer
 import com.bottlecast.app.common.sea.domain.CandidateState
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ISeaActions
@@ -30,6 +33,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingCommand
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -39,8 +44,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
-import kotlinx.coroutines.flow.SharingCommand
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -65,6 +68,8 @@ class ShoreViewModel @Inject constructor(
     private val streakRepository: IStreakRepository,
     private val chestRepository: IChestRepository,
     private val shoreNotices: ShoreNotices,
+    private val reminderStore: IReminderStore,
+    private val notificationAccess: INotificationAccess,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -86,7 +91,13 @@ class ShoreViewModel @Inject constructor(
 
     private var prefetch: Job? = null
 
-    private data class Context(val isAdmin: Boolean, val online: Boolean, val now: ZonedDateTime)
+    // read again each time the Shore comes back, since it can change in Android's settings meanwhile
+    private val notificationsAllowed = MutableStateFlow(notificationAccess.allowed())
+
+    // what the Shore offers of the daily reminder (spec §3.16a)
+    private data class Reminders(val chipTime: LocalTime?, val offer: Boolean)
+
+    private data class Context(val isAdmin: Boolean, val online: Boolean, val now: ZonedDateTime, val reminders: Reminders)
 
     // what the Shore shows of the streak and the chest
     private data class Numbers(val streak: Streak?, val counts: ChestCounts?, val awayFinds: Int)
@@ -100,8 +111,12 @@ class ShoreViewModel @Inject constructor(
             // shows the new day at once. Today's listeners carry on meanwhile, so coming back from
             // Reveal shows the find straight away.
             val now = watchedMinuteTicks().shareIn(viewModelScope, SharingStarted.Eagerly, replay = 1)
-            val context = combine(authenticationRepository.user, connectivityMonitor.isOnline, now) { user, online, time ->
-                Context(isAdmin = user is UserEntity.AuthenticatedUser && user.isAdmin, online = online, now = time)
+            val reminders = combine(reminderStore.settings, notificationsAllowed) { settings, allowed ->
+                val mayOffer = settings.mayOffer(clock.instant(), allowed)
+                Reminders(chipTime = settings.time.takeIf { mayOffer }, offer = mayOffer && !settings.rationaleOffered)
+            }
+            val context = combine(authenticationRepository.user, connectivityMonitor.isOnline, now, reminders) { user, online, time, reminders ->
+                Context(isAdmin = user is UserEntity.AuthenticatedUser && user.isAdmin, online = online, now = time, reminders = reminders)
             }
             val numbers = combine(streakRepository.streak, chestRepository.counts, chestRepository.castFindsSinceViewed) { streak, counts, away ->
                 Numbers(streak, counts, away)
@@ -116,6 +131,11 @@ class ShoreViewModel @Inject constructor(
     }
 
     fun onStreakNoticeShown(event: StreakEvent) = streakRepository.acknowledge(event)
+
+    /** The Shore is on screen again: notifications may have been turned on or off in Android's settings. */
+    fun onResume() {
+        notificationsAllowed.value = notificationAccess.allowed()
+    }
 
     fun onShoreNoticeShown(notice: ShoreNotice) = shoreNotices.consume(notice)
 
@@ -158,7 +178,8 @@ class ShoreViewModel @Inject constructor(
                     daysLeft = message.holdEnds()?.let { daysLeftUntil(it, clock.instant()) },
                 )
             },
-            reminderTime = null,
+            reminderTime = context.reminders.chipTime,
+            offerReminders = context.reminders.offer,
             pendingThrowBack = (pending as? PendingSeaAction.ThrowBack)?.takeIf { it.messageId == find.messageId },
             isAdmin = context.isAdmin,
             isOffline = !context.online,
@@ -238,6 +259,8 @@ sealed class ShoreUiState {
         val todaysFind: TodaysFind?,
         /** The daily reminder's time, shown only while notifications are off. */
         val reminderTime: LocalTime?,
+        /** The reminder sheet hasn't been offered yet: it opens once, after the first find (spec §3.16a). */
+        val offerReminders: Boolean = false,
         /** A throw back waiting out its window, for the snackbar's Undo. */
         val pendingThrowBack: PendingSeaAction.ThrowBack? = null,
         override val isAdmin: Boolean = false,

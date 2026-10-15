@@ -69,12 +69,14 @@ import kotlin.math.abs
  * rule, then hand over to the first find, or to casting, which asks for Google first.
  *
  * @param onCastHandler goes on to Compose; true when the person has just signed in.
+ * @param replay "How BottleCast works" from Settings: every exit just goes back, and nothing is recorded.
  */
 @Composable
 fun OnboardingScreen(
     onSkipHandler: () -> Unit,
     onFindFirstHandler: () -> Unit,
     onCastHandler: (justSignedIn: Boolean) -> Unit,
+    replay: Boolean = false,
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.state.collectAsStateWithLifecycle()
@@ -96,9 +98,12 @@ fun OnboardingScreen(
         }
     }
 
+    // a replay from Settings (spec §3.17) changes nothing, and counts as no first run
     val finish: (OnboardingExit) -> Unit = { exit ->
-        viewModel.onFinished()
-        tracker.trackEvent(AnalyticsEvent.OnboardingFinished, mapOf(AnalyticsEvent.PARAM_HOW to exit.analyticsValue))
+        if (!replay) {
+            viewModel.onFinished()
+            tracker.trackEvent(AnalyticsEvent.OnboardingFinished, mapOf(AnalyticsEvent.PARAM_HOW to exit.analyticsValue))
+        }
     }
 
     OnboardingScreen(
@@ -115,7 +120,7 @@ fun OnboardingScreen(
             onFindFirstHandler()
         },
         onCastInstead = dropUnlessResumed {
-            if (uiState.signInToCast) {
+            if (uiState.signInToCast && !replay) {
                 signingIn = true
             } else {
                 finish(OnboardingExit.CastInstead)

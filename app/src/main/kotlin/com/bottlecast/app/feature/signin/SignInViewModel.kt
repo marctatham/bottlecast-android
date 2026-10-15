@@ -41,6 +41,9 @@ enum class SignInReason(@param:StringRes val title: Int) {
 
     /** A guest's Cast tab in the Chest, which lists only a Google account's bottles. */
     Track(R.string.sign_in_title_track),
+
+    /** A guest's [Continue with Google] on the Me tab or in Settings › Account. */
+    Account(R.string.sign_in_title_account),
 }
 
 /**

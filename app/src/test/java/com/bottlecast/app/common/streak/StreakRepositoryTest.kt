@@ -221,4 +221,10 @@ private class MemoryCheckpointStore : IStreakCheckpointStore {
         seen.value = date
         return Job().apply { complete() }
     }
+
+    override fun clear(): Job {
+        saved = null
+        seen.value = null
+        return Job().apply { complete() }
+    }
 }

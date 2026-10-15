@@ -28,6 +28,8 @@ plugins {
     alias(libs.plugins.firebase.crashlytics)
 
     alias(libs.plugins.roborazzi)
+
+    alias(libs.plugins.aboutlibraries)
 }
 
 // the upload keystore & its credentials are kept out of version control (see .gitignore & local.properties)
@@ -161,6 +163,11 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.serialization.core) // type-safe navigation routes
     implementation(libs.androidx.hilt.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.aboutlibraries.core)
+    implementation(libs.androidx.lifecycle.process)
 
     // Compose
     implementation(libs.androidx.compose.ui)
@@ -219,4 +226,42 @@ dependencies {
     androidTestImplementation(libs.androidx.test.espresso.core)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
+}
+
+// The licences screen's data (Settings › Open-source licences): each library and its licence, generated
+// into the app's resources as part of the build. Offline, so the build never reaches the network: the
+// licences are named and linked, not copied in.
+aboutLibraries {
+    offlineMode = true
+}
+
+// The bundled fonts' and icons' licence texts (licenses/*.txt) ship with the app, as the OFL asks, for the
+// same screen. They're copied on their own, so nothing else in the folder ends up in the app.
+abstract class LicenceTexts : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val texts: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+
+    @get:Inject
+    abstract val files: FileSystemOperations
+
+    @TaskAction
+    fun copy() {
+        files.sync {
+            from(texts)
+            into(outputDirectory)
+        }
+    }
+}
+
+val licenceTexts = tasks.register<LicenceTexts>("licenceTexts") {
+    texts.from(rootProject.layout.projectDirectory.dir("licenses").asFileTree.matching { include("*.txt") })
+}
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(licenceTexts, LicenceTexts::outputDirectory)
+    }
 }

@@ -17,7 +17,10 @@ import timber.log.Timber
 import javax.inject.Inject
 import kotlin.random.Random
 
-/** The pen-name sheet (spec §3.2, G13): type one, or have one suggested, never from the Google name. */
+/**
+ * The pen-name sheet (spec §3.2, G13): type one, or have one suggested, never from the Google name. It
+ * lives as long as the screen that hosts the sheet, so [reset] starts each opening afresh.
+ */
 @HiltViewModel
 class PenNameViewModel @Inject constructor(
     private val profileRepository: IProfileRepository,
@@ -68,6 +71,13 @@ class PenNameViewModel @Inject constructor(
             profileRepository.savePenName(name)
             _state.value = PenNameUiState.Saved(name = name, suggested = name == suggested)
         }
+    }
+
+    /** The sheet has closed: the next opening edits the pen name there is now. */
+    fun reset() {
+        suggested = null
+        val saved = _state.value as? PenNameUiState.Saved
+        _state.value = PenNameUiState.Editing(name = saved?.name ?: editing()?.name.orEmpty())
     }
 
     private fun editing(): PenNameUiState.Editing? = _state.value as? PenNameUiState.Editing

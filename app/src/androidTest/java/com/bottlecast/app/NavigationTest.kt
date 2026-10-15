@@ -295,7 +295,7 @@ class NavigationTest {
         composeTestRule.onNodeWithText(string(R.string.sign_in_title_cast)).assertIsDisplayed()
         composeTestRule.onNodeWithText(string(R.string.sign_in_google)).performClick()
 
-        composeTestRule.waitUntil(conditionDescription = "Compose is shown") {
+        composeTestRule.waitUntil(conditionDescription = "Compose is shown", timeoutMillis = REVEAL_TIMEOUT_MILLIS) {
             tracker.screens.lastOrNull() == Compose.SCREEN_NAME
         }
         waitForText(string(R.string.sign_in_signed_in))
@@ -309,7 +309,7 @@ class NavigationTest {
         composeTestRule.onNodeWithText(string(R.string.chest_empty_title)).assertIsDisplayed()
 
         composeTestRule.onNodeWithText(string(R.string.nav_me)).performClick()
-        composeTestRule.onNodeWithText(string(R.string.me_placeholder_title)).assertIsDisplayed()
+        composeTestRule.onNodeWithText(string(R.string.me_guest_name)).assertIsDisplayed()
 
         // back from any tab root leads to the Shore (spec §2)
         Espresso.pressBack()

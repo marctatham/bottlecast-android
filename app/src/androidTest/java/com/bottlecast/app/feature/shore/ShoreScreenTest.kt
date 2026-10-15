@@ -22,12 +22,14 @@ import com.bottlecast.app.R
 import com.bottlecast.app.common.components.BottlingSnackbarHost
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.fakes.FakeAuthenticationRepository
-import com.bottlecast.app.fakes.FakeConnectivityMonitor
 import com.bottlecast.app.fakes.FakeChestRepository
+import com.bottlecast.app.fakes.FakeConnectivityMonitor
+import com.bottlecast.app.fakes.FakeNotificationAccess
+import com.bottlecast.app.fakes.FakeReminderStore
 import com.bottlecast.app.fakes.FakeSeaActions
+import com.bottlecast.app.fakes.FakeSeaRepository
 import com.bottlecast.app.fakes.FakeStreakRepository
 import com.bottlecast.app.feature.shore.domain.ShoreNotices
-import com.bottlecast.app.fakes.FakeSeaRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
 import org.junit.Rule
@@ -158,6 +160,8 @@ class ShoreScreenTest {
                                 FakeStreakRepository(),
                                 FakeChestRepository(seaRepository, authenticationRepository),
                                 ShoreNotices(),
+                                FakeReminderStore(),
+                                FakeNotificationAccess(),
                                 Clock.systemDefaultZone(),
                             )
                         },

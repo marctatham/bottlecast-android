@@ -7,16 +7,6 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.runtime.LaunchedEffect
-import com.bottlecast.app.common.components.bottle.FloatingBottle
-import com.bottlecast.app.common.components.bottle.FloatingBottleDefaults
-import com.bottlecast.app.common.components.illustrations.SeaCalmIllustration
-import com.bottlecast.app.common.ui.BottlingMotion
-import com.bottlecast.app.common.ui.rememberHaptics
-import com.bottlecast.app.feature.shore.components.countdownText
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -32,11 +22,16 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +43,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.min
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.compose.dropUnlessStarted
 import com.bottlecast.app.R
 import com.bottlecast.app.common.analytics.AnalyticsEvent
@@ -59,14 +58,23 @@ import com.bottlecast.app.common.components.BottlingButtonType
 import com.bottlecast.app.common.components.DomeEdge
 import com.bottlecast.app.common.components.DomeScaffold
 import com.bottlecast.app.common.components.TideRing
+import com.bottlecast.app.common.components.bottle.FloatingBottle
+import com.bottlecast.app.common.components.bottle.FloatingBottleDefaults
+import com.bottlecast.app.common.components.illustrations.SeaCalmIllustration
+import com.bottlecast.app.common.streak.domain.StreakEvent
+import com.bottlecast.app.common.ui.BottlingMotion
 import com.bottlecast.app.common.ui.BottlingPreview
 import com.bottlecast.app.common.ui.BottlingTheme
-import com.bottlecast.app.common.ui.isLargeText
 import com.bottlecast.app.common.ui.BreathingTide
 import com.bottlecast.app.common.ui.NightDawnPreviews
+import com.bottlecast.app.common.ui.clockTime
+import com.bottlecast.app.common.ui.isLargeText
 import com.bottlecast.app.common.ui.rememberBreathingTide
+import com.bottlecast.app.common.ui.rememberHaptics
 import com.bottlecast.app.common.ui.rememberIdleMotionEnabled
 import com.bottlecast.app.common.ui.rememberReducedMotion
+import com.bottlecast.app.feature.reminders.ReminderSheet
+import com.bottlecast.app.feature.reminders.ReminderSheetSource
 import com.bottlecast.app.feature.shore.components.NextTide
 import com.bottlecast.app.feature.shore.components.ReminderChip
 import com.bottlecast.app.feature.shore.components.ShoreScene
@@ -74,9 +82,9 @@ import com.bottlecast.app.feature.shore.components.ShoreScenery
 import com.bottlecast.app.feature.shore.components.ShoreStatsRow
 import com.bottlecast.app.feature.shore.components.ShoreTopRow
 import com.bottlecast.app.feature.shore.components.TodaysFindCard
+import com.bottlecast.app.feature.shore.components.countdownText
 import com.bottlecast.app.feature.shore.domain.ShoreNotice
 import com.bottlecast.app.feature.shore.domain.Tide
-import com.bottlecast.app.common.streak.domain.StreakEvent
 import java.time.Duration
 import java.time.LocalTime
 
@@ -156,6 +164,36 @@ fun ShoreScreen(
         }
         viewModel.onShoreNoticeShown(notice)
     }
+    // The reminder sheet (spec §3.16a): offered by itself once, after the first find, when the Shore is
+    // back on top, and from the reminder chip. Turning reminders on says so in a snackbar.
+    var reminderSheet by rememberSaveable { mutableStateOf<ReminderSheetSource?>(null) }
+    var remindersOnAt by rememberSaveable { mutableStateOf<LocalTime?>(null) }
+    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+    LifecycleResumeEffect(viewModel) {
+        viewModel.onResume()
+        onPauseOrDispose {}
+    }
+    val offerReminders = found?.offerReminders == true && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
+    LaunchedEffect(offerReminders) {
+        if (offerReminders && reminderSheet == null) reminderSheet = ReminderSheetSource.FirstFind
+    }
+    val remindersOn = remindersOnAt?.let { stringResource(R.string.reminder_turned_on, clockTime(it)) }
+    LaunchedEffect(remindersOn) {
+        snackbarHostState.showSnackbar(remindersOn ?: return@LaunchedEffect)
+        remindersOnAt = null
+    }
+    reminderSheet?.let { source ->
+        ReminderSheet(
+            source = source,
+            onDismissRequest = { reminderSheet = null },
+            onEnabled = { time ->
+                reminderSheet = null
+                remindersOnAt = time
+                viewModel.onResume()
+            },
+        )
+    }
+
     // at midnight the tide turns, with a tick (spec §3.3)
     var wasFound by remember { mutableStateOf(found != null) }
     LaunchedEffect(found != null) {
@@ -196,8 +234,7 @@ fun ShoreScreen(
                 (state as? ShoreUiState.FoundToday)?.todaysFind?.let { onOpenTodaysFindHandler(it.messageId) }
             },
             onSeeAwayFindsHandler = dropUnlessStarted(block = onSeeAwayFindsHandler),
-            // the reminder sheet comes with slice 4's second part
-            onReminderHandler = {},
+            onReminderHandler = dropUnlessStarted { reminderSheet = ReminderSheetSource.ShoreChip },
             contentPadding = contentPadding,
             rollCountdown = !reducedMotion,
         )

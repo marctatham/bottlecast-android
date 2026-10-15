@@ -41,7 +41,7 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
 
 - [ ] **Push for "found", "kept" and gift events** (Slice 7)
   - These need a push sender (the Worker calling FCM HTTP v1 with a service-account token). No slice builds it, and the spec doesn't describe it.
-  - Slice 4 built the spec's v1 fallback (§3.16b): the Chest's dot and the Shore's "While you were away" banner. Push itself is still unplanned.
+  - Slice 4 built the spec's v1 fallback (§3.16b): the Chest's dot and the Shore's "While you were away" banner, and Settings shows "When my bottles are found" as "Coming soon". Push itself is still unplanned.
 
 - [ ] **Worker within the free limits** (Slices 5 and 6)
   - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't. Still open: whether signing fits in 10 ms of CPU (a slice 5 spike), staying under 50 subrequests per invocation (cron runs included), and serialising the single minter's nonce.
@@ -52,9 +52,14 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - The draft store already saves the pending cast for this, but nothing reads it yet.
   - Proposed: on start, check a saved pending cast against the server; if it never landed, restore it as the draft and say so on Compose.
 
-- [ ] **In-app licences** (Slice 4)
-  - Material Symbols and Roboto Slab are Apache 2.0, which asks for the licence text to reach people who get the app. The texts are in `licenses/`, but nothing in the app shows them.
-  - Proposed: an open-source licences row in Settings.
+- [ ] **A data-deletion page on the web** (Slice 9, before a release with account deletion)
+  - Play asks apps that offer accounts for a web link where people can ask for their account and data to be deleted. Slice 4 deletes the account in the app (Settings › Account), and its goodbye screen leaves room for that link.
+  - Proposed: a page in `../bottlecast-web` that says how to delete the account in the app, or by email if the app is gone, and what stays (below). Link it from the goodbye screen and the Play listing.
+
+- [ ] **What deleting an account can't reach** (Slice 9, with the privacy policy's review)
+  - The rules let only an admin remove reports and handoffs, so a deleted account's reports (who reported which bottle, and why) and any handoff it armed stay. Bottles someone else holds or kept stay too, without the writer's uid or pen name, and the account's tombstone (`deletions/{uid}`, holding only when) stays for good.
+  - From slice 6, keepsakes already sealed on-chain can't be erased.
+  - Proposed: say all of this in the privacy policy and on the data-deletion page. An admin script could clear a deleted account's reports once they're resolved.
 
 - [ ] **"Create one with Google"** (Slices 5 and 6)
   - The embedded-wallet option on Add a wallet stays "Coming soon" behind a remote flag until a free embedded-wallet tier is confirmed, so linking an existing wallet is the only path for now.
@@ -77,6 +82,10 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - "Harbour closed" now covers the Firestore, Auth and Worker daily limits, and a low minter shows "Sealing · delayed". Not yet designed: Firebase Hosting's 360 MB a day running out (the gift and profile pages and `assetlinks.json` go down) and a Shore variant of Harbour closed.
 
 ## Resolved
+
+- [x] **In-app licences** (Slice 4)
+  - Material Symbols and Roboto Slab are Apache 2.0, which asks for the licence text to reach people who get the app, and the Roboto Flex and Mono fonts' OFL asks the same.
+  - Answer (2026-10-15, slice 4): Settings › About › Open-source licences lists every library, from the AboutLibraries Gradle plugin's build-time list, and shows the bundled fonts' and icons' licence texts, which ship as assets. See [decisions.md](decisions.md).
 
 - [x] **Quiet hours and "found" notifications** (Slice 4)
   - Spec §3.16b holds every notification, the daily reminder included, until quiet hours end. The Notify-Rationale and Settings boards promise "found" notifications, which the spec defers until push exists.

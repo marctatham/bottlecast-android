@@ -12,6 +12,7 @@ import com.bottlecast.app.common.messages.domain.IDraftRepository
 import com.bottlecast.app.common.messages.domain.ILanguageDetector
 import com.bottlecast.app.common.messages.domain.NewCast
 import com.bottlecast.app.common.profile.domain.IProfileRepository
+import com.bottlecast.app.common.settings.domain.ISettingsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.channels.Channel
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -38,6 +40,7 @@ class ComposePreviewViewModel @Inject constructor(
     private val languageDetector: ILanguageDetector,
     private val authenticationRepository: IAuthenticationRepository,
     private val connectivityMonitor: IConnectivityMonitor,
+    private val settingsStore: ISettingsStore,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -64,7 +67,8 @@ class ComposePreviewViewModel @Inject constructor(
             _state.value = ComposePreviewUiState.Ready(
                 messageId = draft.messageId,
                 text = draft.text.trim(),
-                signWithPenName = savedStateHandle[SIGN] ?: false,
+                // Settings' default, until the writer chooses for this bottle
+                signWithPenName = savedStateHandle[SIGN] ?: settingsStore.settings.first().signWithPenName,
                 sealable = savedStateHandle[SEALABLE] ?: true,
                 termsTicked = savedStateHandle[TERMS] ?: false,
             )
@@ -164,7 +168,7 @@ sealed class ComposePreviewUiState {
         val text: String,
         /** The account's pen name, or null when it has none yet ("Set a pen name…"). */
         val penName: String? = null,
-        /** "Sign with my pen name"; off unless the writer turns it on (Settings' default arrives in slice 4). */
+        /** "Sign with my pen name": Settings' default until the writer chooses (spec §3.17). */
         val signWithPenName: Boolean = false,
         /** "Let the finder seal this as a keepsake", on by default (spec §3.4b). */
         val sealable: Boolean = true,

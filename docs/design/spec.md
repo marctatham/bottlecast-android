@@ -1161,7 +1161,7 @@ States: unopened / uncorked / already kept ("This bottle already has a keeper.",
 
 When it appears:
 - After the first find, on returning to the Shore.
-- Later, only from the Shore B chip or Settings.
+- Later, only from the Shore B chip or Settings. The chip shows while reminders are off or Android holds them back, and hides for a week after Android's prompt is refused.
 
 Layout: ModalBottomSheet (surfaceHigh):
 - A 96dp bottle with a bell and the moon.
@@ -1175,7 +1175,7 @@ Copy:
 - "Want a daily nudge?" / "One gentle reminder a day, at a time you pick. That's it — no spam."
 - Granted: snackbar "Reminders on — we'll nudge you at 9:00 AM"
 - Denied: no re-ask for 7 days.
-- Permanently denied: "Reminders are turned off for BottleCast in Android settings." [Open settings]
+- Permanently denied, or notifications off in Android settings: "Reminders are turned off for BottleCast in Android settings." [Open settings]. Coming back with them allowed turns the reminder on.
 - When `shouldShowRequestPermissionRationale()` is true, add "You can turn it off anytime."
 
 **3.16b Example notifications** (shade mock)
@@ -1215,7 +1215,7 @@ All use a small monochrome bottle icon with the brandSeed #00C2FF accent.
 **Dialogs:**
 - Sign out: "Sign out?" / "You'll go back to guest mode on this phone." [Cancel] [Sign out]
 - Delete:
-  - "Delete your account?" / "Your profile, chest, streak and drifting bottles will be removed. Keepsakes already sealed on-chain can't be erased — they stay in your wallets."
+  - "Delete your account?" / "Your profile, chest, streak and drifting bottles will be removed. Bottles someone else has found or kept stay with them, without your name." (decided 2026-10-15). From slice 6, on mainnet, add: "Keepsakes already sealed on-chain can't be erased — they stay in your wallets."
   - Checkbox (G20): "I understand this can't be undone"
   - [Cancel] [Delete account] (enabled only once the box is ticked)
 
@@ -1223,7 +1223,7 @@ All use a small monochrome bottle icon with the brandSeed #00C2FF accent.
 - Guest: Account shows "Continue with Google"; Wallets and Privacy are disabled with "Sign in first".
 - AI unsupported / downloading (row progress).
 - Notifications denied: reminder rows disabled, with "Notifications are off · Turn on".
-- Delete in progress: blocking progress, then a goodbye screen ("Fair winds.") with a link to the data-deletion page.
+- Delete in progress: blocking progress, then a goodbye screen ("Fair winds.") with a link to the data-deletion page, once that page exists (slice 9).
 
 ### 3.18 Edge, empty and error states
 **Template:** a centred column with a 160dp spot illustration, a 16dp gap, titleLarge, an 8dp gap, bodyMedium (maximum 3 lines), a 24dp gap, one pill, and an optional text button.

@@ -14,7 +14,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - Kotlin 2.4 via AGP 9.4's built-in Kotlin.
   - Jetpack Compose with Material 3 (material3 pinned to 1.5.0-beta01 ahead of the BOM), Navigation Compose with type-safe routes (kotlinx-serialization), Hilt (KSP).
   - Firebase Auth/Firestore/Analytics/Crashlytics, and Google sign-in through Credential Manager.
-  - DataStore Preferences, Custom Tabs (`androidx.browser`), ML Kit's language identification (the unbundled model) and Timber.
+  - DataStore Preferences, WorkManager (through `androidx.hilt:hilt-work`), Custom Tabs (`androidx.browser`), ML Kit's language identification (the unbundled model), AboutLibraries (its Gradle plugin and core, for the licences screen's data) and Timber.
   - minSdk 33, compileSdk/targetSdk 37, Java 11.
   - Gradle 9.8 with the configuration cache and build cache on. Versions live in `gradle/libs.versions.toml`.
 - Code is in `app/src/main/kotlin/com/bottlecast/app/`. Build-type code is in `app/src/debug/kotlin/` and `app/src/release/kotlin/`. Tests are in `app/src/test/java/` (JVM) and `app/src/androidTest/java/` (device); both hold Kotlin.
@@ -35,6 +35,9 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - `common/sea/`: the finder's side (today's candidate, the find, throw back, report, and handing a guest's find over to an existing account)
   - `common/chest/`: Keep (`claims/{messageId}`), the chest's lists, one bottle for Keepsake detail, pulling a cast, the server counts, and the Chest's news (its dot and "While you were away")
   - `common/streak/`: the streak, folded from the daily records and `streakDays` marks by the pure `foldStreak()`/`liveStreak()`, with the fold so far kept on the phone; calm seas and a guest's carried streak
+  - `common/settings/`: the phone's settings in DataStore (theme, reduce motion, haptics, shake to uncork, signing with the pen name) and the theme's `UiModeManager` applier. Reduce motion, haptics and shaking reach composables through `LocalFeelPreferences`, which `MainActivity` provides.
+  - `common/reminders/`: the daily reminder. Its settings are in DataStore; the pure `nextReminderAt()`/`decideReminder()` hold the rules; `DailyReminderWorker` (a `@HiltWorker`) posts it; `ReminderCoordinator` keeps it scheduled.
+  - `common/account/`: signing out, and deleting the account: `DeleteAccountUseCase`, and `AccountFirestoreEraser`, which leaves the `deletions/{uid}` tombstone, then anonymises or deletes the account's bottles and deletes its records
 
   `domain` holds `I`-prefixed interfaces and entities; `data` the implementations, with Firestore field names in `data/model/` and mappers in `data/mapper/`; and `di` the Hilt modules.
 
@@ -53,7 +56,8 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - `signin` is the lazy Google sign-in sheet, with the guest upgrade, and `penname` is the pen-name sheet (spec §3.2).
   - `compose`, `composepreview` and `castsuccess` are casting (spec §3.4–3.5).
   - `chest` is the Chest's tabs (spec §3.10) and `keepsake` its Keepsake detail (§3.11).
-  - `me` is an empty state until slice 4's second PR.
+  - `me` is the Me tab (spec §3.12). `settings` is Settings (§3.17) and its Open-source licences screen, and `goodbye` follows deleting the account.
+  - `reminders` is the reminder sheet (spec §3.16a), opened from the Shore and Settings.
   - `viewmessages` is the moderation screen from before the redesign.
 
 ## Conventions
@@ -128,6 +132,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - `FakeCastCoordinator` answers at once, or refuses once after `refuseNext`. Offline, it queues casts until `confirmQueued()`.
   - `FakeSeaRepository` holds one seeded bottle. Switch it with `seaCalm`, `alreadyFoundToday` or `failNextFind`, or hold a find back with `findGate`. `FakeSeaActions` holds throw backs and reports until a test calls `expireAll()`, so no test waits out an undo window.
   - `FakeChestRepository` builds the chest on `FakeSeaRepository`'s find: today's held find is Not kept until it's kept, and `casts` holds the account's casts. `FakeStreakRepository` holds whatever `streak` a test sets.
+  - DataStore stays out of instrumented tests, so `FakeSettingsModule`, `FakeRemindersModule` and `FakeAccountModule` (all in `testdi/FakeSettingsModule.kt`) replace the settings, the reminder (with notifications allowed, the sheet already offered and a scheduler that does nothing) and the account's eraser. `FakeAccountEraser.erased` and `FakeAuthenticationRepository.deleted` show what a deletion did.
   - A screen test without Hilt uses `ComponentActivity` and builds its ViewModel from fakes, as `ShoreScreenTest` does.
   - Look text up with `activity.getString(R.string.…)`. Wait with `waitUntil`; never sleep or add delays to fakes.
   - `performClick()` taps a node's centre. On a merged row that holds links, such as the Terms checkbox, the centre can land on a link and open a Custom Tab, and the next lookup finds no Compose hierarchy. Tap the control itself with `performTouchInput { click(…) }`.
@@ -211,3 +216,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **mockk under Robolectric:** once a Robolectric NATIVE test has run in a test JVM, mockk can't attach its agent at runtime. The `Test` tasks preload ByteBuddy's agent with `-javaagent` (the `mockkAgent` configuration in `app/build.gradle.kts`); keep its version in step with mockk's.
 - **Debug Google sign-in failing with `[28444]` or `NoCredentialException`:** usually Firebase config drift (the debug Android OAuth client is missing), not app code. Check that `app/google-services.json` has an `oauth_client` with `client_type: 1`. Fixing it changes the Firebase project, so ask first.
 - **AppCompat:** `Theme.Bottling` extends `Theme.AppCompat.NoActionBar`, but AppCompat only arrives as a transitive dependency.
+- **WorkManager and Hilt:** `BottleCastApplication` is WorkManager's `Configuration.Provider`, with Hilt's worker factory, and the manifest removes WorkManager's own initializer. So `WorkManager.getInstance()` works only in the real app: instrumented tests run on Hilt's test application, and fake the scheduler.
+- **The theme setting** is applied with `UiModeManager.setApplicationNightMode`, which Android keeps across restarts, so `isSystemInDarkTheme()`, the splash and the window colours all follow it. Nothing reads the stored theme at start.
+- **Deleting an account** needs a fresh Google sign-in with the same account, and every write waits for the server. The rules allow most of the deletes only while `deletions/{uid}` exists, and each of those reads it, so they go in batches of 10. An `orphaned` bottle (its writer deleted their account while it was held) has a null `userId`, which the mapper reads as `""`.
+- **Licences:** the AboutLibraries plugin writes `res/raw/aboutlibraries.json` at build time, offline, and the `licenceTexts` task copies `licenses/*.txt` into the app's assets. A new bundled font or icon set needs its row in `BundledAsset` too.

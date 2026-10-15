@@ -48,16 +48,17 @@ interface BottlingHaptics {
 }
 
 /**
- * The haptics for this screen. [enabled] is for the in-app Haptics switch that Settings brings in
- * slice 4. Previews get haptics that do nothing.
+ * The haptics for this screen, unless Settings' Haptics switch is off (G16) or [enabled] is false.
+ * Previews get haptics that do nothing.
  */
 @Composable
 fun rememberHaptics(enabled: Boolean = true): BottlingHaptics {
+    val on = enabled && LocalFeelPreferences.current.haptics
     val view = LocalView.current
     val context = LocalContext.current
     val inspecting = LocalInspectionMode.current
-    return remember(view, context, enabled, inspecting) {
-        if (!enabled || inspecting) {
+    return remember(view, context, on, inspecting) {
+        if (!on || inspecting) {
             NoHaptics
         } else {
             VibratorHaptics(view, context.getSystemService(VibratorManager::class.java)?.defaultVibrator)

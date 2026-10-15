@@ -20,8 +20,4 @@ internal object SignInDimens {
     val chipPaddingVertical = 6.dp
     val chipPaddingStart = 10.dp
     val chipPaddingEnd = 16.dp
-
-    /** The Google button: the G and its label 12dp apart, the G at 20dp (Google's guidelines). */
-    val googleLogo = 20.dp
-    val googleLogoGap = 12.dp
 }

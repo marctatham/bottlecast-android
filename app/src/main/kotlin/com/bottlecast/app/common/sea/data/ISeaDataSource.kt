@@ -1,6 +1,7 @@
 package com.bottlecast.app.common.sea.data
 
 import com.bottlecast.app.common.messages.domain.MessageEntity
+import com.bottlecast.app.common.sea.domain.BlockedWriter
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ReportReason
 import kotlinx.coroutines.flow.Flow
@@ -34,6 +35,12 @@ interface ISeaDataSource {
 
     /** The writers this account blocked, including any block still waiting to reach the server. */
     fun blockedWriters(uid: String): Set<String>
+
+    /** The writers this account blocked and when, newest first, as they change. */
+    fun observeBlockedWriters(uid: String): Flow<List<BlockedWriter>>
+
+    /** Removes the block on [writerUid]; it reaches the server when it can. */
+    fun unblock(uid: String, writerUid: String)
 
     /** One transaction: holds the bottle and creates the finder's find and today's daily record. */
     fun recordFind(messageId: String, uid: String, date: LocalDate, zone: String, now: Instant): FindOutcome

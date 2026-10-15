@@ -38,6 +38,10 @@ class ScreenNameMappingTest {
             composable<CastSuccess> {}
             composable<Keepsake> {}
             composable<Moderation> {}
+            composable<Settings> {}
+            composable<HowItWorks> {}
+            composable<Licences> {}
+            composable<Goodbye> {}
         }
 
         // when

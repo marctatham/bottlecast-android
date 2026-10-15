@@ -129,6 +129,16 @@ export async function seedKept(id, keeperUid, ageMillis, { status = 'kept' } = {
   return keptAt;
 }
 
+// An account part-way through being deleted (spec §3.17): its tombstone.
+export async function seedDeletion(uid) {
+  await seed((db) => setDoc(doc(db, 'deletions', uid), { createdAt: Timestamp.now() }));
+}
+
+// The writer's account is deleted while someone holds or kept the bottle: its writer taken off.
+export function anonymiseWrite(id, status) {
+  return ['update', ['messages', id], { userId: null, penName: null, status }];
+}
+
 export async function seedProfile(uid, profile) {
   await seed((db) => setDoc(doc(db, 'users', uid), profile));
 }
@@ -277,6 +287,7 @@ export function commit(db, writes, only) {
     const ref = doc(db, ...path);
     if (kind === 'set') batch.set(ref, data);
     else if (kind === 'merge') batch.set(ref, data, { merge: true });
+    else if (kind === 'delete') batch.delete(ref);
     else batch.update(ref, data);
   });
   return batch.commit();

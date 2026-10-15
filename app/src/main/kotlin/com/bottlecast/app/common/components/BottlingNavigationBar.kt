@@ -32,6 +32,7 @@ import com.bottlecast.app.common.ui.NightDawnPreviews
  * tab. Only the tab roots show it; every other route is immersive.
  *
  * @param chestBadge a moon dot on the Chest, for bottles not kept yet or waiting to seal (slice 4).
+ * @param meInitial the pen name's initial in the Me tab's avatar, or null for the person glyph.
  * @param windowInsets the system navigation bar the bar extends behind; screenshot tests pass none.
  */
 @Composable
@@ -40,6 +41,7 @@ fun BottlingNavigationBar(
     onSelect: (TopLevelDestination) -> Unit,
     modifier: Modifier = Modifier,
     chestBadge: Boolean = false,
+    meInitial: String? = null,
     windowInsets: WindowInsets = NavigationBarDefaults.windowInsets,
 ) {
     val colorScheme = MaterialTheme.colorScheme
@@ -61,6 +63,7 @@ fun BottlingNavigationBar(
                         TopLevelDestination.ME -> Avatar(
                             diameter = BottlingTheme.sizes.navAvatar,
                             glyphSize = BottlingTheme.sizes.navAvatarGlyph,
+                            initial = meInitial,
                         )
                     }
                 },

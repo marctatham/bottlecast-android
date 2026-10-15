@@ -1,13 +1,22 @@
 package com.bottlecast.app.common.authentication.domain
 
+import java.time.Instant
+
 sealed class UserEntity {
 
     data class AuthenticatedUser(
         val providerType: AuthProviderType,
         val jwtToken: String,
         val userId: String,
-        val isAdmin: Boolean
-    ) : UserEntity()
+        val isAdmin: Boolean,
+        /** When the account was made: the Me tab's "casting since" (spec §3.12). */
+        val createdAt: Instant? = null,
+        /** The Google account's name, which only Settings › Account shows (decided 2026-10-15). Never logged. */
+        val googleName: String? = null,
+    ) : UserEntity() {
+        // never in a log
+        override fun toString(): String = "AuthenticatedUser($providerType, admin=$isAdmin)"
+    }
 
     data object UnauthenticatedUser : UserEntity()
 }

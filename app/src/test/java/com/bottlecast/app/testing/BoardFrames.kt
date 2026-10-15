@@ -22,6 +22,7 @@ internal fun BoardTabFrame(
     selected: TopLevelDestination,
     navigationBarInsets: WindowInsets = WindowInsets(0),
     chestBadge: Boolean = false,
+    meInitial: String? = null,
     snackbarHost: @Composable () -> Unit = {},
     content: @Composable (contentPadding: PaddingValues) -> Unit,
 ) {
@@ -29,6 +30,7 @@ internal fun BoardTabFrame(
         selected = selected,
         onSelect = {},
         chestBadge = chestBadge,
+        meInitial = meInitial,
         navigationBarInsets = navigationBarInsets,
         snackbarHost = snackbarHost,
         content = content,
