@@ -64,6 +64,7 @@ class ReportDialogScreenshotTest {
                     onThrowBackHandler = {},
                     onBackToShoreHandler = {},
                     onRetryHandler = {},
+                    onKeepHandler = {},
                     windowInsets = BoardStatusBar,
                     contentPadding = PaddingValues(),
                 )

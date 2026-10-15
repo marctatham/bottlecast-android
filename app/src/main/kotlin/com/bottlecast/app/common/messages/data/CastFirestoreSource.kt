@@ -6,6 +6,7 @@ import com.bottlecast.app.common.messages.domain.CastStatus
 import com.bottlecast.app.common.messages.domain.NewCast
 import com.bottlecast.app.common.profile.data.model.ProfileFields
 import com.bottlecast.app.common.profile.domain.TERMS_VERSION
+import com.bottlecast.app.common.streak.data.model.StreakDayFields
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -36,6 +37,7 @@ class CastFirestoreSource @Inject constructor(
     private val messages = firestore.collection(MessageFields.COLLECTION)
     private val tallies = firestore.collection(CastTallyFields.COLLECTION)
     private val users = firestore.collection(ProfileFields.COLLECTION)
+    private val streakDays = firestore.collection(StreakDayFields.COLLECTION)
 
     override fun observeTally(uid: String): Flow<CastTally?> = callbackFlow {
         val registration = tallies.document(uid).addSnapshotListener { snapshot, error ->
@@ -67,14 +69,26 @@ class CastFirestoreSource @Inject constructor(
         val tallyRef = tallies.document(uid)
         when (tally) {
             // the day's first, or the first on this phone that knew of no tally
-            is TallyWrite.Start -> batch.set(
-                tallyRef,
-                mapOf(
-                    CastTallyFields.DATE to tally.date.toString(),
-                    CastTallyFields.COUNT to 1,
-                    CastTallyFields.MESSAGE_ID to cast.messageId,
-                ),
-            )
+            is TallyWrite.Start -> {
+                batch.set(
+                    tallyRef,
+                    mapOf(
+                        CastTallyFields.DATE to tally.date.toString(),
+                        CastTallyFields.COUNT to 1,
+                        CastTallyFields.MESSAGE_ID to cast.messageId,
+                    ),
+                )
+                // the day's first cast gives a calm-sea shield (spec §3.3), as the rules check by the tally
+                batch.set(
+                    streakDays.document(StreakDayFields.id(uid, tally.date)),
+                    mapOf(
+                        StreakDayFields.UID to uid,
+                        StreakDayFields.DATE to tally.date.toString(),
+                        StreakDayFields.CAST to true,
+                    ),
+                    SetOptions.merge(),
+                )
+            }
             is TallyWrite.Increment -> batch.update(
                 tallyRef,
                 mapOf(

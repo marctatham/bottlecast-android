@@ -4,6 +4,8 @@ import androidx.lifecycle.viewModelScope
 import com.bottlecast.app.common.authentication.domain.AuthProviderType
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
+import com.bottlecast.app.common.chest.domain.ChestCounts
+import com.bottlecast.app.common.chest.domain.IChestRepository
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
 import com.bottlecast.app.common.messages.domain.MessageEntity
 import com.bottlecast.app.common.sea.domain.CandidateState
@@ -12,6 +14,12 @@ import com.bottlecast.app.common.sea.domain.ISeaActions
 import com.bottlecast.app.common.sea.domain.ISeaRepository
 import com.bottlecast.app.common.sea.domain.PendingSeaAction
 import com.bottlecast.app.common.sea.domain.TodayFind
+import com.bottlecast.app.common.streak.domain.IStreakRepository
+import com.bottlecast.app.common.streak.domain.Streak
+import com.bottlecast.app.common.streak.domain.StreakEvent
+import com.bottlecast.app.common.messages.domain.MessageStatus
+import com.bottlecast.app.feature.shore.domain.ShoreNotice
+import com.bottlecast.app.feature.shore.domain.ShoreNotices
 import com.bottlecast.app.testing.MainDispatcherRule
 import com.bottlecast.app.testing.MutableClock
 import io.mockk.coEvery
@@ -61,6 +69,20 @@ class ShoreViewModelTest {
         coEvery { prefetchCandidate() } returns CandidateState.Unknown
     }
     private val seaActions = mockk<ISeaActions>(relaxed = true) { every { pending } returns this@ShoreViewModelTest.pending }
+
+    private val streak = MutableStateFlow<Streak?>(null)
+    private val notice = MutableStateFlow<StreakEvent?>(null)
+    private val streakRepository = mockk<IStreakRepository>(relaxed = true) {
+        every { streak } returns this@ShoreViewModelTest.streak
+        every { notice } returns this@ShoreViewModelTest.notice
+    }
+    private val counts = MutableStateFlow<ChestCounts?>(null)
+    private val awayFinds = MutableStateFlow(0)
+    private val chestRepository = mockk<IChestRepository>(relaxed = true) {
+        every { counts } returns this@ShoreViewModelTest.counts
+        every { castFindsSinceViewed } returns this@ShoreViewModelTest.awayFinds
+    }
+    private val shoreNotices = ShoreNotices()
 
     @Test
     fun `today's bottle waits, with no streak or stats until they're recorded`() = runTest {
@@ -293,7 +315,7 @@ class ShoreViewModelTest {
     fun `the minute's tick stops while nobody watches the Shore, and starts again from the clock`() = runTest {
         // given
         finds.value = mapOf(today to found("today"))
-        val viewModel = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, clock)
+        val viewModel = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, streakRepository, chestRepository, shoreNotices, clock)
         val watching = backgroundScope.launch { viewModel.state.collect {} }
         runCurrent()
 
@@ -314,6 +336,69 @@ class ShoreViewModelTest {
     }
 
     @Test
+    fun `the streak, the stats and finds while away show once they're known`() = runTest {
+        // given
+        val viewModel = shore()
+
+        // when
+        streak.value = Streak(current = 6, best = 14, shields = 1, foundToday = false)
+        counts.value = ChestCounts(bottled = 12, found = 30, kept = 9)
+        awayFinds.value = 2
+        runCurrent()
+
+        // then
+        Assert.assertEquals(
+            ShoreUiState.BottleWaiting(streak = ShoreStreak(6, 1), stats = ShoreStats(12, 30, 9), awayFinds = 2),
+            viewModel.state.value,
+        )
+        verify { chestRepository.refreshCounts() }
+        close(viewModel)
+    }
+
+    @Test
+    fun `today's find shows kept once kept, or how long it waits until then`() = runTest {
+        // given
+        val heldSince = clock.instant().minus(Duration.ofDays(2))
+        finds.value = mapOf(today to found("today").copy(message = MessageEntity("today", "Message today", "writer", status = MessageStatus.Found, foundAt = heldSince)))
+        val viewModel = shore()
+
+        // when
+        runCurrent()
+        val held = (viewModel.state.value as ShoreUiState.FoundToday).todaysFind
+        finds.value = mapOf(today to found("today", FindStatus.Kept))
+        runCurrent()
+        val kept = (viewModel.state.value as ShoreUiState.FoundToday).todaysFind
+
+        // then
+        Assert.assertEquals(TodaysFind("today", "Message today", kept = false, daysLeft = 5), held)
+        Assert.assertEquals(TodaysFind("today", "Message today", kept = true), kept)
+        close(viewModel)
+    }
+
+    @Test
+    fun `a streak's news and a notice from Reveal are handed on until shown`() = runTest {
+        // given
+        val viewModel = shore()
+        val event = StreakEvent.ShieldUsed(today.minusDays(1), days = 6)
+        val watching = backgroundScope.launch { viewModel.streakNotice.collect {} }
+
+        // when
+        notice.value = event
+        shoreNotices.post(ShoreNotice.WaitsInChest)
+        runCurrent()
+        val shown = viewModel.streakNotice.value to viewModel.shoreNotice.value
+        viewModel.onStreakNoticeShown(event)
+        viewModel.onShoreNoticeShown(ShoreNotice.WaitsInChest)
+
+        // then
+        Assert.assertEquals(event to ShoreNotice.WaitsInChest, shown)
+        verify { streakRepository.acknowledge(event) }
+        Assert.assertNull(viewModel.shoreNotice.value)
+        watching.cancel()
+        close(viewModel)
+    }
+
+    @Test
     fun `a failure still offers today's bottle`() = runTest {
         // given
         every { connectivityMonitor.isOnline } throws IllegalStateException("no network service")
@@ -328,7 +413,7 @@ class ShoreViewModelTest {
     }
 
     // the Shore, watched as it is on screen
-    private fun TestScope.shore() = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, clock)
+    private fun TestScope.shore() = ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, streakRepository, chestRepository, shoreNotices, clock)
         .also { viewModel -> backgroundScope.launch { viewModel.state.collect {} } }
 
     private fun todayFor(date: LocalDate): Flow<TodayFind?> = finds.map { it[date] }

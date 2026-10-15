@@ -23,7 +23,10 @@ import com.bottlecast.app.common.components.BottlingSnackbarHost
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.fakes.FakeAuthenticationRepository
 import com.bottlecast.app.fakes.FakeConnectivityMonitor
+import com.bottlecast.app.fakes.FakeChestRepository
 import com.bottlecast.app.fakes.FakeSeaActions
+import com.bottlecast.app.fakes.FakeStreakRepository
+import com.bottlecast.app.feature.shore.domain.ShoreNotices
 import com.bottlecast.app.fakes.FakeSeaRepository
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert
@@ -143,10 +146,20 @@ class ShoreScreenTest {
                         onOpenChestHandler = {},
                         onOpenMeHandler = {},
                         onOpenTodaysFindHandler = { findsOpened += it },
+                        onSeeAwayFindsHandler = {},
                         contentPadding = PaddingValues(),
                         snackbarHostState = snackbarHostState,
                         viewModel = viewModel {
-                            ShoreViewModel(authenticationRepository, connectivityMonitor, seaRepository, seaActions, Clock.systemDefaultZone())
+                            ShoreViewModel(
+                                authenticationRepository,
+                                connectivityMonitor,
+                                seaRepository,
+                                seaActions,
+                                FakeStreakRepository(),
+                                FakeChestRepository(seaRepository, authenticationRepository),
+                                ShoreNotices(),
+                                Clock.systemDefaultZone(),
+                            )
                         },
                     )
                     BottlingSnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))

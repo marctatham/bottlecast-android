@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -73,7 +74,9 @@ import com.bottlecast.app.feature.shore.components.ShoreScenery
 import com.bottlecast.app.feature.shore.components.ShoreStatsRow
 import com.bottlecast.app.feature.shore.components.ShoreTopRow
 import com.bottlecast.app.feature.shore.components.TodaysFindCard
+import com.bottlecast.app.feature.shore.domain.ShoreNotice
 import com.bottlecast.app.feature.shore.domain.Tide
+import com.bottlecast.app.common.streak.domain.StreakEvent
 import java.time.Duration
 import java.time.LocalTime
 
@@ -84,6 +87,7 @@ import java.time.LocalTime
  * @param contentPadding the navigation bar's height, which the bottom pills sit above.
  * @param snackbarHostState where the throw back's Undo and the Shore's notices show.
  * @param alreadyFoundNotice Discover found today already had a find; say when the next tide is.
+ * @param onSeeAwayFindsHandler "While you were away"'s [See them]: the Chest, on its Cast tab.
  */
 @Composable
 fun ShoreScreen(
@@ -93,6 +97,7 @@ fun ShoreScreen(
     onOpenChestHandler: () -> Unit,
     onOpenMeHandler: () -> Unit,
     onOpenTodaysFindHandler: (messageId: String) -> Unit,
+    onSeeAwayFindsHandler: () -> Unit,
     contentPadding: PaddingValues,
     snackbarHostState: SnackbarHostState,
     alreadyFoundNotice: Boolean = false,
@@ -127,6 +132,29 @@ fun ShoreScreen(
             snackbarHostState.showSnackbar(alreadyFound)
             onNoticeShown()
         }
+    }
+    // One-time news, each marked shown once it's been seen: a streak a shield kept, or one that rested
+    // (spec §3.3), and a fresh find left in the chest (spec §3.7).
+    val streakNotice by viewModel.streakNotice.collectAsStateWithLifecycle()
+    val streakText = streakNotice?.let { event ->
+        when (event) {
+            is StreakEvent.ShieldUsed -> pluralStringResource(R.plurals.shore_shield_used, event.days, event.days)
+            is StreakEvent.Rested -> stringResource(R.string.shore_streak_rested)
+        }
+    }
+    LaunchedEffect(streakNotice) {
+        val event = streakNotice ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(streakText ?: return@LaunchedEffect)
+        viewModel.onStreakNoticeShown(event)
+    }
+    val shoreNotice by viewModel.shoreNotice.collectAsStateWithLifecycle()
+    val waitsInChest = stringResource(R.string.shore_waits_in_chest)
+    LaunchedEffect(shoreNotice) {
+        val notice = shoreNotice ?: return@LaunchedEffect
+        when (notice) {
+            ShoreNotice.WaitsInChest -> snackbarHostState.showSnackbar(waitsInChest)
+        }
+        viewModel.onShoreNoticeShown(notice)
     }
     // at midnight the tide turns, with a tick (spec §3.3)
     var wasFound by remember { mutableStateOf(found != null) }
@@ -167,7 +195,8 @@ fun ShoreScreen(
             onOpenTodaysFindHandler = dropUnlessStarted {
                 (state as? ShoreUiState.FoundToday)?.todaysFind?.let { onOpenTodaysFindHandler(it.messageId) }
             },
-            // the reminder sheet comes with slice 4
+            onSeeAwayFindsHandler = dropUnlessStarted(block = onSeeAwayFindsHandler),
+            // the reminder sheet comes with slice 4's second part
             onReminderHandler = {},
             contentPadding = contentPadding,
             rollCountdown = !reducedMotion,
@@ -195,6 +224,7 @@ internal fun ShoreScreen(
     onReminderHandler: () -> Unit,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    onSeeAwayFindsHandler: () -> Unit = {},
     windowInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     rollCountdown: Boolean = true,
 ) {
@@ -237,6 +267,16 @@ internal fun ShoreScreen(
             if (uiState.isOffline) {
                 Spacer(modifier = Modifier.height(spacing.xs))
                 Banner(text = stringResource(R.string.shore_offline_banner), icon = R.drawable.ic_symbol_wifi_off)
+            }
+            // "While you were away" (G5), the stand-in for "found" notifications until push exists
+            if (uiState.awayFinds > 0) {
+                Spacer(modifier = Modifier.height(spacing.xs))
+                Banner(
+                    text = pluralStringResource(R.plurals.shore_away_found, uiState.awayFinds, uiState.awayFinds),
+                    icon = R.drawable.ic_glyph_bottle,
+                    actionLabel = stringResource(R.string.shore_away_see_them),
+                    onAction = onSeeAwayFindsHandler,
+                )
             }
             when (uiState) {
                 is ShoreUiState.BottleWaiting -> if (uiState.seaCalm) {

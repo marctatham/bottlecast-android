@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.googleUid
+import com.bottlecast.app.common.chest.domain.IChestRepository
 import com.bottlecast.app.common.preferences.IOnboardingStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,7 +19,11 @@ import javax.inject.Inject
 class AppNavigationStateViewModel @Inject constructor(
     private val authenticationRepository: IAuthenticationRepository,
     onboardingStore: IOnboardingStore,
+    chestRepository: IChestRepository,
 ) : ViewModel() {
+
+    /** The Chest tab's dot: a bottle not kept yet, or a cast found, since the Chest was last viewed (spec §2). */
+    val chestBadge: StateFlow<Boolean> = chestRepository.badge
 
     /**
      * Where the app starts: onboarding until it's been seen (spec §3.1), then the Shore. Null until

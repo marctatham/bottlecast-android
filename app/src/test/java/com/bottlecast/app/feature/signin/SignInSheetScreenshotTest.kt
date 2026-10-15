@@ -39,6 +39,26 @@ class SignInSheetScreenshotTest {
     @Test
     fun carryingTodaysFindDawn() = capture(darkTheme = false, SignInUiState(carriesTodaysFind = true))
 
+    // a guest's streak comes too (slice 4), with today's find or on its own
+    @Test
+    fun carryingStreakAndFindNight() = capture(darkTheme = true, SignInUiState(carriesTodaysFind = true, carriedStreak = 3))
+
+    @Test
+    fun carryingStreakAndFindDawn() = capture(darkTheme = false, SignInUiState(carriesTodaysFind = true, carriedStreak = 3))
+
+    @Test
+    fun carryingStreakNight() = capture(darkTheme = true, SignInUiState(carriedStreak = 3))
+
+    @Test
+    fun carryingStreakDawn() = capture(darkTheme = false, SignInUiState(carriedStreak = 3))
+
+    // signing in to keep a bottle (spec §3.2's titles)
+    @Test
+    fun keepNight() = capture(darkTheme = true, SignInUiState(carriesTodaysFind = true, carriedStreak = 6), reason = SignInReason.Keep)
+
+    @Test
+    fun keepDawn() = capture(darkTheme = false, SignInUiState(carriesTodaysFind = true, carriedStreak = 6), reason = SignInReason.Keep)
+
     @Test
     fun loadingNight() = capture(darkTheme = true, SignInUiState(phase = SignInPhase.Loading, carriesTodaysFind = true))
 
@@ -70,14 +90,14 @@ class SignInSheetScreenshotTest {
     // the sheet is its own window and animates open, so the clock is advanced past the animation
     // and every window is drawn, scrim included
     @OptIn(ExperimentalMaterial3Api::class)
-    private fun capture(darkTheme: Boolean, uiState: SignInUiState) {
+    private fun capture(darkTheme: Boolean, uiState: SignInUiState, reason: SignInReason = SignInReason.Cast) {
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {
             BottlingTheme(darkTheme = darkTheme) {
                 Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background))
                 SignInSheet(
                     uiState = uiState,
-                    reason = SignInReason.Cast,
+                    reason = reason,
                     sheetState = rememberBottlingSheetState(),
                     onDismissRequest = {},
                     onContinue = {},

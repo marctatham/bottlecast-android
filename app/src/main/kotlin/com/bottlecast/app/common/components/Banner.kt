@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,7 +38,8 @@ enum class BannerStyle {
 
 /**
  * A banner placed under the top bar (spec §3.18): a 16dp radius and at least 48dp tall, so it
- * grows with the text. It's announced politely when it appears.
+ * grows with the text. It's announced politely when it appears. [actionLabel] adds a text button at
+ * the end, such as "While you were away"'s [See them] (G5).
  */
 @Composable
 fun Banner(
@@ -44,6 +47,8 @@ fun Banner(
     @DrawableRes icon: Int,
     modifier: Modifier = Modifier,
     style: BannerStyle = BannerStyle.Info,
+    actionLabel: String? = null,
+    onAction: () -> Unit = {},
 ) {
     val colors = BottlingTheme.colors
     val colorScheme = MaterialTheme.colorScheme
@@ -59,7 +64,7 @@ fun Banner(
             .heightIn(min = BottlingTheme.sizes.touchTarget)
             .clip(BottlingTheme.shapes.field)
             .background(container)
-            .padding(horizontal = spacing.m, vertical = spacing.s)
+            .padding(start = spacing.m, end = if (actionLabel != null) spacing.xxs else spacing.m)
             .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
         horizontalArrangement = Arrangement.spacedBy(spacing.s),
         verticalAlignment = Alignment.CenterVertically,
@@ -70,7 +75,19 @@ fun Banner(
             tint = content,
             modifier = Modifier.size(BottlingTheme.sizes.bannerIcon),
         )
-        Text(text = text, style = MaterialTheme.typography.bodyMedium, color = content)
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = content,
+            modifier = Modifier
+                .weight(1f)
+                .padding(vertical = spacing.s),
+        )
+        if (actionLabel != null) {
+            TextButton(onClick = onAction, colors = ButtonDefaults.textButtonColors(contentColor = content)) {
+                Text(text = actionLabel, style = MaterialTheme.typography.labelLarge)
+            }
+        }
     }
 }
 
@@ -83,5 +100,10 @@ private fun BannerPreview() = BottlingPreview {
     ) {
         Banner(text = "You're offline — today's bottle will be here when you're back", icon = R.drawable.ic_symbol_wifi_off)
         Banner(text = "Something went adrift", icon = R.drawable.ic_symbol_flag, style = BannerStyle.Error)
+        Banner(
+            text = "While you were away, 2 of your bottles were found.",
+            icon = R.drawable.ic_glyph_bottle,
+            actionLabel = "See them",
+        )
     }
 }

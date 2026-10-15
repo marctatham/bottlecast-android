@@ -13,6 +13,7 @@ import com.bottlecast.app.common.messages.domain.MessageLimits
 import com.bottlecast.app.common.messages.domain.NewCast
 import com.bottlecast.app.common.threading.ApplicationScope
 import com.bottlecast.app.common.threading.DispatcherIO
+import com.bottlecast.app.common.time.localDates
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -20,14 +21,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -36,9 +35,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import timber.log.Timber
 import java.time.Clock
-import java.time.Duration
 import java.time.LocalDate
-import java.time.ZonedDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.random.Random
@@ -73,14 +70,7 @@ class CastCoordinator @Inject constructor(
         .distinctUntilChanged()
 
     // the local date, then again just after each midnight, so a new day's casts show without a new tally
-    private val today: Flow<LocalDate> = flow {
-        while (true) {
-            val now = ZonedDateTime.now(clock)
-            emit(now.toLocalDate())
-            val nextDay = now.toLocalDate().plusDays(1).atStartOfDay(now.zone)
-            delay(Duration.between(now, nextDay).toMillis() + MIDNIGHT_SLACK_MILLIS)
-        }
-    }.distinctUntilChanged()
+    private val today: Flow<LocalDate> = clock.localDates()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override val castsLeftToday: StateFlow<Int?> = googleUid
@@ -172,8 +162,5 @@ class CastCoordinator @Inject constructor(
 
     private companion object {
         const val STOP_TIMEOUT_MILLIS = 5_000L
-
-        // wakes a moment after midnight, so the new date has surely begun
-        const val MIDNIGHT_SLACK_MILLIS = 1_000L
     }
 }

@@ -4,13 +4,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
+import com.bottlecast.app.common.chest.domain.ChestCounts
+import com.bottlecast.app.common.chest.domain.IChestRepository
+import com.bottlecast.app.common.chest.domain.daysLeftUntil
 import com.bottlecast.app.common.connectivity.IConnectivityMonitor
+import com.bottlecast.app.common.messages.domain.holdEnds
 import com.bottlecast.app.common.sea.domain.CandidateState
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ISeaActions
 import com.bottlecast.app.common.sea.domain.ISeaRepository
 import com.bottlecast.app.common.sea.domain.PendingSeaAction
 import com.bottlecast.app.common.sea.domain.TodayFind
+import com.bottlecast.app.common.streak.domain.IStreakRepository
+import com.bottlecast.app.common.streak.domain.Streak
+import com.bottlecast.app.common.streak.domain.StreakEvent
+import com.bottlecast.app.feature.shore.domain.ShoreNotice
+import com.bottlecast.app.feature.shore.domain.ShoreNotices
 import com.bottlecast.app.feature.shore.domain.Tide
 import com.bottlecast.app.feature.shore.domain.tideAt
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -32,6 +41,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.SharingCommand
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.time.Clock
@@ -52,11 +62,21 @@ class ShoreViewModel @Inject constructor(
     private val connectivityMonitor: IConnectivityMonitor,
     private val seaRepository: ISeaRepository,
     private val seaActions: ISeaActions,
+    private val streakRepository: IStreakRepository,
+    private val chestRepository: IChestRepository,
+    private val shoreNotices: ShoreNotices,
     private val clock: Clock,
 ) : ViewModel() {
 
     private val _state: MutableStateFlow<ShoreUiState> = MutableStateFlow(ShoreUiState.BottleWaiting())
     val state: StateFlow<ShoreUiState> = _state.asStateFlow()
+
+    /** A missed day's news, for a one-time snackbar (spec §3.3). */
+    val streakNotice: StateFlow<StreakEvent?> = streakRepository.notice
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(NOTICE_STOP_MILLIS), null)
+
+    /** A notice another screen left for the Shore. */
+    val shoreNotice: StateFlow<ShoreNotice?> = shoreNotices.pending
 
     // the Shore has no failure screen: if its inputs fail, it still offers today's bottle
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
@@ -68,7 +88,11 @@ class ShoreViewModel @Inject constructor(
 
     private data class Context(val isAdmin: Boolean, val online: Boolean, val now: ZonedDateTime)
 
+    // what the Shore shows of the streak and the chest
+    private data class Numbers(val streak: Streak?, val counts: ChestCounts?, val awayFinds: Int)
+
     init {
+        chestRepository.refreshCounts()
         viewModelScope.launch(exceptionHandler) {
             // The minute's tick drives the countdown, and a new date finds tomorrow's record. It ticks
             // only while the Shore is watched, so it costs nothing under another screen or in the
@@ -79,14 +103,21 @@ class ShoreViewModel @Inject constructor(
             val context = combine(authenticationRepository.user, connectivityMonitor.isOnline, now) { user, online, time ->
                 Context(isAdmin = user is UserEntity.AuthenticatedUser && user.isAdmin, online = online, now = time)
             }
-            combine(context, todaysFind(now), seaRepository.candidate, seaActions.pending) { ctx, find, candidate, pending ->
-                stateFor(ctx, find, candidate, pending)
+            val numbers = combine(streakRepository.streak, chestRepository.counts, chestRepository.castFindsSinceViewed) { streak, counts, away ->
+                Numbers(streak, counts, away)
+            }
+            combine(context, todaysFind(now), seaRepository.candidate, seaActions.pending, numbers) { ctx, find, candidate, pending, numbers ->
+                stateFor(ctx, find, candidate, pending, numbers)
             }.collect { state ->
                 _state.value = state
                 if (state is ShoreUiState.BottleWaiting && !state.isOffline) prefetch()
             }
         }
     }
+
+    fun onStreakNoticeShown(event: StreakEvent) = streakRepository.acknowledge(event)
+
+    fun onShoreNoticeShown(notice: ShoreNotice) = shoreNotices.consume(notice)
 
     /** Takes back a throw back still waiting out its window. */
     fun onUndoThrowBack(actionId: String) = seaActions.undo(actionId)
@@ -99,25 +130,41 @@ class ShoreViewModel @Inject constructor(
         find: TodayFind?,
         candidate: CandidateState,
         pending: PendingSeaAction?,
+        numbers: Numbers,
     ): ShoreUiState {
+        val streak = numbers.streak?.let { ShoreStreak(days = it.current, shields = it.shields) }
+        val stats = numbers.counts?.let { ShoreStats(bottled = it.bottled, found = it.found, kept = it.kept) }
         if (find == null) {
             return ShoreUiState.BottleWaiting(
                 isAdmin = context.isAdmin,
                 isOffline = !context.online,
+                streak = streak,
+                stats = stats,
+                awayFinds = numbers.awayFinds,
                 // offline, the sea can't have been looked at today, so today's bottle waits
                 seaCalm = candidate == CandidateState.SeaCalm && context.online,
             )
         }
         // a find that's been thrown back or reported, even one still waiting out its undo, is gone
         // from the Shore, and so is a bottle that can't be read any more
-        val showCard = find.status == FindStatus.Held && find.message != null && pending?.messageId != find.messageId
+        val showCard = find.status in setOf(FindStatus.Held, FindStatus.Kept) && pending?.messageId != find.messageId
         return ShoreUiState.FoundToday(
             tide = tideAt(context.now),
-            todaysFind = if (showCard) TodaysFind(find.messageId, find.message!!.message) else null,
+            todaysFind = find.message?.takeIf { showCard }?.let { message ->
+                TodaysFind(
+                    messageId = find.messageId,
+                    excerpt = message.message,
+                    kept = find.status == FindStatus.Kept,
+                    daysLeft = message.holdEnds()?.let { daysLeftUntil(it, clock.instant()) },
+                )
+            },
             reminderTime = null,
             pendingThrowBack = (pending as? PendingSeaAction.ThrowBack)?.takeIf { it.messageId == find.messageId },
             isAdmin = context.isAdmin,
             isOffline = !context.online,
+            streak = streak,
+            stats = stats,
+            awayFinds = numbers.awayFinds,
         )
     }
 
@@ -161,6 +208,8 @@ class ShoreViewModel @Inject constructor(
 // how long the ticks carry on once nobody watches, so a rotation doesn't stop them
 private const val TICKS_LINGER_MILLIS = 5_000L
 
+private const val NOTICE_STOP_MILLIS = 5_000L
+
 /** The Shore's two states (spec §3.3). A null [streak] or [stats] isn't shown. */
 sealed class ShoreUiState {
     abstract val isAdmin: Boolean
@@ -168,12 +217,16 @@ sealed class ShoreUiState {
     abstract val streak: ShoreStreak?
     abstract val stats: ShoreStats?
 
+    /** Finds of the user's bottles since they last looked in the chest: "While you were away" (G5). */
+    abstract val awayFinds: Int
+
     /** State A: today's bottle is waiting, unless the sea is known to be calm. */
     data class BottleWaiting(
         override val isAdmin: Boolean = false,
         override val isOffline: Boolean = false,
         override val streak: ShoreStreak? = null,
         override val stats: ShoreStats? = null,
+        override val awayFinds: Int = 0,
         /** No bottle is drifting that this account could find: the Shore offers casting instead. */
         val seaCalm: Boolean = false,
     ) : ShoreUiState()
@@ -191,6 +244,7 @@ sealed class ShoreUiState {
         override val isOffline: Boolean = false,
         override val streak: ShoreStreak? = null,
         override val stats: ShoreStats? = null,
+        override val awayFinds: Int = 0,
     ) : ShoreUiState()
 }
 
@@ -211,4 +265,7 @@ data class ShoreStats(
 data class TodaysFind(
     val messageId: String,
     val excerpt: String,
+    val kept: Boolean = false,
+    /** Whole days until an unkept find drifts back, or null when that isn't known. */
+    val daysLeft: Int? = null,
 )

@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -176,9 +177,9 @@ private fun ColumnScope.SignInSheetContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        if (uiState.carriesTodaysFind) {
+        carryOverText(uiState)?.let { carry ->
             Spacer(modifier = Modifier.height(spacing.m))
-            CarryOverChip()
+            CarryOverChip(text = carry)
         }
         Spacer(modifier = Modifier.height(spacing.l))
         val problem = when (uiState.phase) {
@@ -260,9 +261,24 @@ private fun SignInGlyph() {
     }
 }
 
-/** "Today's find comes with you", on a primaryContainer pill with the waves (spec §3.2). */
+/**
+ * What a guest brings along when it signs in (spec §3.2): its streak and today's find, or either, or
+ * null when there's nothing to carry. A one-day streak is just today's find.
+ */
 @Composable
-private fun CarryOverChip() {
+private fun carryOverText(uiState: SignInUiState): String? {
+    val streak = uiState.carriedStreak
+    return when {
+        uiState.carriesTodaysFind && streak >= 2 -> pluralStringResource(R.plurals.sign_in_carry_streak_and_find, streak, streak)
+        uiState.carriesTodaysFind -> stringResource(R.string.sign_in_carry_find)
+        streak >= 1 -> pluralStringResource(R.plurals.sign_in_carry_streak, streak, streak)
+        else -> null
+    }
+}
+
+/** The carry-over chip, such as "Today's find comes with you", on a primaryContainer pill with the waves (spec §3.2). */
+@Composable
+private fun CarryOverChip(text: String) {
     val sizes = BottlingTheme.sizes
     Row(
         modifier = Modifier
@@ -284,7 +300,7 @@ private fun CarryOverChip() {
             modifier = Modifier.size(sizes.iconSmall),
         )
         Text(
-            text = stringResource(R.string.sign_in_carry_find),
+            text = text,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onPrimaryContainer,
         )

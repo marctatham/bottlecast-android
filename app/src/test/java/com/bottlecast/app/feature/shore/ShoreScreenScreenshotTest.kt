@@ -140,6 +140,38 @@ class ShoreScreenScreenshotTest {
     @Test
     fun alreadyFoundSnackbarDawn() = captureSnackbar(alreadyFound(), action = null, darkTheme = false)
 
+    // "While you were away" (G5), on either side of the tide
+    @Test
+    fun awayFindsNight() = capture(SampleWaiting.copy(awayFinds = 2), darkTheme = true)
+
+    @Test
+    fun awayFindsDawn() = capture(SampleWaiting.copy(awayFinds = 2), darkTheme = false)
+
+    @Test
+    fun foundTodayAwayFindsNight() = capture(SampleFoundToday.copy(awayFinds = 1), darkTheme = true)
+
+    @Test
+    fun foundTodayAwayFindsDawn() = capture(SampleFoundToday.copy(awayFinds = 1), darkTheme = false)
+
+    @Test
+    @Config(fontScale = 2f)
+    fun foundTodayLargeTextNight() = capture(SampleFoundToday, darkTheme = true)
+
+    @Test
+    fun waitsInChestSnackbarNight() = captureSnackbar(string(R.string.shore_waits_in_chest), action = null, darkTheme = true)
+
+    @Test
+    fun waitsInChestSnackbarDawn() = captureSnackbar(string(R.string.shore_waits_in_chest), action = null, darkTheme = false)
+
+    @Test
+    fun shieldUsedSnackbarNight() = captureSnackbar(shieldUsed(), action = null, darkTheme = true)
+
+    @Test
+    fun shieldUsedSnackbarDawn() = captureSnackbar(shieldUsed(), action = null, darkTheme = false)
+
+    @Test
+    fun streakRestedSnackbarNight() = captureSnackbar(string(R.string.shore_streak_rested), action = null, darkTheme = true)
+
     @Test
     fun adminMenuOpenNight() = captureAdminMenu(darkTheme = true)
 
@@ -193,6 +225,8 @@ class ShoreScreenScreenshotTest {
         string(R.string.shore_already_found, string(R.string.shore_countdown_hours_minutes, 7, 12))
 
     private fun string(@StringRes resId: Int, vararg args: Any): String = RuntimeEnvironment.getApplication().getString(resId, *args)
+
+    private fun shieldUsed(): String = RuntimeEnvironment.getApplication().resources.getQuantityString(R.plurals.shore_shield_used, 6, 6)
 
     private fun captureSnackbar(message: String, action: String?, darkTheme: Boolean) {
         val hostState = SnackbarHostState()
@@ -257,6 +291,7 @@ class ShoreScreenScreenshotTest {
             todaysFind = TodaysFind(
                 messageId = "bottle00000000000001",
                 excerpt = "Hoy el mar me devolvió algo que creía perdido: la calma.",
+                daysLeft = 7,
             ),
             reminderTime = LocalTime.of(9, 0),
             streak = ShoreStreak(days = 6, shields = 1),
@@ -265,7 +300,7 @@ class ShoreScreenScreenshotTest {
 
         val SampleFoundTodayUnderAnHour = SampleFoundToday.copy(
             tide = Tide(untilNextTide = Duration.ofMinutes(42), dayElapsed = 1f - 42f / (24 * 60)),
-            todaysFind = TodaysFind(messageId = "bottle00000000000002", excerpt = "Hey, that's pretty cool"),
+            todaysFind = TodaysFind(messageId = "bottle00000000000002", excerpt = "Hey, that's pretty cool", kept = true),
             reminderTime = null,
         )
     }

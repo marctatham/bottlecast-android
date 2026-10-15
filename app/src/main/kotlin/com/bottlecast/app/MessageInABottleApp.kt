@@ -24,8 +24,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.TransformOrigin
@@ -57,6 +60,9 @@ import com.bottlecast.app.feature.discover.DiscoverScreen
 import com.bottlecast.app.feature.me.MeScreen
 import com.bottlecast.app.feature.onboarding.OnboardingScreen
 import com.bottlecast.app.feature.reveal.RevealScreen
+import com.bottlecast.app.feature.chest.ChestTab
+import com.bottlecast.app.feature.chest.ChestViewModel
+import com.bottlecast.app.feature.keepsake.KeepsakeScreen
 import com.bottlecast.app.feature.shore.ShoreScreen
 import com.bottlecast.app.feature.signin.SignInReason
 import com.bottlecast.app.feature.signin.SignInSheet
@@ -73,6 +79,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
     val viewModel: AppNavigationStateViewModel = hiltViewModel()
     // read once, while the first frame waits (MainActivity)
     val startDestination = viewModel.startDestination.collectAsStateWithLifecycle().value ?: return
+    val chestBadge by viewModel.chestBadge.collectAsStateWithLifecycle()
     TrackScreens(navController, analyticsProvider, viewModel)
     SystemBarAppearance()
 
@@ -149,6 +156,7 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
             TabFrame(
                 selected = TopLevelDestination.SHORE,
                 onSelect = tabHandler,
+                chestBadge = chestBadge,
                 snackbarHost = { BottlingSnackbarHost(snackbarHostState) },
             ) { contentPadding ->
                 ShoreScreen(
@@ -164,6 +172,11 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
                     onOpenChestHandler = { tabHandler(TopLevelDestination.CHEST) },
                     onOpenMeHandler = { tabHandler(TopLevelDestination.ME) },
                     onOpenTodaysFindHandler = { messageId -> navController.navigate(Reveal(messageId)) },
+                    // the Chest, on its Cast tab (G5)
+                    onSeeAwayFindsHandler = {
+                        tabHandler(TopLevelDestination.CHEST)
+                        navController.currentBackStackEntry?.savedStateHandle?.set(ChestViewModel.KEY_TAB, ChestTab.Cast.name)
+                    },
                     contentPadding = contentPadding,
                     snackbarHostState = snackbarHostState,
                     alreadyFoundNotice = notice == LocalDate.now().toString(),
@@ -182,15 +195,34 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
             }
         }
         composable<Chest> {
-            TabFrame(selected = TopLevelDestination.CHEST, onSelect = tabHandler) { contentPadding ->
+            val snackbarHostState = remember { SnackbarHostState() }
+            // a guest's Cast tab asks for Google before it can list any casts
+            var signingInToTrack by rememberSaveable { mutableStateOf(false) }
+            TabFrame(
+                selected = TopLevelDestination.CHEST,
+                onSelect = tabHandler,
+                chestBadge = chestBadge,
+                snackbarHost = { BottlingSnackbarHost(snackbarHostState) },
+            ) { contentPadding ->
                 ChestScreen(
                     onGoToShoreHandler = { tabHandler(TopLevelDestination.SHORE) },
+                    onCastHandler = { navController.navigate(Compose()) },
+                    onSignInHandler = { signingInToTrack = true },
+                    onOpenBottleHandler = { messageId -> navController.navigate(Keepsake(messageId)) },
                     contentPadding = contentPadding,
+                    snackbarHostState = snackbarHostState,
+                )
+            }
+            if (signingInToTrack) {
+                SignInSheet(
+                    reason = SignInReason.Track,
+                    onDismissRequest = { signingInToTrack = false },
+                    onSignedIn = { signingInToTrack = false },
                 )
             }
         }
         composable<Me> {
-            TabFrame(selected = TopLevelDestination.ME, onSelect = tabHandler) { contentPadding ->
+            TabFrame(selected = TopLevelDestination.ME, onSelect = tabHandler, chestBadge = chestBadge) { contentPadding ->
                 MeScreen(
                     onGoToShoreHandler = { tabHandler(TopLevelDestination.SHORE) },
                     contentPadding = contentPadding,
@@ -250,6 +282,9 @@ fun MessageInABottleApp(analyticsProvider: ITracker) {
         }
         immersive<CastSuccess> {
             CastSuccessScreen(onBackToShoreHandler = homeHandler)
+        }
+        immersive<Keepsake> {
+            KeepsakeScreen(onBackHandler = backHandler, onLeaveHandler = backHandler)
         }
         immersive<Moderation> {
             LegacyScreen { ViewMessagesScreen() }

@@ -16,7 +16,11 @@ import com.bottlecast.app.R
 import com.bottlecast.app.common.sea.domain.PendingSeaAction
 import com.bottlecast.app.common.ui.BottlingTheme
 import com.bottlecast.app.fakes.FakeAuthenticationRepository
+import com.bottlecast.app.fakes.FakeChestRepository
+import com.bottlecast.app.fakes.FakeConnectivityMonitor
 import com.bottlecast.app.fakes.FakeSeaActions
+import com.bottlecast.app.fakes.FakeStreakRepository
+import com.bottlecast.app.feature.shore.domain.ShoreNotices
 import com.bottlecast.app.fakes.FakeSeaRepository
 import org.junit.Assert
 import org.junit.Before
@@ -37,6 +41,7 @@ class RevealScreenTest {
     private val authenticationRepository = FakeAuthenticationRepository()
     private val seaRepository = FakeSeaRepository(authenticationRepository)
     private val seaActions = FakeSeaActions(seaRepository)
+    private val chestRepository = FakeChestRepository(seaRepository, authenticationRepository)
     private var leaves = 0
 
     @Before
@@ -51,6 +56,11 @@ class RevealScreenTest {
                             SavedStateHandle(mapOf("messageId" to FakeSeaRepository.SEEDED_ID, "fresh" to false)),
                             seaRepository,
                             seaActions,
+                            chestRepository,
+                            authenticationRepository,
+                            FakeConnectivityMonitor(),
+                            FakeStreakRepository(),
+                            ShoreNotices(),
                             Clock.systemDefaultZone(),
                         )
                     },

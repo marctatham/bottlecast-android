@@ -15,8 +15,9 @@ interface ICastDataSource {
     fun readTally(uid: String): CastTally?
 
     /**
-     * One commit: the bottle, the tally counting it, and the profile when the Terms are accepted or the
-     * bottle is signed. It's on the phone at once, so it queues while offline.
+     * One commit: the bottle, the tally counting it, the day's shield mark when it's the day's first
+     * cast, and the profile when the Terms are accepted or the bottle is signed. It's on the phone at
+     * once, so it queues while offline.
      */
     fun writeCast(uid: String, cast: NewCast, rand: Double, tally: TallyWrite): PendingCast
 

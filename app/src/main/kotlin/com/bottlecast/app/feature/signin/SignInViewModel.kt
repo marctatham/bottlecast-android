@@ -15,6 +15,7 @@ import com.bottlecast.app.common.messages.domain.isHoldLive
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ISeaRepository
 import com.bottlecast.app.common.sea.domain.TodayFind
+import com.bottlecast.app.common.streak.domain.IStreakRepository
 import com.bottlecast.app.feature.signin.domain.SignInOutcome
 import com.bottlecast.app.feature.signin.domain.SignInWithGoogleUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,9 +34,13 @@ import java.time.Clock
 import java.time.LocalDate
 import javax.inject.Inject
 
-/** Why the sheet is asking, which titles it (spec §3.2). Keep, gifts and the rest add theirs later. */
+/** Why the sheet is asking, which titles it (spec §3.2). Gifts and the rest add theirs later. */
 enum class SignInReason(@param:StringRes val title: Int) {
     Cast(R.string.sign_in_title_cast),
+    Keep(R.string.sign_in_title_keep),
+
+    /** A guest's Cast tab in the Chest, which lists only a Google account's bottles. */
+    Track(R.string.sign_in_title_track),
 }
 
 /**
@@ -49,6 +54,7 @@ class SignInViewModel @Inject constructor(
     authenticationRepository: IAuthenticationRepository,
     connectivityMonitor: IConnectivityMonitor,
     seaRepository: ISeaRepository,
+    streakRepository: IStreakRepository,
     private val clock: Clock,
 ) : ViewModel() {
 
@@ -61,19 +67,28 @@ class SignInViewModel @Inject constructor(
     }
 
     init {
-        // A guest holding today's find brings it along (the handover, if linking can't).
+        // A guest holding today's find brings it along (the handover, if linking can't), and its
+        // streak too (carried over, if linking can't).
         @OptIn(ExperimentalCoroutinesApi::class)
-        val carriesTodaysFind = authenticationRepository.user.flatMapLatest { user ->
+        val guestCarry = authenticationRepository.user.flatMapLatest { user ->
             val guest = (user as? UserEntity.AuthenticatedUser)?.providerType == AuthProviderType.Anonymous
-            if (guest) seaRepository.observeToday(LocalDate.now(clock)) else flowOf(null)
+            if (guest) {
+                combine(seaRepository.observeToday(LocalDate.now(clock)), streakRepository.streak) { today, streak ->
+                    today.isLiveHold() to (streak?.current ?: 0)
+                }
+            } else {
+                flowOf(false to 0)
+            }
         }
         // only the chip and the offline caption hang on this, so a failure here isn't a failed sign-in
         val observeHandler = CoroutineExceptionHandler { _, throwable ->
             Timber.w(throwable, "[init] Stopped following the connection and today's find")
         }
         viewModelScope.launch(observeHandler) {
-            combine(connectivityMonitor.isOnline, carriesTodaysFind) { online, today -> !online to today.isLiveHold() }
-                .collect { (offline, carries) -> _state.update { it.copy(isOffline = offline, carriesTodaysFind = carries) } }
+            combine(connectivityMonitor.isOnline, guestCarry) { online, carry -> !online to carry }
+                .collect { (offline, carry) ->
+                    _state.update { it.copy(isOffline = offline, carriesTodaysFind = carry.first, carriedStreak = carry.second) }
+                }
         }
     }
 
@@ -108,8 +123,10 @@ data class SignInUiState(
     val phase: SignInPhase = SignInPhase.Idle,
     /** Offline, the Google button waits (spec §3.2). */
     val isOffline: Boolean = false,
-    /** "Today's find comes with you": a guest holding today's find. Slice 4 adds the streak. */
+    /** "Today's find comes with you": a guest holding today's find. */
     val carriesTodaysFind: Boolean = false,
+    /** The streak a guest brings along, counting today's find, or 0. */
+    val carriedStreak: Int = 0,
 )
 
 sealed interface SignInPhase {

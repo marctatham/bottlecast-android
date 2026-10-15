@@ -179,6 +179,7 @@ private fun ModerationButton(@StringRes text: Int, onClick: () -> Unit) {
 private fun MessageStatus.label(): Int = when (this) {
     MessageStatus.Afloat -> R.string.moderation_status_afloat
     MessageStatus.Found -> R.string.moderation_status_found
+    MessageStatus.Kept -> R.string.moderation_status_kept
     MessageStatus.UnderReview -> R.string.moderation_status_under_review
     MessageStatus.Removed -> R.string.moderation_status_removed
 }
