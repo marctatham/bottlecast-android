@@ -15,23 +15,6 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - The owner reviews the wording (it isn't legal advice), then pushes and deploys the web repo. This blocks the next release, even if slice 9 hasn't started.
   - `privacy.html` dates from 2023 and needs the same review. It says no third parties and no cookies, but the app now uses Firebase Analytics, Crashlytics and Google sign-in, stores pen names and the accepted Terms, and will write sealed keepsakes to a public chain.
 
-- [ ] **Quiet hours and "found" notifications** (Slice 4)
-  - Spec §3.16b holds every notification, the daily reminder included, until quiet hours end. The Notify-Rationale and Settings boards promise "found" notifications, which the spec defers until push exists.
-  - Proposed: confirm both as the spec has them; until push exists, Settings marks the "found" row "Coming soon" (spec §3.17 and §6).
-
-- [ ] **Shields for the first cast each day** (Slice 4)
-  - A calm-sea shield for each day's first cast (10-character minimum) may invite filler casts that moderation then has to absorb.
-  - Options: keep the rule, or change what gives a shield.
-
-- [ ] **What deleting an account does to other people's chests** (Slice 4)
-  - The delete dialog (spec §3.17) covers the user's own profile, chest, streak and drifting bottles. Undecided: a deleted writer's unsealed bottles kept in other people's chests, and seals still pending.
-  - Options: remove the text from those chests or keep it there anonymously; cancel pending seals or let them finish.
-
-- [ ] **Which name the Me tab shows** (Slice 4)
-  - Spec §3.12 heads the Me tab with "Marc T.", which §3.17 shows as the Google account name, while the sample pen name is "Driftwood". The Profile board draws "Marc T." with a "Pen name: Driftwood" chip and "MT" initials. But §3.12 also says the avatar falls back to the pen-name initial and that a user with no pen name is an "Anonymous sailor", which only fits a pen-name heading.
-  - Either way, public pages and the share card show the pen name (spec §3.13 and §6), so the "MT" initials on the Share-Profile board's card become the pen-name initial.
-  - Options: the pen name as the heading and initial, or the Google name with a pen-name chip, as the board draws it.
-
 - [ ] **When the 24-hour safety check starts** (Slice 6)
   - The spec and the Claim-Waiting board count from the cast. The Keepsake-Detail board assumed the find, though its dates fit either reading.
   - Options: from the cast, or from the find. Proposed: from the cast (spec §1.7).
@@ -56,9 +39,9 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - Spec §4 says timed controls stay up for at least `AccessibilityManager.getRecommendedTimeoutMillis()`, and that snackbars with an action don't time out while TalkBack is on. But §3.14 still gives the achievement toast 4 s.
   - Proposed: read 4 s as a minimum and follow §4, as slice 2 did for its undo windows (5 s or the recommended timeout, with no timeout under TalkBack).
 
-- [ ] **Push for "found", "kept" and gift events** (Slices 4 and 7)
+- [ ] **Push for "found", "kept" and gift events** (Slice 7)
   - These need a push sender (the Worker calling FCM HTTP v1 with a service-account token). No slice builds it, and the spec doesn't describe it.
-  - Proposed: the spec's v1 fallback, a Chest badge dot and the Shore's "While you were away" banner (§3.16b), until a slice adds push.
+  - Slice 4 built the spec's v1 fallback (§3.16b): the Chest's dot and the Shore's "While you were away" banner. Push itself is still unplanned.
 
 - [ ] **Worker within the free limits** (Slices 5 and 6)
   - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't. Still open: whether signing fits in 10 ms of CPU (a slice 5 spike), staying under 50 subrequests per invocation (cron runs included), and serialising the single minter's nonce.
@@ -94,6 +77,22 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - "Harbour closed" now covers the Firestore, Auth and Worker daily limits, and a low minter shows "Sealing · delayed". Not yet designed: Firebase Hosting's 360 MB a day running out (the gift and profile pages and `assetlinks.json` go down) and a Shore variant of Harbour closed.
 
 ## Resolved
+
+- [x] **Quiet hours and "found" notifications** (Slice 4)
+  - Spec §3.16b holds every notification, the daily reminder included, until quiet hours end. The Notify-Rationale and Settings boards promise "found" notifications, which the spec defers until push exists.
+  - Answer (2026-10-15, slice 4 planning): as the spec has it. Quiet hours hold every notification; until push exists, Settings marks the "found" row "Coming soon" and the rationale's checkbox stays hidden. See [decisions.md](decisions.md).
+
+- [x] **Shields for the first cast each day** (Slice 4)
+  - A calm-sea shield for each day's first cast (10-character minimum) may invite filler casts that moderation then has to absorb.
+  - Answer (2026-10-15, slice 4 planning): keep the rule, up to 2 shields. See [decisions.md](decisions.md).
+
+- [x] **What deleting an account does to other people's chests** (Slice 4)
+  - The delete dialog (spec §3.17) covers the user's own profile, chest, streak and drifting bottles, but not a deleted writer's bottles in other people's chests, or seals still pending.
+  - Answer (2026-10-15, slice 4 planning): bottles someone else holds or kept stay in their chest, anonymised; drifting ones are deleted with everything else; pending seals (slice 6) finish. See [decisions.md](decisions.md).
+
+- [x] **Which name the Me tab shows** (Slice 4)
+  - Spec §3.12 headed the Me tab with the Google name, while its fallbacks only fit a pen-name heading.
+  - Answer (2026-10-15, slice 4 planning): the pen name and its initial, or "Anonymous sailor"; the Google name appears only in Settings › Account. See [decisions.md](decisions.md).
 
 - [x] **Merging a guest into an existing Google account** (Slice 3)
   - The sign-in chip promises that the streak and today's find come with you, but if that Google account already exists, `linkWithCredential` fails and the guest's day would be lost.

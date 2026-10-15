@@ -251,3 +251,51 @@ Choices made while building it, which the owner can revisit at review:
   |---|---|
   | Compose's editor right under the top bar, since the "Into the sea / To someone" row waits for slice 7 (editor at y≈116) | The editor under the segmented row |
   | The cast's bottle at 12% scale on the horizon (about 23dp tall) | A 63dp bottle |
+
+## 2026-10-15 — Slice 4 planning
+
+The owner's answers while planning slice 4 (Chest, Keep, streak and reminders). The slice ships as two PRs: Keep and the Chest first, then Me, Settings and reminders. The first PR applies all of these except where noted.
+
+- **The Me tab is headed by the pen name,** with its initial in the avatar. Without one it reads "Anonymous sailor" with [Set a pen name]. The Google name appears only in Settings › Account (second PR). Resolves "Which name the Me tab shows".
+- **Shields keep the rule:** each day's first cast gives one, up to 2. Resolves "Shields for the first cast each day".
+- **Deleting an account** removes drifting bottles and everything else of the user's. Bottles someone else holds or kept stay in their chest, anonymised: the writer link and pen name are stripped. Seals pending at deletion (slice 6) finish. The second PR builds it. Resolves "What deleting an account does to other people's chests".
+- **Quiet hours** hold back every notification, the daily reminder included, until they end. Until push exists, Settings shows "When my bottles are found" disabled with "Coming soon", and the rationale's "found" checkbox stays hidden. The stand-in is the Chest's dot and the Shore's "While you were away" banner, which the first PR brings. Resolves "Quiet hours and 'found' notifications".
+- **Keep writes at once.** A guest signs in first. Slice 6 brings the Claim sheet, the full-screen Kept result and "Seal it".
+- **The spec wins over the boards** where they differ, and the boards fill in where it's silent, as in slices 2 and 3. Resolves "Board or spec where they differ" for slice 4.
+
+  *Changes spec: §1.7 (Kept, and the streak's records), §3.3 (the shield's order, the Shore's notices), §3.7 (Keep without the Claim sheet), §3.10 (rows still to come), §3.11 (what waits for slice 6), §3.12 (the heading).*
+
+Choices made while building the first PR, which the owner can revisit at review:
+
+- **The data model:**
+  - Keep is one transaction: the bottle becomes `kept` with `keptAt`, the finder's find becomes `kept`, and `claims/{messageId}` holds the keeper (`pending_wallet`). The rules check the find's `foundAt` against the bottle's, so only the live holder keeps it. `keptAt` is never removed, so the rules know a bottle was kept without reading its claim.
+  - Only the keeper reads a claim, and the keeper can read the bottle while it's kept or under review, but not once it's removed. The writer sees Kept and its date, never who kept it.
+  - Moderation only ever moves a kept bottle among kept, under review and removed, so it never goes back to the sea.
+  - The writer can pull a bottle while it drifts (afloat, or a hold that has ended, and not reported out of the sea).
+- **Kept is final this slice:** a kept bottle can't be thrown back or reported, in the rules or the app.
+- **The streak is folded on the phone** from the account's daily find records and `streakDays/{uid}_{date}` marks: the day's first cast (written in the cast's own commit, checked against the tally), a calm sea (written when a look finds one), and a streak carried over from a guest. Each day: a carried streak counts as far as it reaches, then the day's cast gives a shield, then a find adds a day, a calm sea holds, and any other day uses a shield or rests the streak. So a day with a cast but no find never rests a streak; at the cap of 2 it ends with one shield fewer.
+- **Accepted, until a Worker takes over:** the rules can't check a calm sea or a carried streak, so a modified app could protect or lengthen its own streak.
+- **The fold up to three days ago is kept on the phone** (DataStore), so each look reads only the last few days, and it moves on only once the server has confirmed them. A new phone folds the whole history once. Production starts everyone at 0.
+- **A guest's streak is carried** when it signs in to a Google account that already exists, whether or not today's find moves with it: the guest notes its streak before the switch, and the account marks it on today's streak day after. Linking keeps the uid, so nothing needs carrying.
+- **The chest is read in parts:** kept bottles from the claims and unkept ones from the last week's finds, in pages of 20, and casts from the writer's own bottles, filtered on the phone. A bottle's words come from the phone's cache when it has them, since they never change.
+- **The counts are server counts** (`count()`, and `sum(findCount)` for "While you were away"), kept per account, asked for again only when something changed, and hidden offline. The first count on a phone is the baseline, so old finds aren't news.
+- **The Shore's "It'll wait in your chest for 7 days."** shows when Reveal closes on a fresh find that wasn't kept, thrown back or reported, however it closed.
+- **Keepsake detail** shows the status chip, the traits line and the journey. "On-chain record" and "What's public" wait for slice 6, since they describe a keepsake's public record. An unkept find's Throw back and Report go back to the Chest, which offers the Undo.
+- **Copy with no spec source:**
+  - the sign-in title "Sign in to track your bottles" (a guest's Cast tab) and the chip "Your 3-day streak comes with you"
+  - the "Removed" chip
+  - the trait names: Classic, Flask, Gourd, Sea glass, Amber glass, Moonglass
+  - "Drifts away today — keep it to hold on to it." and "This bottle drifts away today. Keep it to hold on to it.", beside the spec's "tomorrow" lines
+  - the keep errors: "This bottle has drifted on, so it can't be kept." and "Couldn't keep it just now. It's still yours to keep — try again in a moment."
+  - the pull errors, and Keepsake detail's "This bottle has drifted on" / "It isn't in your chest any more." [Back to your chest]
+  - the journey's "Not yet"
+- **Where the boards and the spec differ,** the spec wins:
+
+  | Spec value, taken | Board value, not taken |
+  |---|---|
+  | The chip at the end of a chest item | The chip in the meta row, under the excerpt |
+  | "Found (14)" \| "Cast (12)", and the summary line | "Found · 30" \| "Cast · 12", no summary |
+  | The Chest's dome edge at y≈180, "Your chest" in headlineSmall | Edge at 236, headlineMedium |
+  | Reveal's Share and Throw back under the card, Keep pinned at the foot | Keep first |
+
+- **From the boards, where the spec is silent:** the Chest's moon, the filter row scrolling sideways edge to edge, the bottle glyph's circle in its tint's container colour, Keepsake detail's compact dome (edge at 236) and its 20dp section gaps.

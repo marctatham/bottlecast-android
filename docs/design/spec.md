@@ -328,7 +328,7 @@ Primary copy avoids crypto jargon. Detail rows name each technical term exactly 
 | Drifting | Afloat in the sea pool | `status = afloat`, `rand` set, `reportCount` below 3 |
 | Found | Someone uncorked it. One finder at a time: the find holds it for 7 days | `status = found`, `foundAt` (when the hold began), `findCount`; the finder's `finds/{messageId}_{uid}` (`held`, `thrown_back` or `reported`) and the day's `daily/{uid}_{date}` |
 | Not kept · 5d left | The finder hasn't kept it; it drifts back after 7 days (G3) | Worked out as `foundAt` + 7 days, never stored; an expired hold is findable again |
-| Kept | Claimed. In your chest, not on-chain | `claims/{id}.status = pending_wallet` |
+| Kept | Claimed. In your chest, not on-chain. Keeping is for good: a kept bottle never drifts again | `messages/{id}.status = kept` and `keptAt` (never removed); the finder's find `kept`; `claims/{messageId}` (`keeperUid`, `status = pending_wallet`, `keptAt`), which only the keeper reads |
 | Waiting · 5h | Safety check: a bottle seals only once it's 24 hours old, counted from its cast (G1). An older bottle seals as soon as it's kept to a wallet | `claims.status = cooling`, `sealAfter = messages.createdAt + 24h` |
 | Sealing… | Mint transaction sent | `status = minting` |
 | Sealed | Minted to your receiving wallet | `status = minted`, `txHash`, `tokenId` |
@@ -551,6 +551,8 @@ Shared frame: edge-to-edge 360×800, full dome (edge at y≈480), breathing tide
 - Your first cast each day gives you a shield. You can hold up to 2.
 - A missed day automatically uses one shield.
 - Days when the sea is empty never break a streak.
+- Each day goes in the order it happens (decided 2026-10-15): the day's first cast gives its shield, then a day with no find uses one. So a day with a cast but no find never rests a streak.
+- The records: the create-only daily find records, and `streakDays/{uid}_{date}` marks for the day's first cast (in the cast's own commit), a calm sea and a streak carried over from a guest. The phone folds them, keeping its fold up to three days ago.
 - There are no paid items, ever.
 
 **States:**
@@ -727,7 +729,7 @@ Preview stays a separate route: it is where the writer consents to permanence.
 - Gift mode: the caption "This one doesn't use up today's bottle."
 
 ### 3.7 Reveal: the message
-*Until slice 4 brings the Chest, Reveal has no Keep pill or helper, and Shore B's card no Kept or Not kept chip (decisions, 2026-10-13).*
+*Keep writes at once, after the sign-in sheet for a guest; the Claim sheet, the full-screen Kept result and "Seal it" wait for slice 6 (decisions, 2026-10-15).*
 
 **Layout:**
 - Compact dome (edge at y≈230). No nav bar.
@@ -931,6 +933,7 @@ States:
 - Loading: 3 skeleton cards (static under reduced motion).
 - Empty per tab; filter with no results: "Nothing here yet".
 - Guest: Found works; Cast shows "Sign in to cast and track your bottles" [Sign in].
+- Until slices 6 and 7: no Sealed or Gifts filters, no wallet banner, and the summary leaves out "sealed".
 - Offline: cached data plus a banner.
 - Expiring unkept bottle: the meta reads "Drifts away tomorrow — keep it to hold on to it."
 - The nav dot clears once the tab is viewed.
@@ -945,6 +948,7 @@ States:
 - **"ON-CHAIN RECORD"** (shown when Sealing or Sealed): a 24dp-radius surface group of 56dp rows, label on the left and value on the right, mono where relevant, with copy buttons. Then "View on Basescan ↗".
 - **"WHAT'S PUBLIC"**: a glassContainer info card.
 - Bottom actions, by state.
+- Until slice 6: no "On-chain record" or "What's public", no Seal or Move, and Kept has no actions.
 
 **Copy:**
 - Journey: "Cast · 3 Oct", "Found · 5 Oct", "Kept · 5 Oct", "Sealed · 6 Oct". For your own casts: "Found by someone · 5 Oct".
@@ -984,6 +988,7 @@ States:
 **Layout:** nav bar visible.
 - Compact dome (edge at y≈260). Transparent top bar with a 48dp settings gear on the right.
 - Avatar: a 96dp scallop (fallback circle) with a 3dp moon rim at y≈96. It shows the Google photo **only if "Show my photo" is on**; otherwise the pen-name initial on moonContainer.
+- The heading is the pen name, never the Google name, which only Settings › Account shows (decided 2026-10-15).
 - Name (headlineSmall), then the handle and join date (bodyMedium).
 - Stats card straddling the arc (y≈236–336): surfaceHigh, 24dp radius. Four columns, each a statNumeral over a caption. The streak column adds "best 14" and the shield count.
 - "Achievements" (titleMedium) with a "6 of 15" chip and a "See all" text button; then a row of five 56dp badges.
@@ -993,7 +998,7 @@ States:
 - Tonal pill "Share my profile".
 
 **Copy:**
-- "Marc T." / "@marct · casting since Oct 2026"
+- "Driftwood" / "@marct · casting since Oct 2026"
 - Stats: "12 BOTTLED", "30 FOUND", "9 KEPT", "6 STREAK · best 14 · 1 shield".
 - Wallets: "2 linked · Receiving: Rainbow" (none: "Add a wallet (optional)").
 - Guest: "Guest sailor" / "Sign in to keep bottles and carry your streak to any phone." [Continue with Google]

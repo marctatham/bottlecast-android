@@ -25,7 +25,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
     - `MainActivity` holds the first frame with a pre-draw listener until it's known, and the NavHost isn't composed before then.
     - Tabs pop to `Shore`, never to `findStartDestination()`, which can be Onboarding.
   - Tab roots (Shore, Chest, Me) draw themselves in a `TabFrame`, which adds the navigation bar and hands its height to the screen as `contentPadding`. Every other route is immersive.
-  - Screens under the dome (Shore, Chest, Me) are built on `DomeScaffold`. It draws the dome under the status bar and keeps the content inside `windowInsets = WindowInsets.safeDrawing.only(Top + Horizontal)`, scrolling below the see-through bar. The bottom comes only from `contentPadding`, so the navigation bar isn't counted twice.
+  - Screens under the dome (Shore, Chest, Me) are built on `DomeScaffold`. It draws the dome under the status bar and keeps the content inside `windowInsets = WindowInsets.safeDrawing.only(Top + Horizontal)`, scrolling below the see-through bar. The bottom comes only from `contentPadding`, so the navigation bar isn't counted twice. The Chest lists more than fits, so it uses `DomeLazyScaffold`, the same frame around a `LazyColumn`.
   - Every other route is registered with `immersive<T>`. Its frame rounds the corners on a back swipe and takes every tap, so none falls through to the screen still drawn underneath. Screens from before the redesign also sit in `LegacyScreen`, which keeps them inside the system bars over an opaque background.
   - A tab root stays drawn while a screen opens over it. A keyboard, TalkBack or Switch Access can still reach it there, so its actions go through `dropUnlessStarted`, and `TabFrame` guards the bar the same way.
 - These packages each split into `domain`, `data` and `di`:
@@ -33,6 +33,8 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - `common/messages/`: the writer's side (the draft, and casting through the app-scoped `CastCoordinator`, with the daily tally and the language) and moderation
   - `common/profile/`: `users/{uid}`, holding the pen name and the accepted Terms version
   - `common/sea/`: the finder's side (today's candidate, the find, throw back, report, and handing a guest's find over to an existing account)
+  - `common/chest/`: Keep (`claims/{messageId}`), the chest's lists, one bottle for Keepsake detail, pulling a cast, the server counts, and the Chest's news (its dot and "While you were away")
+  - `common/streak/`: the streak, folded from the daily records and `streakDays` marks by the pure `foldStreak()`/`liveStreak()`, with the fold so far kept on the phone; calm seas and a guest's carried streak
 
   `domain` holds `I`-prefixed interfaces and entities; `data` the implementations, with Firestore field names in `data/model/` and mappers in `data/mapper/`; and `di` the Hilt modules.
 
@@ -50,7 +52,8 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - `onboarding` is the first run (spec §3.1).
   - `signin` is the lazy Google sign-in sheet, with the guest upgrade, and `penname` is the pen-name sheet (spec §3.2).
   - `compose`, `composepreview` and `castsuccess` are casting (spec §3.4–3.5).
-  - `chest` and `me` are empty states until slice 4.
+  - `chest` is the Chest's tabs (spec §3.10) and `keepsake` its Keepsake detail (§3.11).
+  - `me` is an empty state until slice 4's second PR.
   - `viewmessages` is the moderation screen from before the redesign.
 
 ## Conventions
@@ -124,6 +127,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - `FakeAuthenticationRepository` signs in with `signInAsGoogle()` or `signInAsGuest()`. Its `googleAccountExists` sends a sign-in down the handover path, and `FakeSeaRepository.foundElsewhere(id)` gives the guest today's find to carry.
   - `FakeCastCoordinator` answers at once, or refuses once after `refuseNext`. Offline, it queues casts until `confirmQueued()`.
   - `FakeSeaRepository` holds one seeded bottle. Switch it with `seaCalm`, `alreadyFoundToday` or `failNextFind`, or hold a find back with `findGate`. `FakeSeaActions` holds throw backs and reports until a test calls `expireAll()`, so no test waits out an undo window.
+  - `FakeChestRepository` builds the chest on `FakeSeaRepository`'s find: today's held find is Not kept until it's kept, and `casts` holds the account's casts. `FakeStreakRepository` holds whatever `streak` a test sets.
   - A screen test without Hilt uses `ComponentActivity` and builds its ViewModel from fakes, as `ShoreScreenTest` does.
   - Look text up with `activity.getString(R.string.…)`. Wait with `waitUntil`; never sleep or add delays to fakes.
   - `performClick()` taps a node's centre. On a merged row that holds links, such as the Terms checkbox, the centre can land on a link and open a Custom Tab, and the next lookup finds no Compose hierarchy. Tap the control itself with `performTouchInput { click(…) }`.
@@ -198,6 +202,8 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **One owner per animation:** an `Animatable` cancels whatever animation it's already running, so a second coroutine animating it can cut the first one short, along with anything that coroutine would have done next. Discover's reveal waits for the scroll's slide half out for this reason. A `LaunchedEffect` that changes its own key, such as clearing a notice, cancels itself too: clear the key after the work, so an interrupted effect runs again instead of losing it.
 - **Who counts as a Google account:** a guest that linked Google can still name `anonymous` as its sign-in provider. So the rules look for `'google.com'` in `request.auth.token.firebase.identities` (`hasGoogle()`), and the app refreshes the ID token after linking or switching. In the app, `UserEntity.googleUid` is the one check. Firebase tells `user` about a new account on the main thread, a moment after a sign-in returns, so code that runs straight after one uses the uid it returned (`switchToGoogle`).
 - **Firestore's write queue belongs to the signed-in user.** Writes still pending when the account switches stay behind with the old user. `SignInWithGoogleUseCase` calls `SeaActions.settle()` first, which writes any throw back or report still waiting.
+- **Kept bottles and the rules:** `keptAt` on a message is set once and never removed, so the rules know a bottle was kept without reading its claim (a billed access call). Rules read it with `.get('keptAt', null)`, because older documents lack it. A kept bottle never goes back to the sea, even through moderation.
+- **The streak's checkpoint is a cache:** the fold up to three days ago lives in DataStore, and moves on only once the server has confirmed those days, so a fresh phone's empty cache can't save a wrong one. Bump `FOLD_VERSION` when the fold's rules change, so every phone folds its history again.
 - **Firestore offline reads:** a query's default `get()` answers from the cache once Firestore is offline, possibly with nothing. Reads that decide something, such as whether the sea is calm, use `Source.SERVER`, so offline they fail instead.
 - **Robolectric setup:** it needs the `--add-opens` JVM flags set on the `Test` tasks in `app/build.gradle.kts` (JDK 17+). Keep unit-test Espresso at 3.7.0 or later: Roborazzi brings 3.5.1, which fails on SDK 37 with `InputManager.getInstance()`.
 - **Fonts:** all three families are bundled in `res/font/` and nothing downloads, because Robolectric can't load downloadable fonts. Roboto Flex is the variable font, with each weight selected through `FontVariation` and `opsz` pinned per size; `BottlingFontsTest` checks Robolectric still applies the axes. Sources and licences are in `licenses/`.
