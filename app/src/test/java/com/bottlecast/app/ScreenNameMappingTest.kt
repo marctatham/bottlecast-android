@@ -36,6 +36,7 @@ class ScreenNameMappingTest {
             composable<Compose> {}
             composable<ComposePreview> {}
             composable<CastSuccess> {}
+            composable<Keepsake> {}
             composable<Moderation> {}
         }
 

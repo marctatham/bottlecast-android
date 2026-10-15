@@ -98,6 +98,35 @@ class RevealScreenScreenshotTest {
     @Test
     fun reportedOfflineDawn() = capture(showing(report = RevealReport.Reported(blocked = false, queuedOffline = true)), darkTheme = false)
 
+    // Keep (spec §3.7): the streak's day in the overline, kept, keeping, and offline
+    @Test
+    fun streakDayNight() = capture(showing(day = 6), darkTheme = true)
+
+    @Test
+    fun streakDayDawn() = capture(showing(day = 6), darkTheme = false)
+
+    @Test
+    fun keptNight() = capture(showing(keep = RevealKeep(kept = true), day = 6), darkTheme = true)
+
+    @Test
+    fun keptDawn() = capture(showing(keep = RevealKeep(kept = true), day = 6), darkTheme = false)
+
+    @Test
+    fun keepingNight() = capture(showing(keep = RevealKeep(keeping = true)), darkTheme = true)
+
+    @Test
+    fun keepingDawn() = capture(showing(keep = RevealKeep(keeping = true)), darkTheme = false)
+
+    @Test
+    fun keepOfflineNight() = capture(showing(keep = RevealKeep(online = false)), darkTheme = true)
+
+    @Test
+    fun keepOfflineDawn() = capture(showing(keep = RevealKeep(online = false)), darkTheme = false)
+
+    @Test
+    @Config(fontScale = 2f)
+    fun keptLargeTextNight() = capture(showing(keep = RevealKeep(kept = true), day = 6), darkTheme = true)
+
     @Test
     fun loadingNight() = capture(RevealUiState.Loading, darkTheme = true)
 
@@ -137,6 +166,7 @@ class RevealScreenScreenshotTest {
             onThrowBackHandler = {},
             onBackToShoreHandler = {},
             onRetryHandler = {},
+            onKeepHandler = {},
             windowInsets = BoardStatusBar,
             contentPadding = PaddingValues(),
         )
@@ -159,11 +189,15 @@ class RevealScreenScreenshotTest {
             castAgo: CastAgo? = CastAgo.Days(3),
             report: RevealReport = RevealReport.None,
             fresh: Boolean = false,
+            keep: RevealKeep = RevealKeep(),
+            day: Int? = null,
         ) = RevealUiState.Showing(
             // a sea-glass Classic drifts underneath (any id seeded to one would do)
             bottle = RevealedBottle(id = "abc", text = text, byline = byline, castAgo = castAgo),
             report = report,
             fresh = fresh,
+            keep = keep,
+            day = day,
         )
     }
 }

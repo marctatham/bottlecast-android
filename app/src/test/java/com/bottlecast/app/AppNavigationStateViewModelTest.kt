@@ -2,6 +2,7 @@ package com.bottlecast.app
 
 import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.authentication.domain.UserEntity
+import com.bottlecast.app.common.chest.domain.IChestRepository
 import com.bottlecast.app.common.preferences.IOnboardingStore
 import com.bottlecast.app.testing.MainDispatcherRule
 import io.mockk.every
@@ -23,6 +24,7 @@ class AppNavigationStateViewModelTest {
     private val auth = mockk<IAuthenticationRepository> {
         every { user } returns MutableStateFlow(UserEntity.UnauthenticatedUser)
     }
+    private val chest = mockk<IChestRepository> { every { badge } returns MutableStateFlow(false) }
 
     @Test
     fun `a first launch starts with onboarding`() = runTest {
@@ -30,7 +32,7 @@ class AppNavigationStateViewModelTest {
         val store = mockk<IOnboardingStore> { every { seen } returns flowOf(false) }
 
         // when
-        val viewModel = AppNavigationStateViewModel(auth, store)
+        val viewModel = AppNavigationStateViewModel(auth, store, chest)
 
         // then
         Assert.assertEquals(Onboarding, viewModel.startDestination.value)
@@ -42,7 +44,7 @@ class AppNavigationStateViewModelTest {
         val store = mockk<IOnboardingStore> { every { seen } returns flowOf(true) }
 
         // when
-        val viewModel = AppNavigationStateViewModel(auth, store)
+        val viewModel = AppNavigationStateViewModel(auth, store, chest)
 
         // then
         Assert.assertEquals(Shore, viewModel.startDestination.value)
@@ -54,7 +56,7 @@ class AppNavigationStateViewModelTest {
         val store = mockk<IOnboardingStore> { every { seen } returns flow { throw IllegalStateException("corrupt") } }
 
         // when
-        val viewModel = AppNavigationStateViewModel(auth, store)
+        val viewModel = AppNavigationStateViewModel(auth, store, chest)
 
         // then
         Assert.assertEquals(Shore, viewModel.startDestination.value)

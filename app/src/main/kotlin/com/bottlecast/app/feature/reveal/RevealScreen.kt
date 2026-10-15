@@ -1,7 +1,5 @@
 package com.bottlecast.app.feature.reveal
 
-import android.content.Context
-import android.content.Intent
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -32,6 +30,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
@@ -42,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -62,14 +63,19 @@ import com.bottlecast.app.common.analytics.LocalTracker
 import com.bottlecast.app.common.components.BottlingButton
 import com.bottlecast.app.common.components.BottlingButtonSize
 import com.bottlecast.app.common.components.BottlingButtonType
+import com.bottlecast.app.common.components.BottlingSnackbarHost
 import com.bottlecast.app.common.components.DomeEdge
 import com.bottlecast.app.common.components.DomeScaffold
 import com.bottlecast.app.common.components.EmptyState
 import com.bottlecast.app.common.components.ImmersiveTopBar
 import com.bottlecast.app.common.components.MessageCard
 import com.bottlecast.app.common.components.OverlineText
+import com.bottlecast.app.common.components.StatusChip
+import com.bottlecast.app.common.components.StatusChipStyle
 import com.bottlecast.app.common.components.bleed
 import com.bottlecast.app.common.components.bottle.bottleLookFor
+import com.bottlecast.app.common.components.showTimed
+import com.bottlecast.app.common.chest.domain.KeepResult
 import com.bottlecast.app.common.sea.domain.ReportReason
 import com.bottlecast.app.common.ui.BottlingMotion
 import com.bottlecast.app.common.ui.BottlingPreview
@@ -83,14 +89,19 @@ import com.bottlecast.app.feature.reveal.components.DriftingBottle
 import com.bottlecast.app.feature.reveal.components.ReportDialog
 import com.bottlecast.app.feature.reveal.components.ReportedBar
 import com.bottlecast.app.feature.reveal.components.ReportedThanks
+import com.bottlecast.app.feature.reveal.components.keepMessage
+import com.bottlecast.app.feature.reveal.components.shareBottle
 import com.bottlecast.app.feature.reveal.components.RevealScenery
 import com.bottlecast.app.feature.reveal.components.revealByline
 import com.bottlecast.app.feature.reveal.domain.CastAgo
+import com.bottlecast.app.feature.signin.SignInReason
+import com.bottlecast.app.feature.signin.SignInSheet
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /**
- * Reveal (spec §3.7): a found bottle's message on parchment, with Share and Throw back, and a flag
- * to report it. Keep, its helper and its chip arrive with the Chest in slice 4.
+ * Reveal (spec §3.7): a found bottle's message on parchment, with Share and Throw back, a flag to
+ * report it, and Keep pinned at the foot. A guest signs in to keep it.
  *
  * @param onBackHandler back to the Shore: the find stays found.
  * @param onLeaveHandler the bottle was thrown back, or reported and done with: back to the Shore.
@@ -106,6 +117,26 @@ fun RevealScreen(
     val undoWindow = rememberTimedControlMillis(UNDO_WINDOW_MILLIS, hasAction = true)
     val context = LocalContext.current
     val tracker = LocalTracker.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    var signingIn by rememberSaveable { mutableStateOf(false) }
+    val snackbarMillis = rememberTimedControlMillis(UNDO_WINDOW_MILLIS, hasAction = false)
+    val keepMessages = KeepResult.entries.associateWith { stringResource(keepMessage(it)) }
+
+    LaunchedEffect(viewModel) {
+        viewModel.effects.collect { effect ->
+            when (effect) {
+                RevealEffect.NeedsSignIn -> signingIn = true
+                is RevealEffect.KeepFinished -> {
+                    if (effect.result == KeepResult.Kept) {
+                        tracker.trackEvent(AnalyticsEvent.BottleKept, mapOf(AnalyticsEvent.PARAM_SOURCE to KEEP_SOURCE))
+                    }
+                    val message = keepMessages.getValue(effect.result)
+                    scope.launch { snackbarHostState.showTimed(message, actionLabel = null, millis = snackbarMillis) }
+                }
+            }
+        }
+    }
 
     val showing = uiState as? RevealUiState.Showing
     val fresh = showing?.fresh == true && !reducedMotion
@@ -147,17 +178,23 @@ fun RevealScreen(
         },
         onBackToShoreHandler = dropUnlessResumed { onLeaveHandler() },
         onRetryHandler = viewModel::onRetry,
+        onKeepHandler = { viewModel.onKeep() },
+        snackbarHostState = snackbarHostState,
     )
+
+    if (signingIn) {
+        SignInSheet(
+            reason = SignInReason.Keep,
+            onDismissRequest = { signingIn = false },
+            onSignedIn = {
+                signingIn = false
+                viewModel.onKeep(signedIn = true)
+            },
+        )
+    }
 }
 
-private fun shareBottle(context: Context, message: String) {
-    val text = context.getString(R.string.reveal_share_text, message, context.getString(R.string.play_store_url))
-    val send = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, text)
-    }
-    context.startActivity(Intent.createChooser(send, context.getString(R.string.reveal_share_chooser)))
-}
+private const val KEEP_SOURCE = "reveal"
 
 /**
  * The stateless Reveal screen, for previews and screenshot tests.
@@ -177,109 +214,128 @@ internal fun RevealScreen(
     onThrowBackHandler: () -> Unit,
     onBackToShoreHandler: () -> Unit,
     onRetryHandler: () -> Unit,
+    onKeepHandler: () -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     windowInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
     contentPadding: PaddingValues = WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom).asPaddingValues(),
 ) {
     var reporting by rememberSaveable { mutableStateOf(false) }
     val showing = uiState as? RevealUiState.Showing
     val reported = showing != null && showing.report != RevealReport.None
+    // kept is final for now: a kept bottle can't be thrown back or reported
+    val kept = showing?.keep?.kept == true
     val spacing = BottlingTheme.spacing
     val largeText = isLargeText()
 
-    DomeScaffold(
-        edge = RevealDimens.dome,
-        contentPadding = contentPadding,
-        modifier = modifier,
-        windowInsets = windowInsets,
-        edgeOffset = domeOffset,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        scenery = { insets -> RevealScenery(insets = insets) },
-    ) { toArc ->
-        ImmersiveTopBar(onBackHandler = onBackHandler, modifier = Modifier.bleed(RevealDimens.topBarBleed)) {
-            if (showing != null) {
-                ReportFlag(reported = reported, onClick = { reporting = true })
+    Box(modifier = modifier) {
+        DomeScaffold(
+            edge = RevealDimens.dome,
+            contentPadding = contentPadding,
+            windowInsets = windowInsets,
+            edgeOffset = domeOffset,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            scenery = { insets -> RevealScenery(insets = insets) },
+        ) { toArc ->
+            ImmersiveTopBar(onBackHandler = onBackHandler, modifier = Modifier.bleed(RevealDimens.topBarBleed)) {
+                if (showing != null && !kept) {
+                    ReportFlag(reported = reported, onClick = { reporting = true })
+                }
             }
-        }
-        when (uiState) {
-            RevealUiState.Loading -> Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = spacing.xxl),
-                contentAlignment = Alignment.Center,
-            ) {
-                CircularProgressIndicator(color = BottlingTheme.colors.glass)
-            }
+            when (uiState) {
+                RevealUiState.Loading -> Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = spacing.xxl),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(color = BottlingTheme.colors.glass)
+                }
 
-            RevealUiState.Failed -> EmptyState(
-                title = stringResource(R.string.adrift_title),
-                body = stringResource(R.string.adrift_body),
-                actionLabel = stringResource(R.string.try_again),
-                actionIcon = R.drawable.ic_symbol_refresh,
-                onAction = onRetryHandler,
-                announce = true,
-                // below the arc: the compact dome is too short to hold it
-                modifier = Modifier.padding(top = (toArc - BottlingTheme.sizes.topBarHeight).coerceAtLeast(0.dp) + spacing.xl),
-            )
-
-            is RevealUiState.Showing -> {
-                OverlineText(
-                    text = stringResource(R.string.reveal_found_today),
-                    modifier = Modifier.padding(top = spacing.xxs, bottom = spacing.xs),
+                RevealUiState.Failed -> EmptyState(
+                    title = stringResource(R.string.adrift_title),
+                    body = stringResource(R.string.adrift_body),
+                    actionLabel = stringResource(R.string.try_again),
+                    actionIcon = R.drawable.ic_symbol_refresh,
+                    onAction = onRetryHandler,
+                    announce = true,
+                    // below the arc: the compact dome is too short to hold it
+                    modifier = Modifier.padding(top = (toArc - BottlingTheme.sizes.topBarHeight).coerceAtLeast(0.dp) + spacing.xl),
                 )
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    // at large text the card grows with the page instead of scrolling inside (spec §4)
-                    val cap = if (largeText) null else screenHeight() * RevealDimens.CARD_MAX_SHARE
-                    AnimatedContent(
-                        targetState = uiState.report,
-                        transitionSpec = {
-                            fadeIn(BottlingMotion.component()) togetherWith fadeOut(BottlingMotion.component())
-                        },
-                        contentKey = { it::class },
-                        label = "report",
-                    ) { report ->
-                        when (report) {
-                            RevealReport.None -> MessageCard(
-                                text = uiState.bottle.text,
-                                byline = revealByline(uiState.bottle),
-                                maxHeight = cap,
-                                sheen = sheen,
-                            )
-                            RevealReport.Pending -> ReportedBar(onUndoHandler = onUndoReportHandler)
-                            is RevealReport.Reported -> ReportedThanks(
-                                blocked = report.blocked,
-                                queuedOffline = report.queuedOffline,
-                                onBackToShoreHandler = onBackToShoreHandler,
-                            )
+
+                is RevealUiState.Showing -> {
+                    OverlineText(
+                        text = uiState.day?.let { stringResource(R.string.reveal_found_today_day, it) }
+                            ?: stringResource(R.string.reveal_found_today),
+                        modifier = Modifier.padding(top = spacing.xxs, bottom = spacing.xs),
+                    )
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        // at large text the card grows with the page instead of scrolling inside (spec §4)
+                        val cap = if (largeText) null else screenHeight() * RevealDimens.CARD_MAX_SHARE
+                        AnimatedContent(
+                            targetState = uiState.report,
+                            transitionSpec = {
+                                fadeIn(BottlingMotion.component()) togetherWith fadeOut(BottlingMotion.component())
+                            },
+                            contentKey = { it::class },
+                            label = "report",
+                        ) { report ->
+                            when (report) {
+                                RevealReport.None -> MessageCard(
+                                    text = uiState.bottle.text,
+                                    byline = revealByline(uiState.bottle),
+                                    maxHeight = cap,
+                                    sheen = sheen,
+                                )
+                                RevealReport.Pending -> ReportedBar(onUndoHandler = onUndoReportHandler)
+                                is RevealReport.Reported -> ReportedThanks(
+                                    blocked = report.blocked,
+                                    queuedOffline = report.queuedOffline,
+                                    onBackToShoreHandler = onBackToShoreHandler,
+                                )
+                            }
                         }
                     }
-                }
-                if (!reported) {
-                    Spacer(modifier = Modifier.height(RevealDimens.actionsGap))
-                    // side by side, or stacked when large text leaves no room for both (spec §4)
-                    if (largeText) {
-                        Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                    if (!reported) {
+                        Spacer(modifier = Modifier.height(RevealDimens.actionsGap))
+                        // side by side, or stacked when large text leaves no room for both (spec §4)
+                        if (kept) {
                             ShareButton(onShareHandler, Modifier.fillMaxWidth())
-                            ThrowBackButton(onThrowBackHandler, Modifier.fillMaxWidth())
+                        } else if (largeText) {
+                            Column(verticalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                                ShareButton(onShareHandler, Modifier.fillMaxWidth())
+                                ThrowBackButton(onThrowBackHandler, Modifier.fillMaxWidth())
+                            }
+                        } else {
+                            Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
+                                ShareButton(onShareHandler, Modifier.weight(1f))
+                                ThrowBackButton(onThrowBackHandler, Modifier.weight(1f))
+                            }
                         }
-                    } else {
-                        Row(horizontalArrangement = Arrangement.spacedBy(spacing.xs)) {
-                            ShareButton(onShareHandler, Modifier.weight(1f))
-                            ThrowBackButton(onThrowBackHandler, Modifier.weight(1f))
+                        if (!largeText) {
+                            DriftingBottle(
+                                look = bottleLookFor(uiState.bottle.id),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = spacing.xxl),
+                            )
                         }
+                        // Keep, pinned at the foot while the page is short enough (spec §3.7)
+                        Spacer(modifier = Modifier.weight(1f))
+                        KeepAction(keep = uiState.keep, onKeepHandler = onKeepHandler)
                     }
-                    if (!largeText) {
-                        DriftingBottle(
-                            look = bottleLookFor(uiState.bottle.id),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = spacing.xxl),
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(spacing.l))
                 }
-                Spacer(modifier = Modifier.height(spacing.l))
             }
         }
+
+        BottlingSnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(contentPadding)
+                .padding(horizontal = spacing.gutter),
+        )
     }
 
     if (reporting && showing != null) {
@@ -291,6 +347,37 @@ internal fun RevealScreen(
             },
         )
     }
+}
+
+/**
+ * "Keep this bottle" and its helper, or, once kept, the "In your chest · Kept" chip (spec §3.7).
+ * Offline, the pill waits, and the helper says why (spec §3.8a).
+ */
+@Composable
+private fun KeepAction(keep: RevealKeep, onKeepHandler: () -> Unit) {
+    if (keep.kept) {
+        StatusChip(
+            text = stringResource(R.string.chip_in_chest_kept),
+            icon = R.drawable.ic_symbol_inventory_2,
+            style = StatusChipStyle.PrimaryContainer,
+        )
+        return
+    }
+    BottlingButton(
+        text = R.string.keep_bottle,
+        leadingIcon = R.drawable.ic_symbol_inventory_2,
+        enabled = keep.online,
+        isLoading = keep.keeping,
+        onTapHandler = onKeepHandler,
+    )
+    Spacer(modifier = Modifier.height(BottlingTheme.spacing.xs))
+    Text(
+        text = stringResource(if (keep.online) R.string.keep_helper else R.string.keep_offline),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -373,5 +460,6 @@ private fun RevealScreenPreview() = BottlingPreview {
         onThrowBackHandler = {},
         onBackToShoreHandler = {},
         onRetryHandler = {},
+        onKeepHandler = {},
     )
 }

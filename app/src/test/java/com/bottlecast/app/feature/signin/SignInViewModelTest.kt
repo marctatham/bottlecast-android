@@ -12,6 +12,8 @@ import com.bottlecast.app.common.messages.domain.MessageStatus
 import com.bottlecast.app.common.sea.domain.FindStatus
 import com.bottlecast.app.common.sea.domain.ISeaRepository
 import com.bottlecast.app.common.sea.domain.TodayFind
+import com.bottlecast.app.common.streak.domain.IStreakRepository
+import com.bottlecast.app.common.streak.domain.Streak
 import com.bottlecast.app.feature.signin.domain.SignInOutcome
 import com.bottlecast.app.feature.signin.domain.SignInWithGoogleUseCase
 import com.bottlecast.app.testing.MainDispatcherRule
@@ -47,8 +49,10 @@ class SignInViewModelTest {
     private val auth = mockk<IAuthenticationRepository> { every { this@mockk.user } returns this@SignInViewModelTest.user }
     private val connectivity = mockk<IConnectivityMonitor> { every { isOnline } returns online }
     private val sea = mockk<ISeaRepository> { every { observeToday(any()) } returns today }
+    private val streak = MutableStateFlow<Streak?>(null)
+    private val streakRepository = mockk<IStreakRepository> { every { streak } returns this@SignInViewModelTest.streak }
 
-    private fun viewModel() = SignInViewModel(credentials, signIn, auth, connectivity, sea, clock)
+    private fun viewModel() = SignInViewModel(credentials, signIn, auth, connectivity, sea, streakRepository, clock)
 
     @Test
     fun `a sign-in goes from loading to signed in, with how it went`() = runTest {
@@ -129,6 +133,34 @@ class SignInViewModelTest {
         // then
         Assert.assertTrue(holding)
         Assert.assertFalse(thrownBack)
+    }
+
+    @Test
+    fun `a guest's streak comes along, counting today's find`() = runTest {
+        // given
+        val viewModel = viewModel()
+
+        // when
+        streak.value = Streak(current = 3, best = 3, shields = 0, foundToday = true)
+        today.value = TodayFind(LocalDate.now(clock), "today", held(), FindStatus.Held)
+
+        // then
+        Assert.assertEquals(3, viewModel.state.value.carriedStreak)
+        Assert.assertTrue(viewModel.state.value.carriesTodaysFind)
+    }
+
+    @Test
+    fun `a Google account carries nothing`() = runTest {
+        // given
+        user.value = UserEntity.AuthenticatedUser(AuthProviderType.Google, "jwt", "gail", isAdmin = false)
+        streak.value = Streak(current = 3, best = 3, shields = 0, foundToday = false)
+
+        // when
+        val viewModel = viewModel()
+
+        // then
+        Assert.assertEquals(0, viewModel.state.value.carriedStreak)
+        Assert.assertFalse(viewModel.state.value.carriesTodaysFind)
     }
 
     @Test

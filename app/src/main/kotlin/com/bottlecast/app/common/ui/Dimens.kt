@@ -76,4 +76,8 @@ object BottlingSizes {
     /** A dialog keeps this far from the screen's sides, and grows no wider than [dialogMaxWidth]. */
     val dialogSideMargin = 28.dp
     val dialogMaxWidth = 560.dp
+
+    /** A bottle's glyph in a list (spec §3.10): the rig, this tall, on a circle this wide (Chest boards). */
+    val bottleGlyph = 40.dp
+    val bottleGlyphRig = 28.dp
 }

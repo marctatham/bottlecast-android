@@ -90,6 +90,16 @@ data class CastSuccess(val messageId: String, val queued: Boolean, val sealable:
     }
 }
 
+/** Keepsake detail: one bottle from the chest, found or cast (spec §3.11). */
+@Serializable
+data class Keepsake(val messageId: String) : BottlingRoute {
+    override val screenName: String get() = SCREEN_NAME
+
+    companion object {
+        const val SCREEN_NAME = "keepsake"
+    }
+}
+
 /** The admin's list of reported and pulled bottles (spec §3.3: "Moderation"). */
 @Serializable
 data object Moderation : BottlingRoute {
@@ -117,6 +127,7 @@ val routeScreenNames: Map<KClass<out BottlingRoute>, String> = mapOf(
     Compose::class to Compose.SCREEN_NAME,
     ComposePreview::class to ComposePreview.screenName,
     CastSuccess::class to CastSuccess.SCREEN_NAME,
+    Keepsake::class to Keepsake.SCREEN_NAME,
     Moderation::class to Moderation.screenName,
 )
 

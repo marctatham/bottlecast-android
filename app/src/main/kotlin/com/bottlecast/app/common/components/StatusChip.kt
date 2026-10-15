@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import com.bottlecast.app.R
 import com.bottlecast.app.common.ui.BottlingPreview
@@ -35,6 +37,9 @@ enum class StatusChipStyle {
     /** "Kept". */
     PrimaryContainer,
 
+    /** "Found": a primary border and text, on one of your own bottles. */
+    PrimaryOutline,
+
     /** "Under review" and "Sealing failed". */
     ErrorContainer,
 
@@ -45,6 +50,10 @@ enum class StatusChipStyle {
 /**
  * A 32dp pill pairing an icon with text, so status is never shown by colour alone (spec §4).
  * Its height is a minimum: it grows with the text.
+ *
+ * @param description what TalkBack reads in place of [text], such as "Not kept, 5 days left".
+ * @param standalone false inside something that reads as one, such as a chest card, so the chip is
+ *   read with it rather than on its own.
  */
 @Composable
 fun StatusChip(
@@ -52,6 +61,8 @@ fun StatusChip(
     @DrawableRes icon: Int,
     style: StatusChipStyle,
     modifier: Modifier = Modifier,
+    description: String? = null,
+    standalone: Boolean = true,
 ) {
     val colors = BottlingTheme.colors
     val colorScheme = MaterialTheme.colorScheme
@@ -62,6 +73,7 @@ fun StatusChip(
         StatusChipStyle.Glass -> Triple(colors.glassContainer, colors.onGlassContainer, null)
         StatusChipStyle.Outline -> Triple(Color.Transparent, colorScheme.onSurfaceVariant, colorScheme.outline)
         StatusChipStyle.PrimaryContainer -> Triple(colorScheme.primaryContainer, colorScheme.onPrimaryContainer, null)
+        StatusChipStyle.PrimaryOutline -> Triple(Color.Transparent, colorScheme.primary, colorScheme.primary)
         StatusChipStyle.ErrorContainer -> Triple(colorScheme.errorContainer, colorScheme.onErrorContainer, null)
         StatusChipStyle.Parchment -> Triple(Color.Transparent, colors.ink, colors.inkMuted)
     }
@@ -73,7 +85,13 @@ fun StatusChip(
             .background(container)
             .then(if (border != null) Modifier.border(sizes.hairline, border, shape) else Modifier)
             .padding(start = sizes.chipPaddingStart, end = sizes.chipPaddingEnd)
-            .semantics(mergeDescendants = true) {},
+            .then(
+                when {
+                    description != null -> Modifier.clearAndSetSemantics { contentDescription = description }
+                    standalone -> Modifier.semantics(mergeDescendants = true) {}
+                    else -> Modifier
+                }
+            ),
         horizontalArrangement = Arrangement.spacedBy(sizes.chipIconGap),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -97,6 +115,7 @@ private fun StatusChipPreview() = BottlingPreview {
         StatusChip("Drifting", R.drawable.ic_symbol_waves, StatusChipStyle.Glass)
         StatusChip("Not kept · 5d left", R.drawable.ic_symbol_waves, StatusChipStyle.Outline)
         StatusChip("Kept", R.drawable.ic_symbol_inventory_2, StatusChipStyle.PrimaryContainer)
+        StatusChip("Found", R.drawable.ic_glyph_bottle, StatusChipStyle.PrimaryOutline)
         StatusChip("Under review", R.drawable.ic_symbol_flag, StatusChipStyle.ErrorContainer)
     }
 }

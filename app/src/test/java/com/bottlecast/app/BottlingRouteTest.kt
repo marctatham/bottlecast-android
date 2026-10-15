@@ -22,6 +22,7 @@ class BottlingRouteTest {
             Compose::class to "post_message",
             ComposePreview::class to "compose_preview",
             CastSuccess::class to "cast_success",
+            Keepsake::class to "keepsake",
             Moderation::class to "view_messages",
         )
 

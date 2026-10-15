@@ -17,6 +17,10 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -84,6 +88,44 @@ fun DomeScaffold(
                 .padding(bottom = contentPadding.calculateBottomPadding())
                 .padding(horizontal = BottlingTheme.spacing.gutter),
             horizontalAlignment = horizontalAlignment,
+        ) {
+            content(toArc)
+        }
+    }
+}
+
+/**
+ * A [DomeScaffold] whose content is a lazy list, for a screen under the dome that lists more than fits,
+ * such as the Chest (spec §3.10). The dome stays put while the list scrolls over it, below the status
+ * bar; the list's items keep to the side gutters, and can [bleed] past them.
+ */
+@Composable
+fun DomeLazyScaffold(
+    edge: DomeEdge,
+    contentPadding: PaddingValues,
+    modifier: Modifier = Modifier,
+    state: LazyListState = rememberLazyListState(),
+    windowInsets: WindowInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+    glowCenter: Offset = DomeGlowTopEnd,
+    scenery: @Composable BoxScope.(insets: PaddingValues) -> Unit = {},
+    content: LazyListScope.(toArc: Dp) -> Unit,
+) {
+    val insets = windowInsets.asPaddingValues()
+    val gutter = BottlingTheme.spacing.gutter
+    BoxWithConstraints(
+        modifier = modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        val toArc = maxHeight * edge.fraction - insets.calculateTopPadding()
+        Dome(edge = edge, glowCenter = glowCenter)
+        scenery(insets)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(windowInsets),
+            state = state,
+            contentPadding = PaddingValues(start = gutter, end = gutter, bottom = contentPadding.calculateBottomPadding()),
         ) {
             content(toArc)
         }
