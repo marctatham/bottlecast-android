@@ -2,7 +2,7 @@ rules_version = '2';
 
 // BottleCast's Cloud Firestore security rules.
 //
-// Collections: messages, finds, daily, reports, handoffs, castTally, users and
+// Collections: messages, finds, daily, reports, handoffs, castTally, claims, streakDays, users and
 // users/{uid}/blockedWriters. Anything else is denied, because rules deny by default. Tests:
 // firebase/test, run with `npm run test:emulator`.
 //
@@ -85,6 +85,10 @@ service cloud.firestore {
 
     function userDoc(uid) {
       return /databases/$(database)/documents/users/$(uid);
+    }
+
+    function claimDoc(messageId) {
+      return /databases/$(database)/documents/claims/$(messageId);
     }
 
     // The Terms version a cast needs (the app's TERMS_VERSION).
@@ -189,6 +193,34 @@ service cloud.firestore {
         && getAfter(reportDoc(pairId(messageId))).data.createdAt == request.time;
     }
 
+    // Keep (spec §1.7): the live holder, signed in with Google, keeps the bottle. One commit marks the
+    // bottle kept for good, marks my find kept and creates my claim. Matching my find's foundAt to the
+    // bottle's proves the hold is mine: a guest's find left behind by a handover keeps an older one.
+    function isKeep(messageId) {
+      let before = existing();
+      let after = incoming();
+      return hasGoogle()
+        && holdIsLive(before)
+        && changedKeys().hasOnly(['status', 'keptAt'])
+        && after.status == 'kept'
+        && after.keptAt == request.time
+        && getAfter(findDoc(pairId(messageId))).data.foundAt == before.foundAt
+        && getAfter(findDoc(pairId(messageId))).data.status == 'kept'
+        && getAfter(claimDoc(messageId)).data.keeperUid == me();
+    }
+
+    // A bottle someone kept carries keptAt for good, so the rules know without reading its claim.
+    function wasKept(m) {
+      return m.get('keptAt', null) != null;
+    }
+
+    // My kept bottle, while it's kept or under review. A removed one stays unreadable, even to me.
+    function isMyKept(messageId, m) {
+      return m.status in ['kept', 'under_review']
+        && wasKept(m)
+        && get(claimDoc(messageId)).data.keeperUid == me();
+    }
+
     // A finder's hold that hasn't run out, whatever the bottle's status: pulling a bottle keeps its
     // foundAt, so the finder's hold carries on if it's restored.
     function holdRunning(m) {
@@ -197,14 +229,16 @@ service cloud.firestore {
 
     // Moderation: pull a bottle (under_review) or remove it, keeping its hold time, or restore it.
     // Restoring puts it back in the sea, or, while a finder's hold runs, back to that finder with its
-    // reports cleared, so it never has two holders.
+    // reports cleared, so it never has two holders. A kept bottle only ever goes back to its keeper.
     function isModeration() {
       let before = existing();
       let after = incoming();
       return isAdmin()
         && changedKeys().hasOnly(['status', 'reportCount', 'foundAt'])
-        && after.status in ['afloat', 'found', 'under_review', 'removed']
+        && after.status in ['afloat', 'found', 'kept', 'under_review', 'removed']
         && after.reportCount is int && after.reportCount >= 0
+        && ((wasKept(before) && after.status in ['kept', 'under_review', 'removed'])
+            || (!wasKept(before) && after.status != 'kept'))
         && ((after.status == 'afloat' && after.foundAt == null && !holdRunning(before))
             || (after.status != 'afloat' && after.foundAt == before.foundAt))
         && (after.status != 'found' || holdRunning(before));
@@ -233,7 +267,8 @@ service cloud.firestore {
         && (resource == null
             || isAdmin()
             || resource.data.userId == me()
-            || isInSea(resource.data));
+            || isInSea(resource.data)
+            || isMyKept(messageId, resource.data));
       allow list: if signedIn()
         && (isAdmin()
             || resource.data.userId == me()
@@ -241,8 +276,11 @@ service cloud.firestore {
       allow create: if signedIn() && isValidCast(messageId);
       allow update: if signedIn()
         && (isFind(messageId) || isThrowBack(messageId) || isReport(messageId) || isModeration()
-            || isHandover(messageId));
-      allow delete: if isAdmin();
+            || isHandover(messageId) || isKeep(messageId));
+      // The writer may pull a bottle while it drifts, so no one finds it (spec §3.11). One that's held,
+      // kept or reported out of the sea stays, so nobody loses a bottle or dodges a review.
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.userId == me() && isFindable(resource.data));
     }
 
     // ---------- finds/{messageId}_{finderUid} ----------
@@ -271,7 +309,10 @@ service cloud.firestore {
         && existing().status == 'held'
         && (after.status == 'thrown_back'
             || (after.status == 'reported'
-                && getAfter(reportDoc(findId)).data.createdAt == request.time));
+                && getAfter(reportDoc(findId)).data.createdAt == request.time)
+            || (after.status == 'kept'
+                && getAfter(claimDoc(existing().messageId)).data.keeperUid == me()
+                && getAfter(claimDoc(existing().messageId)).data.keptAt == request.time));
     }
 
     match /finds/{findId} {
@@ -408,6 +449,64 @@ service cloud.firestore {
         && ((incoming().date == existing().date && incoming().count == existing().count + 1)
             || (incoming().date > existing().date && incoming().count == 1))
         && countsMyCast();
+    }
+
+    // ---------- claims/{messageId} ----------
+
+    // Kept (spec §1.7): my claim on a bottle, made in the keep's commit. Sealing (slice 6) moves it on
+    // from pending_wallet; until then nothing changes it.
+    function isValidClaim(messageId) {
+      let c = incoming();
+      return hasGoogle()
+        && hasExactly(['messageId', 'keeperUid', 'status', 'keptAt'])
+        && c.messageId == messageId
+        && c.keeperUid == me()
+        && c.status == 'pending_wallet'
+        && c.keptAt == request.time
+        && getAfter(messageDoc(messageId)).data.status == 'kept'
+        && getAfter(messageDoc(messageId)).data.keptAt == request.time;
+    }
+
+    match /claims/{messageId} {
+      allow get: if isAdmin() || (signedIn() && resource.data.keeperUid == me());
+      allow list: if isAdmin() || (signedIn() && resource.data.keeperUid == me());
+      allow create: if signedIn() && isValidClaim(messageId);
+    }
+
+    // ---------- streakDays/{uid}_{yyyy-MM-dd} ----------
+
+    // What a local date did for my streak besides a find (spec §3.3): my first cast that day gave a
+    // calm-sea shield, the sea was calm when I looked, or a guest's streak was carried over. Writes
+    // merge, marks only ever turn true, and a carried streak only grows. The rules can't see a calm
+    // sea or check a carried streak, so the app is trusted with those until a Worker takes over.
+    function isValidStreakDay(dayId) {
+      let d = incoming();
+      return d.keys().hasAll(['uid', 'date'])
+        && d.keys().hasOnly(['uid', 'date', 'cast', 'calm', 'carried'])
+        && d.uid == me()
+        && d.date is string
+        && dayId == me() + '_' + d.date
+        && isLocalDateNow(d.date)
+        && d.get('cast', true) == true
+        && d.get('calm', true) == true
+        && (!('carried' in d) || (d.carried is int && d.carried >= 1 && d.carried <= 3650));
+    }
+
+    // A cast mark needs this commit to start my cast tally on that date: the day's first cast.
+    function startsMyCastDay(date) {
+      return getAfter(castTallyDoc(me())).data.date == date
+        && getAfter(castTallyDoc(me())).data.count == 1;
+    }
+
+    match /streakDays/{dayId} {
+      allow get: if signedIn() && dayId.matches('^' + me() + '_.+$');
+      allow list: if signedIn() && resource.data.uid == me();
+      allow create: if signedIn() && isValidStreakDay(dayId)
+        && (!('cast' in incoming()) || startsMyCastDay(incoming().date));
+      allow update: if signedIn() && isValidStreakDay(dayId)
+        && incoming().keys().hasAll(existing().keys())
+        && incoming().get('carried', 0) >= existing().get('carried', 0)
+        && ('cast' in existing() || !('cast' in incoming()) || startsMyCastDay(incoming().date));
     }
 
     // ---------- users/{uid} ----------

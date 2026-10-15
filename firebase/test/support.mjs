@@ -4,7 +4,7 @@ import { createHash, randomBytes } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment } from '@firebase/rules-unit-testing';
 import {
-  Bytes, Timestamp, doc, increment, serverTimestamp, setDoc, setLogLevel, writeBatch,
+  Bytes, Timestamp, doc, increment, serverTimestamp, setDoc, setLogLevel, updateDoc, writeBatch,
 } from 'firebase/firestore';
 
 // Denied writes are the point of most tests; keep the SDK from logging each one.
@@ -115,6 +115,18 @@ export async function seedHold(id, finderUid, ageMillis, { findStatus = 'held', 
     });
   });
   return foundAt;
+}
+
+// A bottle `keeperUid` found `ageMillis` ago and then kept, as a find and a keep would leave it.
+export async function seedKept(id, keeperUid, ageMillis, { status = 'kept' } = {}) {
+  await seedHold(id, keeperUid, ageMillis);
+  const keptAt = Timestamp.fromMillis(Date.now() - ageMillis + 60 * 1000);
+  await seed(async (db) => {
+    await updateDoc(doc(db, 'messages', id), { status, keptAt });
+    await updateDoc(doc(db, 'finds', `${id}_${keeperUid}`), { status: 'kept' });
+    await setDoc(doc(db, 'claims', id), { messageId: id, keeperUid, status: 'pending_wallet', keptAt });
+  });
+  return keptAt;
 }
 
 export async function seedProfile(uid, profile) {
@@ -239,6 +251,22 @@ export function reportWrites(uid, id, { reason = null, blockedWriter = false, re
     ['update', ['messages', id], { reportCount: increment(1) }],
     ['update', ['finds', `${id}_${uid}`], { status: 'reported' }],
   ];
+}
+
+// Keep, as one commit: mark the bottle kept, mark my find kept and create my claim.
+export function keepWrites(uid, id, { message = {}, find = {}, claim = {} } = {}) {
+  return [
+    ['update', ['messages', id], { status: 'kept', keptAt: serverTimestamp(), ...message }],
+    ['update', ['finds', `${id}_${uid}`], { status: 'kept', ...find }],
+    ['set', ['claims', id], {
+      messageId: id, keeperUid: uid, status: 'pending_wallet', keptAt: serverTimestamp(), ...claim,
+    }],
+  ];
+}
+
+// A mark on today's streak day, merged as the app writes it.
+export function streakDayWrite(uid, marks, { date = utcDate() } = {}) {
+  return ['merge', ['streakDays', `${uid}_${date}`], { uid, date, ...marks }];
 }
 
 // Commits some writes (or a subset, by index) as one batch.
