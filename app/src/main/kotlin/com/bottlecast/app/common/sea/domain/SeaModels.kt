@@ -29,7 +29,10 @@ data class TodayFind(
 enum class FindStatus(val value: String) {
     Held("held"),
     ThrownBack("thrown_back"),
-    Reported("reported");
+    Reported("reported"),
+
+    /** Kept for good, in the finder's chest (spec §1.7). */
+    Kept("kept");
 
     companion object {
         fun from(value: String?): FindStatus? = entries.firstOrNull { it.value == value }

@@ -24,10 +24,106 @@
 
     <string name="go_to_shore">Go to the shore</string>
 
-    <!-- The Chest, until slice 4 fills it (spec §3.10) -->
+    <!-- The Chest (spec §3.10) -->
     <string name="chest_title">Your chest</string>
+    <plurals name="chest_summary_kept">
+        <item quantity="one">%1$d kept</item>
+        <item quantity="other">%1$d kept</item>
+    </plurals>
+    <plurals name="chest_summary_not_kept">
+        <item quantity="one">%1$d not kept yet</item>
+        <item quantity="other">%1$d not kept yet</item>
+    </plurals>
+    <string name="chest_summary_pair">%1$s · %2$s</string>
+    <string name="chest_tab_found">Found</string>
+    <string name="chest_tab_cast">Cast</string>
+    <string name="chest_tab_count">%1$s (%2$d)</string>
+    <string name="chest_filter_all">All</string>
+    <string name="chest_filter_not_kept">Not kept</string>
+    <string name="chest_filter_kept">Kept</string>
+    <string name="chest_filter_drifting">Drifting</string>
+    <string name="chest_filter_found">Found</string>
+    <string name="chest_filter_under_review">Under review</string>
     <string name="chest_empty_title">Your chest is empty</string>
     <string name="chest_empty_body">Today\'s bottle is waiting on the shore.</string>
+    <string name="chest_cast_empty_title">You haven\'t cast a bottle yet</string>
+    <string name="chest_cast_empty_body">Write a few words for a stranger.</string>
+    <string name="chest_filter_empty">Nothing here yet</string>
+    <string name="chest_guest_cast">Sign in to cast and track your bottles</string>
+    <string name="chest_sign_in">Sign in</string>
+    <string name="chest_offline_banner">You\'re offline. Your chest is still here; new bottles need a connection.</string>
+    <string name="chest_loading_description">Opening your chest</string>
+    <string name="chest_meta_found_today">Found today</string>
+    <string name="chest_meta_found">Found %1$s</string>
+    <string name="chest_meta_cast_today">Cast today</string>
+    <string name="chest_meta_cast">Cast %1$s</string>
+    <string name="chest_meta_with_language">%1$s · %2$s</string>
+    <string name="chest_meta_drifts_tomorrow">Drifts away tomorrow — keep it to hold on to it.</string>
+    <string name="chest_meta_drifts_today">Drifts away today — keep it to hold on to it.</string>
+
+    <!-- Status chips (spec §1.7, §3.10) -->
+    <plurals name="chip_not_kept">
+        <item quantity="one">Not kept · %1$dd left</item>
+        <item quantity="other">Not kept · %1$dd left</item>
+    </plurals>
+    <plurals name="chip_not_kept_description">
+        <item quantity="one">Not kept, %1$d day left</item>
+        <item quantity="other">Not kept, %1$d days left</item>
+    </plurals>
+    <string name="chip_kept">Kept</string>
+    <string name="chip_in_chest_kept">In your chest · Kept</string>
+    <string name="chip_drifting">Drifting</string>
+    <string name="chip_found">Found</string>
+    <string name="chip_under_review">Under review</string>
+    <string name="chip_removed">Removed</string>
+
+    <!-- A bottle's traits (spec §3.11, G9) -->
+    <string name="bottle_traits">%1$s · %2$s</string>
+    <string name="bottle_silhouette_classic">Classic</string>
+    <string name="bottle_silhouette_flask">Flask</string>
+    <string name="bottle_silhouette_gourd">Gourd</string>
+    <string name="bottle_tint_sea_glass">Sea glass</string>
+    <string name="bottle_tint_amber">Amber glass</string>
+    <string name="bottle_tint_moonglass">Moonglass</string>
+
+    <!-- Keeping a bottle (spec §1.7, §3.7, §3.8a) -->
+    <string name="keep_bottle">Keep this bottle</string>
+    <string name="keep_helper">Free. No wallet needed.</string>
+    <string name="keep_offline">Keeping needs a connection</string>
+    <string name="keep_kept">Kept. It\'s waiting in your chest.</string>
+    <string name="keep_not_held">This bottle has drifted on, so it can\'t be kept.</string>
+    <string name="keep_failed">Couldn\'t keep it just now. It\'s still yours to keep — try again in a moment.</string>
+
+    <!-- Keepsake detail (spec §3.11) -->
+    <string name="keepsake_share">Share this bottle</string>
+    <string name="keepsake_more">More options</string>
+    <string name="keepsake_throw_back">Throw back</string>
+    <string name="keepsake_report">Report</string>
+    <string name="keepsake_pull">Pull from the sea</string>
+    <string name="keepsake_pull_title">Pull this bottle from the sea?</string>
+    <string name="keepsake_pull_body">No one will find it.</string>
+    <string name="keepsake_pull_cancel">Cancel</string>
+    <string name="keepsake_pull_confirm">Pull it</string>
+    <string name="keepsake_pull_offline">Pulling a bottle needs a connection. It\'s still drifting — try again when you\'re back online.</string>
+    <string name="keepsake_pull_failed">Couldn\'t pull it just now. It\'s still drifting — try again in a moment.</string>
+    <string name="keepsake_pull_not_drifting">It isn\'t drifting any more, so it can\'t be pulled.</string>
+    <plurals name="keepsake_keep">
+        <item quantity="one">Keep this bottle · %1$d day left</item>
+        <item quantity="other">Keep this bottle · %1$d days left</item>
+    </plurals>
+    <string name="keepsake_journey">Journey</string>
+    <string name="keepsake_journey_cast">Cast</string>
+    <string name="keepsake_journey_found">Found</string>
+    <string name="keepsake_journey_found_by_someone">Found by someone</string>
+    <string name="keepsake_journey_kept">Kept</string>
+    <string name="keepsake_journey_not_yet">Not yet</string>
+    <string name="keepsake_under_review">This bottle was reported, so it\'s out of the sea while we take a look.</string>
+    <string name="keepsake_removed">This bottle was taken out of the sea for breaking the community guidelines.</string>
+    <string name="keepsake_drifts_tomorrow">This bottle drifts away tomorrow. Keep it to hold on to it.</string>
+    <string name="keepsake_drifts_today">This bottle drifts away today. Keep it to hold on to it.</string>
+    <string name="keepsake_gone_title">This bottle has drifted on</string>
+    <string name="keepsake_gone_body">It isn\'t in your chest any more.</string>
+    <string name="keepsake_back_to_chest">Back to your chest</string>
 
     <!-- Me, until slice 4 brings the profile (spec §3.12) -->
     <string name="me_placeholder_title">Your profile is on its way</string>
@@ -95,6 +191,17 @@
     <string name="shore_thrown_back">Back to the sea it goes.</string>
     <string name="shore_undo">Undo</string>
     <string name="shore_already_found">You\'ve already found today\'s bottle — next tide in %1$s.</string>
+    <string name="shore_waits_in_chest">It\'ll wait in your chest for 7 days.</string>
+    <plurals name="shore_away_found">
+        <item quantity="one">While you were away, %1$d of your bottles was found.</item>
+        <item quantity="other">While you were away, %1$d of your bottles were found.</item>
+    </plurals>
+    <string name="shore_away_see_them">See them</string>
+    <plurals name="shore_shield_used">
+        <item quantity="one">A calm sea kept your %1$d-day streak.</item>
+        <item quantity="other">A calm sea kept your %1$d-day streak.</item>
+    </plurals>
+    <string name="shore_streak_rested">Streak resting — find today\'s bottle to start a new one.</string>
 
     <!-- Shared by the edge states (spec §3.18) -->
     <string name="try_again">Try again</string>
@@ -119,7 +226,7 @@
     <string name="discover_help_title">No shaking needed</string>
     <string name="discover_help_body">Tap Uncork, press and hold the bottle, or shake — whichever you like. Leaving now won\'t use up today\'s bottle.</string>
     <string name="discover_help_got_it">Got it</string>
-    <string name="discover_sea_calm_note">This didn\'t use up today\'s bottle.</string>
+    <string name="discover_sea_calm_note">This didn\'t use up today\'s bottle, and your streak is safe.</string>
     <string name="discover_offline_title">Fog rolled in</string>
     <string name="discover_offline_body">Reconnect to find today\'s bottle.</string>
     <string name="discover_failed_title">The bottle slipped back into the sea</string>
@@ -127,6 +234,7 @@
 
     <!-- Reveal (spec §3.7) -->
     <string name="reveal_found_today">Found today</string>
+    <string name="reveal_found_today_day">Found today · Day %1$d</string>
     <string name="reveal_report">Report</string>
     <string name="reveal_report_description">Report this bottle</string>
     <string name="reveal_reported_description">You\'ve reported this</string>
@@ -195,8 +303,18 @@
 
     <!-- The sign-in sheet (spec §3.2) -->
     <string name="sign_in_title_cast">Sign in to cast your bottle</string>
+    <string name="sign_in_title_keep">Sign in to keep this bottle</string>
+    <string name="sign_in_title_track">Sign in to track your bottles</string>
     <string name="sign_in_body">We use your Google account so your chest and streak follow you to any phone. Your name never appears on bottles unless you choose a pen name.</string>
     <string name="sign_in_carry_find">Today\'s find comes with you</string>
+    <plurals name="sign_in_carry_streak_and_find">
+        <item quantity="one">Your %1$d-day streak and today\'s find come with you</item>
+        <item quantity="other">Your %1$d-day streak and today\'s find come with you</item>
+    </plurals>
+    <plurals name="sign_in_carry_streak">
+        <item quantity="one">Your %1$d-day streak comes with you</item>
+        <item quantity="other">Your %1$d-day streak comes with you</item>
+    </plurals>
     <string name="sign_in_google">Continue with Google</string>
     <string name="sign_in_not_now">Not now</string>
     <string name="sign_in_legal">By continuing you agree to the %1$s and the %2$s.</string>
@@ -336,6 +454,7 @@
     </plurals>
     <string name="moderation_status_afloat">In the sea</string>
     <string name="moderation_status_found">Held by a finder</string>
+    <string name="moderation_status_kept">Kept by its finder</string>
     <string name="moderation_status_under_review">Pulled for a look</string>
     <string name="moderation_status_removed">Removed</string>
     <string name="moderation_summary">%1$s · %2$s</string>

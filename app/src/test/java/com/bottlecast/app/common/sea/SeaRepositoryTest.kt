@@ -52,6 +52,9 @@ class SeaRepositoryTest {
     }
     private val connectivity = mockk<IConnectivityMonitor> { every { isOnline } returns online }
 
+    // the calm seas the looks marked, for the streak
+    private val calmDays = mutableListOf<Pair<String, LocalDate>>()
+
     @Test
     fun `the candidate is the first bottle this account could find`() = runTest {
         // given
@@ -105,6 +108,20 @@ class SeaRepositoryTest {
 
         // then
         Assert.assertEquals(CandidateState.SeaCalm, state)
+        Assert.assertEquals(listOf("finn" to LocalDate.of(2026, 10, 13)), calmDays)
+    }
+
+    @Test
+    fun `a sea with a bottle to find isn't marked calm`() = runTest {
+        // given
+        source.drifting = listOf(bottle("theirs"))
+        val repository = repository()
+
+        // when
+        repository.prefetchCandidate()
+
+        // then
+        Assert.assertEquals(emptyList<Pair<String, LocalDate>>(), calmDays)
     }
 
     @Test
@@ -288,6 +305,21 @@ class SeaRepositoryTest {
         // then
         Assert.assertEquals(FindResult.Found(held(bottle("next"))), result)
         Assert.assertEquals(listOf("taken", "next"), source.findAttempts)
+    }
+
+    @Test
+    fun `a look that runs out because others took its candidates isn't a calm sea`() = runTest {
+        // given
+        source.drifting = listOf(bottle("taken"))
+        source.findOutcomes["taken"] = { FindOutcome.Taken }
+        val repository = repository()
+        repository.prefetchCandidate()
+
+        // when
+        repository.findTodaysBottle()
+
+        // then
+        Assert.assertEquals(emptyList<Pair<String, LocalDate>>(), calmDays)
     }
 
     @Test
@@ -601,7 +633,8 @@ class SeaRepositoryTest {
 
     // fromRand is where the look at the sea starts; from 0 it reads every bottle upwards
     private fun TestScope.repository(fromRand: Double = 0.0) = SeaRepository(
-        source, auth, connectivity, clock, fixedRandom(fromRand), SecureRandom(), StandardTestDispatcher(testScheduler),
+        source, auth, connectivity, clock, fixedRandom(fromRand), SecureRandom(),
+        { uid, date -> calmDays += uid to date }, StandardTestDispatcher(testScheduler),
     )
 
     private fun fixedRandom(value: Double) = object : Random() {

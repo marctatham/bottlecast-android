@@ -5,6 +5,7 @@ import com.bottlecast.app.common.authentication.domain.IAuthenticationRepository
 import com.bottlecast.app.common.sea.domain.HandoverResult
 import com.bottlecast.app.common.sea.domain.ISeaActions
 import com.bottlecast.app.common.sea.domain.ISeaRepository
+import com.bottlecast.app.common.streak.domain.IStreakRepository
 import javax.inject.Inject
 
 /** How signing in went, for analytics' `signed_in`. */
@@ -24,14 +25,16 @@ enum class SignInOutcome(val analyticsValue: String) {
 
 /**
  * Signs in with Google (spec §3.2). A guest is linked, keeping its uid. If that Google account
- * already exists, the guest first writes what it was doing and arms a handoff of today's find, then
- * switches; the Google account then claims the find, unless it has one of its own today. Only the
- * sign-in itself can fail it: the handover is a bonus, and its failures are logged where they happen.
+ * already exists, the guest first writes what it was doing, notes its streak and arms a handoff of
+ * today's find, then switches; the Google account then claims the find, unless it has one of its own
+ * today, and carries the streak over. Only the sign-in itself can fail it: the handover and the carry
+ * are a bonus, and their failures are logged where they happen.
  */
 class SignInWithGoogleUseCase @Inject constructor(
     private val authentication: IAuthenticationRepository,
     private val sea: ISeaRepository,
     private val seaActions: ISeaActions,
+    private val streak: IStreakRepository,
 ) {
 
     suspend operator fun invoke(idToken: String): SignInOutcome {
@@ -42,9 +45,11 @@ class SignInWithGoogleUseCase @Inject constructor(
         }
         // Firestore keeps each account's writes apart, so the guest's go first, while it's the guest
         seaActions.settle()
+        val carried = streak.carryable()
         val handover = sea.prepareHandover()
         val uid = authentication.switchToGoogle(idToken)
-        if (handover == null) return SignInOutcome.Switched
-        return if (sea.claimHandover(handover, uid) == HandoverResult.HandedOver) SignInOutcome.HandedOver else SignInOutcome.Switched
+        val handedOver = handover != null && sea.claimHandover(handover, uid) == HandoverResult.HandedOver
+        streak.carry(uid, carried)
+        return if (handedOver) SignInOutcome.HandedOver else SignInOutcome.Switched
     }
 }

@@ -32,6 +32,7 @@ class MessageDataModelMapper @Inject constructor() {
             findCount = (document[MessageFields.FIND_COUNT] as? Number)?.toInt() ?: 0,
             foundAt = (document[MessageFields.FOUND_AT] as? Timestamp)?.toInstant(),
             rand = (document[MessageFields.RAND] as? Number)?.toDouble(),
+            keptAt = (document[MessageFields.KEPT_AT] as? Timestamp)?.toInstant(),
         )
     }
 }

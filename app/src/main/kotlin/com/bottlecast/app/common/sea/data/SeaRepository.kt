@@ -16,6 +16,7 @@ import com.bottlecast.app.common.sea.domain.Handover
 import com.bottlecast.app.common.sea.domain.HandoverResult
 import com.bottlecast.app.common.sea.domain.ISeaRepository
 import com.bottlecast.app.common.sea.domain.TodayFind
+import com.bottlecast.app.common.streak.domain.ICalmSeaLog
 import com.bottlecast.app.common.threading.DispatcherIO
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -65,6 +66,7 @@ class SeaRepository @Inject constructor(
     private val clock: Clock,
     private val random: Random,
     private val secureRandom: SecureRandom,
+    private val calmSeaLog: ICalmSeaLog,
     @param:DispatcherIO private val dispatcher: CoroutineDispatcher,
 ) : ISeaRepository {
 
@@ -122,6 +124,9 @@ class SeaRepository @Inject constructor(
 
         val chosen = look.unseen.firstOrNull()
         val state = if (chosen == null) CandidateState.SeaCalm else CandidateState.Available(chosen)
+        // the server said so, and a calm day never breaks a streak (spec §3.3); a look that ran out
+        // after others took its candidates at the pop isn't a calm sea
+        if (chosen == null && exclude.isEmpty()) calmSeaLog.markCalm(uid, date)
         blocked = Blocked(uid, date, blockedWriters)
         return Pin(uid, date, state, clock.instant(), look.unseen.drop(1)).also {
             pin = it

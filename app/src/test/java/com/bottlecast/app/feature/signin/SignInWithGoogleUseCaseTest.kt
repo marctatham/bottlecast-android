@@ -6,6 +6,7 @@ import com.bottlecast.app.common.sea.domain.Handover
 import com.bottlecast.app.common.sea.domain.HandoverResult
 import com.bottlecast.app.common.sea.domain.ISeaActions
 import com.bottlecast.app.common.sea.domain.ISeaRepository
+import com.bottlecast.app.common.streak.domain.IStreakRepository
 import com.bottlecast.app.feature.signin.domain.SignInOutcome
 import com.bottlecast.app.feature.signin.domain.SignInWithGoogleUseCase
 import io.mockk.Runs
@@ -26,7 +27,11 @@ class SignInWithGoogleUseCaseTest {
     }
     private val sea = mockk<ISeaRepository>()
     private val seaActions = mockk<ISeaActions> { coEvery { settle() } just Runs }
-    private val useCase = SignInWithGoogleUseCase(authentication, sea, seaActions)
+    private val streak = mockk<IStreakRepository> {
+        coEvery { carryable() } returns 0
+        coEvery { carry(any(), any()) } just Runs
+    }
+    private val useCase = SignInWithGoogleUseCase(authentication, sea, seaActions, streak)
 
     private val handover = Handover("today", "guest", "token")
 
@@ -42,6 +47,7 @@ class SignInWithGoogleUseCaseTest {
         Assert.assertEquals(SignInOutcome.Linked, outcome)
         coVerify(exactly = 0) { sea.prepareHandover() }
         coVerify(exactly = 0) { authentication.switchToGoogle(any()) }
+        coVerify(exactly = 0) { streak.carry(any(), any()) }
     }
 
     @Test
@@ -74,6 +80,24 @@ class SignInWithGoogleUseCaseTest {
             sea.prepareHandover()
             authentication.switchToGoogle("idToken")
             sea.claimHandover(handover, GOOGLE_UID)
+        }
+    }
+
+    @Test
+    fun `the guest's streak is noted before the switch, and carried onto the account after it`() = runTest {
+        // given
+        coEvery { authentication.linkGoogle("idToken") } returns GoogleLinkResult.AccountExists
+        coEvery { sea.prepareHandover() } returns null
+        coEvery { streak.carryable() } returns 3
+
+        // when
+        useCase("idToken")
+
+        // then
+        coVerifyOrder {
+            streak.carryable()
+            authentication.switchToGoogle("idToken")
+            streak.carry(GOOGLE_UID, 3)
         }
     }
 

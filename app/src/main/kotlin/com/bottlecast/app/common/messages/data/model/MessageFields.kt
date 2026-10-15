@@ -19,4 +19,7 @@ object MessageFields {
     const val REPORT_COUNT = "reportCount"
     const val FIND_COUNT = "findCount"
     const val FOUND_AT = "foundAt"
+
+    /** Set once, when the finder keeps the bottle; never removed, so the rules can tell it was kept. */
+    const val KEPT_AT = "keptAt"
 }

@@ -20,6 +20,12 @@ sealed class AnalyticsEvent(val eventName: String) {
     /** A report was sent, once its undo window ended; param [PARAM_BLOCKED]: whether the writer was blocked too. */
     data object BottleReported : AnalyticsEvent("bottle_reported")
 
+    /** A bottle was kept; param [PARAM_SOURCE]: reveal or keepsake. */
+    data object BottleKept : AnalyticsEvent("bottle_kept")
+
+    /** A writer pulled a drifting bottle of theirs from the sea. */
+    data object BottlePulled : AnalyticsEvent("bottle_pulled")
+
     /** Signed in with Google from the sheet; param [PARAM_RESULT]: linked, signed_in, switched or handed_over. */
     data object SignedIn : AnalyticsEvent("signed_in")
 
