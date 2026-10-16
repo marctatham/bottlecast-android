@@ -1,0 +1,14 @@
+// Slice 5's spike Worker. It's deployed only while measuring, then deleted
+// (README.md). No account_id: wrangler uses the one account it's logged in
+// to, and the public repo never holds the ID.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bottlecast-spike",
+  "main": "src/spike.ts",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": {
+    "enabled": true
+  }
+}

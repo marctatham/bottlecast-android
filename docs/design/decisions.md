@@ -340,3 +340,56 @@ Choices made while building the second PR (Me, Settings and reminders), which th
   | Settings: "Version" as a row | "BottleCast 1.2.0" under the list |
 
 - **From the boards, where the spec is silent:** the reminder sheet's outlined "Remind me at" row and its time chip, Settings' overline headers, surface groups, full-bleed dividers and segmented Theme buttons, and the Account rows' icons. Material gives each Theme button the widest one's width, so on a 390dp phone they sit under "Theme" rather than beside it.
+
+## 2026-10-16 — Slice 5 spikes
+
+Slice 5's answers, which slice 6 builds on. The spike is in `worker/`, and its README has the method and every sample.
+
+- **A Worker signs within 10 ms of CPU once it's warm. On a cold isolate it runs well over, unless it warms up at module scope, and even then a mint lands right at the limit.** These were measured on the Free plan, from the `cpuTime` Cloudflare reports per invocation (in whole milliseconds), with throwaway keys and nothing broadcast:
+
+  | Invocation | Warm | Cold, lazy | Cold, warmed up at module scope |
+  |---|---|---|---|
+  | A mint: an ID token checked, the verified mark, a 280-byte mint signed | 1–2 ms (at most 4) | 25–41 ms | 4–10 ms |
+  | `/wallet/link`: an ID token checked, then a SIWE message checked and its `personal_sign` signature recovered | 2 ms (at most 9) | 19–26 ms | 4–7 ms |
+  | A cron mint: a service-account JWT, the mark, a mint signed | — | 24–68 ms | 4–16 ms (5 of 8 over 10) |
+  | Base Sepolia reads through viem: the pending nonce, and a fee estimate that formats the latest block | 3–15 ms (median 5) | | |
+  | The same reads as one JSON-RPC batch, parsed by hand | 0–1 ms | | |
+
+  - **Cold** means the first request after a redeploy, which starts a fresh isolate. There were ten redeploys: five began with a mint and five with a link, so each cold figure has five samples.
+    - The request sent second wasn't always warm. A lazy link sent after a mint still cost 21–38 ms, probably because it reached another isolate.
+    - Every cron run starts cold, since nothing else keeps its isolate alive.
+    - The lazy Worker pays for noble building its secp256k1 tables and V8 compiling viem's code on first use.
+  - **At the limit:** `cpuTime` comes in whole milliseconds, so the warmed-up mints reported as 10 ms may have been just over. A warm-up alone leaves no headroom.
+  - **The warm-up:** while the isolate starts, it signs and recovers once and signs one offline mint. That takes startup from about 17 ms to about 45 ms (the limit is 1 s). The cron mint still ran over, probably because its service-account JWT (RSA, through `jose`) wasn't warmed up. That step's cold cost wasn't measured on its own.
+  - **Nothing failed that we saw.** Every request that went over, the largest at 68 ms, still returned 200, with no 1102. Every cron run that tail caught (8 of about 13 per Worker) ended `ok`. Cloudflare's docs only promise leeway for occasional overruns, though, and mints are rare enough that most will start cold.
+  - **The rest is cheap when warm:** checking the ID token, the HMAC mark and the service-account JWT run on WebCrypto and cost 0–5 ms.
+
+  Answers the CPU half of "Worker within the free limits".
+- **Subrequests:** the reads take 3 subrequests through viem, or 1 as a batch. Base Sepolia's public RPC refused 3 of 15 batches, though, answering with something other than an array, so the real Worker needs a dedicated RPC endpoint, or single calls when a batch is refused. A whole cron mint needs about 7 of its 50:
+  - the Firestore token: a read from wherever it's cached, or the token exchange (a cold isolate has nothing cached);
+  - the claims that are due, one query;
+  - the claim and the message, one `batchGet`;
+  - the Receiving wallet, one query;
+  - the chain reads, one batch;
+  - `eth_sendRawTransaction`;
+  - the commit.
+- **Proposed for slice 6** (`open-issues.md`):
+  - warm the signing and recovery code up at module scope;
+  - sign the Firestore token once an hour, not once a mint, by keeping the access token where the next isolate can find it (KV, say);
+  - read the chain with one hand-parsed batch, falling back to single calls when it's refused;
+  - mint one claim per invocation;
+  - measure the real invocation again.
+
+  An invocation that's stopped part way is safe to run again, because the contract's mint is idempotent per messageId and the claim stays pending for the next cron. If it still runs over, Workers Paid ($5 a month) is the fallback, which is the owner's call.
+- **Reown: no project yet.** The owner creates it before slice 6: one Starter project, "BottleCast", allowing `com.bottlecast.app` and `com.bottlecast.app.debug` (the web origin joins in slice 7), with Reown Auth, email and social login off. Its ID goes in `local.properties` as `reownProjectId`, never in the repo (`open-issues.md`).
+- **Privy: not asked yet,** so "Create one with Google" stays "Coming soon". Privy's pricing page (checked 2026-10-16) doesn't say whether the free Developer plan, up to 499 monthly users, includes JWT-based auth, and its dashboard puts Custom auth behind "Request access". Only Privy can answer (`open-issues.md`).
+- **AppKit builds in the app.** BOM 1.6.17 was checked on a scratch branch, and nothing was merged. Slice 6 needs these:
+  - Reown's `sign` module sets `dataExtractionRules` and `fullBackupContent` on its `<application>`, so the app's manifest needs `tools:replace` for both, or the merge fails.
+  - It brings 132 libraries: Koin (which builds beside Hilt), Retrofit, Moshi, OkHttp, RxJava 2, SQLDelight with SQLCipher, web3j, kethereum, Bouncy Castle and Spongy Castle, the Coinbase Wallet SDK, Material Components and Compose Material 2.
+  - It also brings Firebase Messaging, whose auto-init would register an FCM token at every start. Turn auto-init off until a push slice wants it.
+  - It moves coroutines from 1.10.2 to 1.11.0 and AppCompat from 1.2.0 to 1.7.1, and leaves Compose, the material3 pin and Firebase where they are.
+  - The unminified debug APK grows from 68.8 MB to 126.8 MB, about 21.6 MB of which is SQLCipher's native libraries for four ABIs. Slice 6 measures the release bundle, with R8.
+- **The Worker lives in `worker/`,** beside `firebase/`.
+- **Cloudflare:** the owner's own account. Wrangler registered the account's workers.dev subdomain by itself on the first deploy (it can be renamed in the dashboard). The spike Workers were deleted once measured.
+
+  *Changes spec: nothing.*

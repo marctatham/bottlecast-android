@@ -49,6 +49,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - `common/ui/` also holds the motion policy. `rememberReducedMotion()` reads the system setting. `rememberIdleMotionEnabled()` is true while the screen is resumed and motion isn't reduced, and gates idle loops such as `rememberBreathingTide()`, which holds still where it is and carries on from there.
   - Haptics go through `rememberHaptics()` (spec §1.5), which respects the system's touch feedback setting. Timed controls, such as an Undo, last `rememberTimedControlMillis()`: at least the system's recommended timeout, and no timeout while TalkBack is on (spec §4). `isLargeText()` is true from 175% text.
 - `firebase/` holds `firestore.rules`, `firestore.indexes.json` and the rules' emulator tests (Node). `scripts/` holds the Python tools for Play uploads, the message migration and the admin claim; `scripts/README.md` says how to run each.
+- `worker/` is the Cloudflare Worker's home (TypeScript, wrangler). Until slice 6 builds the real one, it holds slice 5's CPU spike: bench routes, the scripts that drive and measure them, and the results in `worker/README.md`.
 - `feature/<name>/` holds a screen and its ViewModel. Composables that only one feature uses go in its `components/`; use cases go in its `domain/`. Sizes only one feature uses go in its own tokens object, such as `ShoreDimens`.
   - `shore` is the home (states A and B, spec §3.3).
   - `discover` uncorks today's bottle and `reveal` shows it (spec §3.6–3.7).
@@ -84,6 +85,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **Verify every change:** `./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug`, then `./gradlew :app:assembleDebugAndroidTest` in its own invocation, so instrumented tests keep compiling. In the same invocation as lint it trips the lint/Hilt race.
 - **Release bundle:** `./gradlew :app:bundleRelease`, in its own invocation. Never run lint and a release task in the same invocation (lint/Hilt race).
 - **Instrumented tests:** `./gradlew :app:connectedDebugAndroidTest`. Read "Environments and safety" first.
+- **Worker:** `cd worker && npm ci && npm run check` typechecks it, and `npx wrangler deploy --dry-run` bundles it without uploading. `worker/README.md` says how to run the spike; its throwaway keys come from `node bench/keys.ts` and stay gitignored.
 - **Firestore rules:** `cd firebase && npm ci && npm run test:emulator` runs the rules tests in the emulator, against a demo project. It needs Java 21 or later on PATH (JBR 25 is) and Node 22.12 or later. Use the `firebase-tools` that `package.json` pins, never an older global CLI. The emulator doesn't check indexes, so try new queries against the debug project.
 - **Screenshot tests (Roborazzi on Robolectric):**
   - Record one class: `./gradlew :app:testDebugUnitTest --tests '*<Name>ScreenshotTest' -Proborazzi.test.record=true`
@@ -97,7 +99,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **Fresh clones and worktrees don't build as they are.** These files are gitignored:
   - `app/google-services.json` (debug)
   - `app/src/release/google-services.json` (production)
-  - `local.properties` (SDK path, signing values)
+  - `local.properties` (SDK path, signing values, `reownProjectId`)
 
   Copy the ones you need from the main checkout (debug work needs `app/google-services.json`), and never commit them.
 
@@ -159,6 +161,7 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
   - upload with `scripts/play_upload.py`. It needs `gcloud`, `bundletool`, and `PLAY_UPLOAD_ACCOUNT` when the active gcloud account isn't the right one.
 
   Show the owner the script's dry run (track, versionCode, notes) and get an explicit yes before running `release --yes`.
+- **Cloudflare:** wrangler deploys to the owner's own account, the only one it's logged in to. `wrangler.jsonc` names no `account_id`, so the public repo never holds it. Deploying, adding a cron or changing an account setting needs the owner's OK, and spike Workers are deleted once measured. Wrangler registers a workers.dev subdomain by itself if the account has none.
 - **Chain work** runs on Base Sepolia. Deploying to Base mainnet, or funding a mainnet minter, needs the owner's approval. Ask before changing or deploying the sibling repos `../bottlecast-nft-contract` and `../bottlecast-web`; the web repo deploys to the production Firebase project.
 - Notes specific to one machine belong in `CLAUDE.local.md` (gitignored), not here.
 
@@ -219,4 +222,5 @@ The design source is in `docs/design/`. Start with `docs/design/README.md`, then
 - **WorkManager and Hilt:** `BottleCastApplication` is WorkManager's `Configuration.Provider`, with Hilt's worker factory, and the manifest removes WorkManager's own initializer. So `WorkManager.getInstance()` works only in the real app: instrumented tests run on Hilt's test application, and fake the scheduler.
 - **The theme setting** is applied with `UiModeManager.setApplicationNightMode`, which Android keeps across restarts, so `isSystemInDarkTheme()`, the splash and the window colours all follow it. Nothing reads the stored theme at start.
 - **Deleting an account** needs a fresh Google sign-in with the same account, and every write waits for the server. The rules allow most of the deletes only while `deletions/{uid}` exists, and each of those reads it, so they go in batches of 10. An `orphaned` bottle (its writer deleted their account while it was held) has a null `userId`, which the mapper reads as `""`.
+- **Worker CPU on the Free plan:** 10 ms per invocation, cron included. On a fresh isolate the first secp256k1 signature or recovery costs 20–40 ms, because noble builds its tables and V8 compiles viem on first use. Warming them up at module scope, as `worker/src/spike-warm.ts` does, costs about 30 ms of startup (limit 1 s) and brings a cold mint to the limit, not under it. A Worker's clock stands still while it computes, so measure CPU with `wrangler tail --format json` (`cpuTime`), never with `Date.now()`.
 - **Licences:** the AboutLibraries plugin writes `res/raw/aboutlibraries.json` at build time, offline, and the `licenceTexts` task copies `licenses/*.txt` into the app's assets. A new bundled font or icon set needs its row in `BundledAsset` too.

@@ -15,6 +15,13 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - The owner reviews the wording (it isn't legal advice), then pushes and deploys the web repo. This blocks the next release, even if slice 9 hasn't started.
   - `privacy.html` dates from 2023 and needs the same review. It says no third parties and no cookies, but the app now uses Firebase Analytics, Crashlytics and Google sign-in, stores pen names and the accepted Terms, and will write sealed keepsakes to a public chain.
 
+- [ ] **A Reown project ID** (Slice 5, before slice 6)
+  - AppKit needs a Reown Cloud project ID, and only the owner can create the account.
+  - At dashboard.reown.com (the Starter plan, free), create one project, "BottleCast", for AppKit:
+    - allow `com.bottlecast.app` and `com.bottlecast.app.debug` (slice 7 adds the web origin);
+    - leave Reown Auth, email and social login off, since the Starter plan caps those at 500 monthly users.
+  - Put the ID in `local.properties` as `reownProjectId=…`, never in the repo. Slice 6 reads it into `BuildConfig`.
+
 - [ ] **When the 24-hour safety check starts** (Slice 6)
   - The spec and the Claim-Waiting board count from the cast. The Keepsake-Detail board assumed the find, though its dates fit either reading.
   - Options: from the cast, or from the find. Proposed: from the cast (spec §1.7).
@@ -43,9 +50,22 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - These need a push sender (the Worker calling FCM HTTP v1 with a service-account token). No slice builds it, and the spec doesn't describe it.
   - Slice 4 built the spec's v1 fallback (§3.16b): the Chest's dot and the Shore's "While you were away" banner, and Settings shows "When my bottles are found" as "Coming soon". Push itself is still unplanned.
 
-- [ ] **Worker within the free limits** (Slices 5 and 6)
-  - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't. Still open: whether signing fits in 10 ms of CPU (a slice 5 spike), staying under 50 subrequests per invocation (cron runs included), and serialising the single minter's nonce.
-  - Options for the nonce: cron-only minting, or a Durable Object that owns it. Someone also has to watch the minter's balance (the Base Sepolia faucet gives 0.1 ETH per rolling 24 hours).
+- [ ] **Worker within the free limits** (Slice 6)
+  - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't.
+  - Slice 5 measured it ([decisions.md](decisions.md), 2026-10-16):
+    - Signing fits in 10 ms of CPU once the isolate is warm.
+    - On a cold isolate it runs at 25–41 ms. A warm-up at module scope brings that to 4–10 ms, right at the limit.
+    - A cold cron mint still ran 4–16 ms with the warm-up, because its service-account JWT wasn't warmed up.
+    - A cron mint needs about 7 of the 50 subrequests.
+    - Every over-limit request that was seen still returned 200, with no 1102.
+  - Proposed:
+    - warm signing and recovery up at module scope;
+    - sign the Firestore token once an hour, not once a mint;
+    - read the chain with one batch, falling back to single calls or using a dedicated RPC endpoint, since Base Sepolia's public one refused some batches;
+    - measure the real invocation again.
+
+    Workers Paid ($5 a month) is the fallback if it still runs over.
+  - Still open: serialising the single minter's nonce. The options are cron-only minting, or a Durable Object that owns it. Someone also has to watch the minter's balance (the Base Sepolia faucet gives 0.1 ETH per rolling 24 hours).
 
 - [ ] **Queued casts refused after a restart** (Slice 9)
   - An offline cast is queued in Firestore's offline cache. If the app is closed before the server answers, and the server then refuses it (the daily cap, say, or Terms that changed), nothing tells the writer, and the words aren't restored.
@@ -63,7 +83,13 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
 
 - [ ] **"Create one with Google"** (Slices 5 and 6)
   - The embedded-wallet option on Add a wallet stays "Coming soon" behind a remote flag until a free embedded-wallet tier is confirmed, so linking an existing wallet is the only path for now.
-  - It hangs on the slice 5 spike: does Privy's free plan accept a Firebase custom JWT?
+  - It hangs on the slice 5 spike: does Privy's free plan accept a Firebase custom JWT? Privy's pricing page doesn't say (checked 2026-10-16), and the owner hasn't asked yet.
+  - How to ask: create a free Privy app at dashboard.privy.io, then use Integrations › **Request access** to Custom auth, or ask Privy's support.
+  - If it's granted, JWT-based auth takes:
+    - the JWKS URL `https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com`;
+    - the ID claim `sub`.
+
+    Firebase's tokens carry `iss = https://securetoken.google.com/<projectId>` and `aud = <projectId>`.
 
 - [ ] **Testnet keepsakes in a wallet (debug builds)** (Slice 6)
   - Wallets don't auto-detect testnet NFTs. Spec §3.8b gives debug builds copy buttons for the contract address and keepsake ID, but there's no "Add to my wallet" sheet with MetaMask's manual "Import NFT" steps, and no board for one.
