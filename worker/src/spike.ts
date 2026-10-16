@@ -6,26 +6,26 @@ import { createPublicClient, http, type Hex } from "viem";
 import { baseSepolia } from "viem/chains";
 import type { JWK } from "jose";
 import {
+  cronMint,
+  linkInvocation,
+  mintInvocation,
+  PLACEHOLDER_ADDRESS,
   SAMPLE_MESSAGE_ID,
   SAMPLE_UID,
   signMint,
   signServiceAccountJwt,
+  SPIKE_SA_EMAIL,
   verifiedMark,
   verifyIdToken,
   verifySiwe,
+  type SpikeSecrets,
 } from "./ops.ts";
 
-interface SpikeEnv {
+interface SpikeEnv extends SpikeSecrets {
   SPIKE_KEY: string;
-  SPIKE_MINTER_KEY: Hex;
-  SPIKE_HMAC_KEY: Hex;
-  SPIKE_ID_JWK: string;
-  SPIKE_SA_PKCS8: string;
 }
 
-const SA_EMAIL = "spike@demo-bottlecast.iam.gserviceaccount.com";
 const BASE_SEPOLIA_RPC = "https://sepolia.base.org";
-const READ_ADDRESS = "0x00000000000000000000000000000000b0771c11";
 
 type Body = { idToken?: string; message?: string; signature?: Hex; nonce?: string };
 
@@ -38,22 +38,14 @@ const routes: Record<string, (env: SpikeEnv, body: Body) => Promise<unknown>> = 
 
   "/bench/idtoken": async (env, body) => verifyIdToken(body.idToken!, idJwk(env)),
 
-  "/bench/satoken": async (env) => (await signServiceAccountJwt(env.SPIKE_SA_PKCS8, SA_EMAIL)).length,
+  "/bench/satoken": async (env) => (await signServiceAccountJwt(env.SPIKE_SA_PKCS8, SPIKE_SA_EMAIL)).length,
 
   "/bench/hmac": async (env) => fixedMark(env),
 
-  // The heaviest `/claim` → mint invocation: who's asking, the mark, the signature.
-  "/bench/mint": async (env, body) => {
-    const uid = await verifyIdToken(body.idToken!, idJwk(env));
-    const mark = await verifiedMark(env.SPIKE_HMAC_KEY, uid, SAMPLE_MESSAGE_ID);
-    return (await signMint(env.SPIKE_MINTER_KEY, mark, 0)).slice(0, 10);
-  },
+  "/bench/mint": async (env, body) => (await mintInvocation(env, body.idToken!)).slice(0, 10),
 
-  // `/wallet/link`: who's asking, then the wallet's SIWE signature.
-  "/bench/link": async (env, body) => {
-    await verifyIdToken(body.idToken!, idJwk(env));
-    return verifySiwe(body.message!, body.signature!, body.nonce!);
-  },
+  "/bench/link": async (env, body) =>
+    linkInvocation(env, body.idToken!, { message: body.message!, signature: body.signature!, nonce: body.nonce! }),
 
   // The reads a mint makes before it can send, against Base Sepolia's public
   // RPC. No funds, no broadcast. Counts the subrequests they take. The
@@ -64,7 +56,7 @@ const routes: Record<string, (env: SpikeEnv, body: Body) => Promise<unknown>> = 
       chain: baseSepolia,
       transport: http(BASE_SEPOLIA_RPC, { onFetchRequest: () => void subrequests++ }),
     });
-    const nonce = await client.getTransactionCount({ address: READ_ADDRESS, blockTag: "pending" });
+    const nonce = await client.getTransactionCount({ address: PLACEHOLDER_ADDRESS, blockTag: "pending" });
     const fees = await client.estimateFeesPerGas();
     return {
       nonce,
@@ -75,19 +67,25 @@ const routes: Record<string, (env: SpikeEnv, body: Body) => Promise<unknown>> = 
   },
 
   // The same reads as one JSON-RPC batch, parsed by hand: one subrequest, and
-  // no block to format.
+  // no block to format. The public RPC sometimes refuses a batch, and then
+  // this fails rather than read a missing answer as 0.
   "/bench/rpc-lean": async () => {
     const response = await fetch(BASE_SEPOLIA_RPC, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify([
-        { jsonrpc: "2.0", id: 1, method: "eth_getTransactionCount", params: [READ_ADDRESS, "pending"] },
+        { jsonrpc: "2.0", id: 1, method: "eth_getTransactionCount", params: [PLACEHOLDER_ADDRESS, "pending"] },
         { jsonrpc: "2.0", id: 2, method: "eth_gasPrice", params: [] },
         { jsonrpc: "2.0", id: 3, method: "eth_maxPriorityFeePerGas", params: [] },
       ]),
     });
-    const results = (await response.json()) as { id: number; result?: Hex }[];
-    const result = (id: number) => BigInt(results.find((r) => r.id === id)?.result ?? "0x0");
+    const results: unknown = await response.json();
+    if (!Array.isArray(results)) throw new Error(`The RPC refused the batch: ${JSON.stringify(results).slice(0, 120)}`);
+    const result = (id: number): bigint => {
+      const answer = (results as { id: number; result?: Hex; error?: unknown }[]).find((r) => r.id === id);
+      if (!answer?.result) throw new Error(`No answer to call ${id}: ${JSON.stringify(answer?.error ?? null)}`);
+      return BigInt(answer.result);
+    };
     return {
       nonce: Number(result(1)),
       gasPrice: result(2).toString(),
@@ -110,19 +108,16 @@ export default {
     if (request.headers.get("X-Spike-Key") !== env.SPIKE_KEY) return new Response(null, { status: 404 });
     const route = routes[new URL(request.url).pathname];
     if (!route) return new Response(null, { status: 404 });
-    const body = request.method === "POST" ? ((await request.json()) as Body) : {};
     try {
+      const body = request.method === "POST" ? ((await request.json()) as Body) : {};
       return Response.json({ result: await route(env, body) });
     } catch (error) {
       return Response.json({ error: String(error) }, { status: 400 });
     }
   },
 
-  // A cron mint: no ID token, but a Firestore token to sign, then the mark and the mint.
   async scheduled(_controller, env): Promise<void> {
-    await signServiceAccountJwt(env.SPIKE_SA_PKCS8, SA_EMAIL);
-    const mark = await verifiedMark(env.SPIKE_HMAC_KEY, SAMPLE_UID, SAMPLE_MESSAGE_ID);
-    const signed = await signMint(env.SPIKE_MINTER_KEY, mark, 0);
+    const signed = await cronMint(env);
     console.log(`cron mint signed ${signed.length / 2 - 1} bytes`);
   },
 } satisfies ExportedHandler<SpikeEnv>;

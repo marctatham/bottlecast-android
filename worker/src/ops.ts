@@ -14,8 +14,18 @@ import { importJWK, importPKCS8, jwtVerify, SignJWT, type JWK } from "jose";
 
 export const BASE_SEPOLIA = 84532;
 
-// A placeholder contract: the spike signs a mint but never broadcasts it.
-const SPIKE_CONTRACT: Address = "0x00000000000000000000000000000000b0771c11";
+// A placeholder address: the spike's mints go to it but are never broadcast,
+// and its chain reads ask about it.
+export const PLACEHOLDER_ADDRESS: Address = "0x00000000000000000000000000000000b0771c11";
+export const SPIKE_SA_EMAIL = "spike@demo-bottlecast.iam.gserviceaccount.com";
+
+/** What an invocation signs and checks with: the Worker's secrets, or the local bench's keys. */
+export interface SpikeSecrets {
+  SPIKE_MINTER_KEY: Hex;
+  SPIKE_HMAC_KEY: Hex;
+  SPIKE_ID_JWK: string;
+  SPIKE_SA_PKCS8: string;
+}
 
 // The mint call spec §1.7 describes, so the calldata is the real size.
 const mintAbi = [
@@ -74,7 +84,7 @@ export async function signMint(minterKey: Hex, writerMark: Hex, nonce: number): 
   return account.signTransaction({
     chainId: BASE_SEPOLIA,
     type: "eip1559",
-    to: SPIKE_CONTRACT,
+    to: PLACEHOLDER_ADDRESS,
     data,
     nonce,
     gas: 400_000n,
@@ -82,6 +92,30 @@ export async function signMint(minterKey: Hex, writerMark: Hex, nonce: number): 
     maxPriorityFeePerGas: 1_000_000n,
     value: 0n,
   });
+}
+
+/** The heaviest `/claim` → mint invocation: who's asking, the mark, the signature. */
+export async function mintInvocation(secrets: SpikeSecrets, idToken: string): Promise<Hex> {
+  const uid = await verifyIdToken(idToken, JSON.parse(secrets.SPIKE_ID_JWK) as JWK);
+  const mark = await verifiedMark(secrets.SPIKE_HMAC_KEY, uid, SAMPLE_MESSAGE_ID);
+  return signMint(secrets.SPIKE_MINTER_KEY, mark, 0);
+}
+
+/** `/wallet/link`: who's asking, then the wallet's SIWE signature. */
+export async function linkInvocation(
+  secrets: SpikeSecrets,
+  idToken: string,
+  siwe: { message: string; signature: Hex; nonce: string },
+): Promise<Address> {
+  await verifyIdToken(idToken, JSON.parse(secrets.SPIKE_ID_JWK) as JWK);
+  return verifySiwe(siwe.message, siwe.signature, siwe.nonce);
+}
+
+/** A cron mint: no ID token, but a Firestore token to sign, then the mark and the mint. */
+export async function cronMint(secrets: SpikeSecrets): Promise<Hex> {
+  await signServiceAccountJwt(secrets.SPIKE_SA_PKCS8, SPIKE_SA_EMAIL);
+  const mark = await verifiedMark(secrets.SPIKE_HMAC_KEY, SAMPLE_UID, SAMPLE_MESSAGE_ID);
+  return signMint(secrets.SPIKE_MINTER_KEY, mark, 0);
 }
 
 /** The verified mark: HMAC-SHA256 over the writer's uid and the messageId. */

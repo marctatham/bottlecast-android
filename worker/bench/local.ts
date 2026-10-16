@@ -3,25 +3,28 @@
 // over many calls. Cloudflare's CPUs differ, so the deployed numbers decide.
 //   node bench/local.ts [calls]
 import { performance } from "node:perf_hooks";
-import type { Hex } from "viem";
 import type { JWK } from "jose";
 import {
+  cronMint,
+  linkInvocation,
+  mintInvocation,
   SAMPLE_MESSAGE_ID,
   SAMPLE_TEXT,
   SAMPLE_UID,
   signMint,
   signServiceAccountJwt,
+  SPIKE_SA_EMAIL,
   verifiedMark,
   verifyIdToken,
   verifySiwe,
+  type SpikeSecrets,
 } from "../src/ops.ts";
 import { idToken, makeKeys, siweBody } from "./fixtures.ts";
 
 const calls = Number(process.argv[2] ?? 500);
 const keys = await makeKeys();
-const env = keys.worker as Record<string, string> & { SPIKE_MINTER_KEY: Hex; SPIKE_HMAC_KEY: Hex };
+const env = keys.worker as unknown as SpikeSecrets;
 const jwk = JSON.parse(env.SPIKE_ID_JWK) as JWK;
-const SA_EMAIL = "spike@demo-bottlecast.iam.gserviceaccount.com";
 
 type Op = () => Promise<unknown>;
 const mark = () => verifiedMark(env.SPIKE_HMAC_KEY, SAMPLE_UID, SAMPLE_MESSAGE_ID);
@@ -36,18 +39,13 @@ const token = await idToken(keys.driver.idPrivateJwk);
 const siwe = await siweBody(keys.driver.walletKey);
 const ops: Record<string, Op> = {
   hmac: mark,
-  satoken: () => signServiceAccountJwt(env.SPIKE_SA_PKCS8, SA_EMAIL),
+  satoken: () => signServiceAccountJwt(env.SPIKE_SA_PKCS8, SPIKE_SA_EMAIL),
   idtoken: () => verifyIdToken(token, jwk),
   siwe: () => verifySiwe(siwe.message, siwe.signature, siwe.nonce),
   sign,
-  mint: async () => {
-    const uid = await verifyIdToken(token, jwk);
-    return signMint(env.SPIKE_MINTER_KEY, await verifiedMark(env.SPIKE_HMAC_KEY, uid, SAMPLE_MESSAGE_ID), 0);
-  },
-  link: async () => {
-    await verifyIdToken(token, jwk);
-    return verifySiwe(siwe.message, siwe.signature, siwe.nonce);
-  },
+  mint: () => mintInvocation(env, token),
+  link: () => linkInvocation(env, token, siwe),
+  cron: () => cronMint(env),
 };
 
 console.log(`op        first CPU   p50 CPU   p99 CPU   max CPU   (ms, ${calls} calls)`);

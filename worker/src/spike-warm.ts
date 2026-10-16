@@ -14,7 +14,9 @@ import spike from "./spike.ts";
 const minterKey = (env as unknown as { SPIKE_MINTER_KEY: Hex }).SPIKE_MINTER_KEY;
 const warmUpHash = keccak_256(new TextEncoder().encode("bottlecast warm-up"));
 secp256k1.sign(warmUpHash, hexToBytes(minterKey), { lowS: true }).recoverPublicKey(warmUpHash);
-// Not awaited: no I/O, so it finishes in the startup's microtasks.
-signMint(minterKey, `0x${"00".repeat(32)}`, 0).catch(() => {});
+// Not awaited. It does no I/O, and the cold numbers fell with it (README.md),
+// so it settled while the isolate started up; that was measured, not promised
+// by workerd. A failure is logged, not hidden.
+signMint(minterKey, `0x${"00".repeat(32)}`, 0).catch((error) => console.error(`Warm-up failed: ${error}`));
 
 export default spike;

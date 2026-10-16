@@ -50,6 +50,10 @@ if (mode === "warm") {
   }
 } else if (mode === "cold") {
   const first = process.argv[4] ?? "mint";
+  if (first !== "mint" && first !== "link") {
+    console.error(`Cold runs start with mint or link, not ${first}`);
+    process.exit(1);
+  }
   for (const route of [first, first === "mint" ? "link" : "mint"]) {
     const { status, text } = await call(route, `cold-${arg ?? "0"}`);
     console.log(`${route.padEnd(8)} ${status}  ${text.slice(0, 120)}`);

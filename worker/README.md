@@ -9,7 +9,7 @@ The Cloudflare Worker that slice 6 builds (`/claim`, `/wallet/nonce`, `/wallet/l
   - An RS256 ID-token check with `jose`.
   - A SIWE message checked and its `personal_sign` signature recovered.
   - The service-account JWT for Firestore REST.
-- `src/spike.ts`: one bench route per step and per invocation (`/bench/mint`, `/bench/link` and the rest), plus `/bench/rpc` (Base Sepolia reads, counting subrequests) and a `scheduled` handler that runs a cron mint. Every route needs the `X-Spike-Key` header.
+- `src/spike.ts`: one bench route per step and per invocation (`/bench/mint`, `/bench/link` and the rest), plus `/bench/rpc` (Base Sepolia reads through viem, counting subrequests) and `/bench/rpc-lean` (the same reads as one JSON-RPC batch, one subrequest) and a `scheduled` handler that runs a cron mint. Every route needs the `X-Spike-Key` header.
 - `src/spike-warm.ts`: the same Worker, plus a warm-up at module scope: one secp256k1 signature and recovery, and one offline mint signature, so they happen while the isolate starts.
 - `bench/`:
   - `keys.ts` makes throwaway keys, all gitignored and never funded.
@@ -61,7 +61,7 @@ All CPU figures are Cloudflare's `cpuTime` per invocation, in whole milliseconds
 
 - **Startup:** 14–20 ms lazy, and 37–60 ms with the warm-up (the limit is 1 s). The bundle is 707 KiB, or 149 KiB gzipped.
 - **The first warm-up** (one signature and recovery, without the offline mint) gave cold mints of 13, 8, 7, 9, 10, 5, 11, 6, 15 and 7, and cold links of 6, 9, 3, 10, 3, 4, 7, 5, 6 and 9. The full warm-up's offline mint compiles viem's ABI encoding and serialising too.
-- **No failures:** none of the over-limit invocations failed, and there was no 1102. Every request returned 200, apart from the refused RPC batches below.
+- **No failures that tail saw:** every request returned 200, apart from the refused RPC batches below, with no 1102. Every cron run tail caught (8 of about 13 per Worker) ended `ok`. `cpuTime` is in whole milliseconds, so a sample of 10 may be just over the limit.
 - **Subrequests:** `/bench/rpc` uses 3, and `/bench/rpc-lean` uses 1. Base Sepolia's public RPC answered 3 of 15 batches with something other than an array, so batches need a fallback.
 - **Locally,** on an M1 Pro with Node 24: the first secp256k1 signature in a process costs about 28 ms of CPU, and the warm operations cost 0.5–1.5 ms.
 

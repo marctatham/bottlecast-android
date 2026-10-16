@@ -53,10 +53,11 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
 - [ ] **Worker within the free limits** (Slice 6)
   - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't.
   - Slice 5 measured it ([decisions.md](decisions.md), 2026-10-16):
-    - Signing fits in 10 ms of CPU once the isolate is warm, and on a cold isolate after a warm-up at module scope.
+    - Signing fits in 10 ms of CPU once the isolate is warm.
+    - On a cold isolate it runs at 25–41 ms. A warm-up at module scope brings that to 4–10 ms, right at the limit.
     - A cold cron mint still ran 4–16 ms with the warm-up, because its service-account JWT wasn't warmed up.
-    - A mint needs about 6 of the 50 subrequests.
-    - Cloudflare ran every over-limit invocation without a 1102.
+    - A cron mint needs about 7 of the 50 subrequests.
+    - Every over-limit request that was seen still returned 200, with no 1102.
   - Proposed:
     - warm signing and recovery up at module scope;
     - sign the Firestore token once an hour, not once a mint;
