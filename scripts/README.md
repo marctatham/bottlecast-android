@@ -18,7 +18,7 @@ Admins get **Moderation** in the Shore's ⋮ menu, and the Firestore rules let t
 
 - Sign `gcloud` in (`gcloud auth login`) with an account that can manage the project's users. If that isn't the active gcloud account, pass `--account <gcloud account>` or set `BOTTLECAST_GCLOUD_ACCOUNT`.
 - The account must already exist in that project, so sign in with it once in the app that uses the project: a debug build for the debug project, the Play app for production.
-- Find the project id. It's `project_info.project_id` in `app/google-services.json` (debug) or `app/src/release/google-services.json` (production).
+- Find the project id. It's `project_info.project_id` in `android/app/google-services.json` (debug) or `android/app/src/release/google-services.json` (production).
 
 ### Steps
 

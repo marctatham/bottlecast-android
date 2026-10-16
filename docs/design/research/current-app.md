@@ -4,7 +4,7 @@
 
 This page maps the app as it stood before the Moonlit Shore redesign: the UI layer (theme, components, screens, animations and copy) and the data and auth layers. The last section lists what the redesign changes, with the slice that covers each item. The slices are listed in [README.md](../README.md); [decisions.md](../decisions.md) and [spec.md](../spec.md) describe the redesign itself.
 
-Kotlin paths are relative to `app/src/main/kotlin/com/bottlecast/app/`. Other paths are relative to the repo root.
+Kotlin paths are relative to `app/src/main/kotlin/com/bottlecast/app/`. Other paths are relative to the repo root as it was then. Since the move to a monorepo (2026-10-16), the Android project is in `android/`, and the sibling repos `../bottlecast-web` and `../bottlecast-nft-contract` are `web/` and `contracts/`.
 
 ## 1. At a glance
 

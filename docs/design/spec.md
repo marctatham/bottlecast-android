@@ -163,7 +163,7 @@ Fonts:
 - **Roboto Flex** is for reading.
 - **Roboto Mono** is for on-chain facts.
 
-All three are bundled in `res/font/`; nothing downloads, so devices show what the screenshot tests capture. Roboto Flex is the variable font, with `wght` and `opsz` (the style's size, like CSS `font-optical-sizing: auto`) set per style. Licences are in `licenses/`.
+All three are bundled in `res/font/`; nothing downloads, so devices show what the screenshot tests capture. Roboto Flex is the variable font, with `wght` and `opsz` (the style's size, like CSS `font-optical-sizing: auto`) set per style. Licences are in `android/licenses/`.
 
 | Style | Family / weight | sp size / line | Used for |
 |---|---|---|---|
@@ -1302,7 +1302,7 @@ Rules:
 2. Discover (rig, shake, prefetch) and Reveal; the real Report (hidden for the reporter, N-report threshold, block); the data model (`createdAt`, `lang`, `status`, `rand`, `id`, `penName`, `sealable`, `reportCount`) and the `daily/{uid}_{date}` find record.
 3. Compose and Preview, Cast success, lazy sign-in plus the guest upgrade.
 4. Chest and Keepsake detail (Kept only); streak and shields; local reminders.
-5. Spikes first: Worker signing within 10 ms CPU, Privy custom JWT on the free plan, a Reown project ID. Then the contract (`bottlecast-nft-contract`) and the Cloudflare Worker: `/claim`, `/wallet/nonce`, `/wallet/link` (SIWE via `personal_sign`), minting one claim per invocation. Then Wallets, Sealing and the 24-hour safety check, all on Base Sepolia. Moving to Base mainnet is a separate release step that the owner approves.
+5. Spikes first: Worker signing within 10 ms CPU, Privy custom JWT on the free plan, a Reown project ID. Then the contract (`contracts/`) and the Cloudflare Worker: `/claim`, `/wallet/nonce`, `/wallet/link` (SIWE via `personal_sign`), minting one claim per invocation. Then Wallets, Sealing and the 24-hour safety check, all on Base Sepolia. Moving to Base mainnet is a separate release step that the owner approves.
 6. Gifts (including keeping from `/b/{token}` with a wallet), share cards, web pages, App Links.
 7. Achievements, translation, on-device AI extras, edge states.
 

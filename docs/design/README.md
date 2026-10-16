@@ -59,17 +59,17 @@ Build the slices in this order. Each one ships on its own. This list replaces sp
   See `wallets.md` §8 and `research/web3.md`.
   - Answered (`decisions.md`, 2026-10-16): signing fits in 10 ms once warm; on a cold isolate only a warm-up at module scope brings it to the limit, so slice 6 needs more headroom. The spike is in `worker/`. AppKit builds in the app, with a manifest override.
   - Still to do, both the owner's steps (`open-issues.md`): the Reown project ID, and asking Privy.
-- [ ] **6. Contract, Worker, wallet linking and sealing, on Base Sepolia.** The contract (`../bottlecast-nft-contract`); the Cloudflare Worker (`/claim`, `/wallet/nonce`, `/wallet/link`, minting one claim per invocation); adding and managing wallets; the Claim sheet; the 24-hour safety check; Sealed. Moving to Base mainnet is a separate release step that the owner approves.
+- [ ] **6. Contract, Worker, wallet linking and sealing, on Base Sepolia.** The contract (`contracts/`); the Cloudflare Worker (`/claim`, `/wallet/nonce`, `/wallet/link`, minting one claim per invocation); adding and managing wallets; the Claim sheet; the 24-hour safety check; Sealed. Moving to Base mainnet is a separate release step that the owner approves.
   Spec §1.6, §1.7, §3.8, §3.9, §3.11. Boards: Foundations-Wallets, Claim-Sheet, Claim-Waiting, Sealed, Wallet-Add-1, Wallet-Add-2, Wallets-Manage, Keepsake-Detail, Keepsake-Testnet, Edge-SealFailed.
   Decided: the verified mark hashes the uid together with the messageId (`decisions.md`, setup session).
   Open: whether the 24-hour check counts from the cast (proposed) or from the find. Before mainnet: who funds the minter, Play's Financial features declaration, and the production Auth tier.
-- [ ] **7. Gifts, App Links and web pages.** Sending to someone; gift links (30-day expiry, call back) and the Worker's `/share` and `/gift/claim`; keeping from `/b/{token}` with a wallet; the share card and `/u/{handle}`; App Links, with the web side in `../bottlecast-web`.
+- [ ] **7. Gifts, App Links and web pages.** Sending to someone; gift links (30-day expiry, call back) and the Worker's `/share` and `/gift/claim`; keeping from `/b/{token}` with a wallet; the share card and `/u/{handle}`; App Links, with the web side in `web/`.
   Spec §2 (flow 6), §3.13, §3.15. Boards: Gift-Compose, Gift-Link, Web-Gift, Gift-Open, Share-Profile, Web-Profile.
   Open: a server-side text check or an admin queue before any gift is sealed.
 - [ ] **8. Achievements, translation, on-device AI and edge states.** Badges and the unlock moment; on-device translation; Nudge, Polish and the tone check; the remaining edge states.
   Spec §3.4 (AI chips), §3.7 (translation), §3.14, §3.18. Boards: Achievements, Achievement-Unlock, Reveal-Translated, Translate-Download, Edge-NoAI, Edge-HarbourClosed, Edge-UnderReview.
   Open: which of the two achievement lists to use; "Night owl" versus quiet hours.
-- [ ] **9. Tidy-up.** Loose ends from earlier slices: the owner reviews and deploys the Terms and Community guidelines in `../bottlecast-web`; a flow for queued casts the server refuses after the app restarts, using the saved pending cast; anything else found along the way.
+- [ ] **9. Tidy-up.** Loose ends from earlier slices: the owner reviews and deploys the Terms and Community guidelines in `web/` (drafted on the local branch `web-terms-drafts`); a flow for queued casts the server refuses after the app restarts, using the saved pending cast; anything else found along the way.
   The Terms item can't wait for the slice: it blocks the next release.
   Open: the items tagged slice 9 in `open-issues.md`.
 

@@ -11,8 +11,8 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - Proposed: the spec, unless the owner picks the board. For slices 2 and 3 the owner chose the spec (2026-10-13 and 2026-10-14, see [decisions.md](decisions.md)).
 
 - [ ] **Review and deploy the Terms and Community guidelines** (Slice 9, before any release)
-  - Slice 3's sign-in sheet and first cast link to `terms.html` and `guidelines.html`, which are drafted as hobby-project boilerplate on a local branch of `../bottlecast-web`. Until they're deployed, those links don't open anything.
-  - The owner reviews the wording (it isn't legal advice), then pushes and deploys the web repo. This blocks the next release, even if slice 9 hasn't started.
+  - Slice 3's sign-in sheet and first cast link to `terms.html` and `guidelines.html`, which are drafted as hobby-project boilerplate on the local branch `web-terms-drafts`, under `web/public/`. Until they're deployed, those links don't open anything.
+  - The owner reviews the wording (it isn't legal advice), then merges `web-terms-drafts` and deploys `web/`. This blocks the next release, even if slice 9 hasn't started.
   - `privacy.html` dates from 2023 and needs the same review. It says no third parties and no cookies, but the app now uses Firebase Analytics, Crashlytics and Google sign-in, stores pen names and the accepted Terms, and will write sealed keepsakes to a public chain.
 
 - [ ] **A Reown project ID** (Slice 5, before slice 6)
@@ -20,7 +20,7 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - At dashboard.reown.com (the Starter plan, free), create one project, "BottleCast", for AppKit:
     - allow `com.bottlecast.app` and `com.bottlecast.app.debug` (slice 7 adds the web origin);
     - leave Reown Auth, email and social login off, since the Starter plan caps those at 500 monthly users.
-  - Put the ID in `local.properties` as `reownProjectId=…`, never in the repo. Slice 6 reads it into `BuildConfig`.
+  - Put the ID in `android/local.properties` as `reownProjectId=…`, never in the repo. Slice 6 reads it into `BuildConfig`.
 
 - [ ] **When the 24-hour safety check starts** (Slice 6)
   - The spec and the Claim-Waiting board count from the cast. The Keepsake-Detail board assumed the find, though its dates fit either reading.
@@ -40,7 +40,19 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - "Night owl" (a find between midnight and 4 AM) now rewards staying up for the midnight tide, against quiet hours. The board list already drops it.
   - Proposed: spec §3.14's list, which wins until the owner picks (spec §6). Night owl: keep or drop.
 
+- [ ] **A contact address of BottleCast's own** (Slice 9)
+  - `privacy.html`, `mydata.html` and `web/README.md` give the owner's personal email as the contact. It was already public there before the monorepo, and the owner wants to change it later.
+  - Proposed: once BottleCast has a domain, route an address on it (Cloudflare Email Routing) to the owner, and use it on every page. Git history keeps the old address either way.
+
+- [ ] **What the site's root shows** (Slice 9)
+  - The last Hosting deploy (2023) included Firebase's "Hosting Setup Complete" placeholder as `index.html`. It was never committed, so the next deploy from `web/` takes it away and the root falls back to `404.html`.
+  - Options: a short index page that links the legal pages, or leave the root on the 404.
+
 ## Open review findings
+
+- [ ] **Hosting leaves out dotfiles** (Slice 7)
+  - `web/firebase.json` ignores `**/.*`, so a deploy would skip the `/.well-known/assetlinks.json` that App Links need ([wallets.md](wallets.md)).
+  - Proposed: narrow the rule so `.well-known/` deploys, and add the rewrites for `/b/{token}` and `/u/{handle}` at the same time.
 
 - [ ] **Accessibility timeouts left at fixed times** (Slice 8)
   - Spec §4 says timed controls stay up for at least `AccessibilityManager.getRecommendedTimeoutMillis()`, and that snackbars with an action don't time out while TalkBack is on. But §3.14 still gives the achievement toast 4 s.
@@ -74,7 +86,7 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
 
 - [ ] **A data-deletion page on the web** (Slice 9, before a release with account deletion)
   - Play asks apps that offer accounts for a web link where people can ask for their account and data to be deleted. Slice 4 deletes the account in the app (Settings › Account), and its goodbye screen leaves room for that link.
-  - Proposed: a page in `../bottlecast-web` that says how to delete the account in the app, or by email if the app is gone, and what stays (below). Link it from the goodbye screen and the Play listing.
+  - Proposed: a page in `web/` that says how to delete the account in the app, or by email if the app is gone, and what stays (below). Link it from the goodbye screen and the Play listing.
 
 - [ ] **What deleting an account can't reach** (Slice 9, with the privacy policy's review)
   - The rules let only an admin remove reports and handoffs, so a deleted account's reports (who reported which bottle, and why) and any handoff it armed stay. Bottles someone else holds or kept stay too, without the writer's uid or pen name, and the account's tombstone (`deletions/{uid}`, holding only when) stays for good.
