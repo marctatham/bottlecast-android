@@ -21,7 +21,7 @@ Moonlit Shore is the redesign the owner approved on 2026-10-12. It keeps the cur
 | [`research/platform.md`](research/platform.md) | On-device AI, daily limits, notifications, App Links, the Firebase free tier, achievements and haptics (researched 2026-10-12) |
 | [`research/web3.md`](research/web3.md) | Chains, costs, wallet SDKs, minting options and Play policy (researched 2026-10-12; prices and limits change) |
 
-The screenshot-test commands (record, compare and verify with Roborazzi) live in the root [`CLAUDE.md`](../../CLAUDE.md), not here.
+The screenshot-test commands (record, compare and verify with Roborazzi) live in [`android/CLAUDE.md`](../../android/CLAUDE.md), not here.
 
 ## Decisions
 This is a summary. `decisions.md` has the exact wording, the dates and the spec sections each decision changes.
@@ -79,6 +79,6 @@ Build the slices in this order. Each one ships on its own. This list replaces sp
 3. When reading a board: 1 px is 1 dp. The top 44 px is left for the status bar, so content starts near y = 48. Each `<sc-if>` block is an alternative state: the canvas shows one at a time, but the markup holds them all. `{{…}}` holes and `data-props` carry sample values.
 4. Work from the markup. Seeing a board rendered needs the canvas, which only the owner can open. Local rendering is untested: the Browser pane can't screenshot a `file://` page, and the canvas runtime (`support.js`) wasn't copied, so every `<sc-if>` branch would show at once.
 5. Use the sample data in `boards/TEMPLATE.md` (user, pen name, stats, wallets, keepsake #142, messages) in previews and screenshot tests, so that a screenshot and its board show the same content.
-6. Check screens with screenshot tests at 390×844 dp in Night and in Dawn (see `CLAUDE.md`), and Read each PNG next to its board's markup. Layouts must also hold at the spec's 360×800 dp reference frame and at 200% text size (§4).
+6. Check screens with screenshot tests at 390×844 dp in Night and in Dawn (see `android/CLAUDE.md`), and Read each PNG next to its board's markup. Layouts must also hold at the spec's 360×800 dp reference frame and at 200% text size (§4).
 7. When the owner decides something, add it to `decisions.md` with the date, fix the spec text, and close the item in `open-issues.md`, all in the same PR.
 8. Treat `wallets.md` and `research/` as background. Their prices, limits and versions date from when they were written, and the spec wins where they disagree.
