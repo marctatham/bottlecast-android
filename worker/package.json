@@ -1,0 +1,28 @@
+{
+  "name": "bottlecast-worker",
+  "private": true,
+  "type": "module",
+  "description": "BottleCast's Cloudflare Worker. For now it holds slice 5's spike: bench routes that measure the CPU signing and token checks use",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "scripts": {
+    "types": "wrangler types",
+    "check": "wrangler types && tsc --noEmit && tsc --noEmit -p bench",
+    "keys": "node bench/keys.ts",
+    "bench:local": "node bench/local.ts",
+    "bench": "node bench/run.ts",
+    "summarise": "node bench/summarise.ts"
+  },
+  "dependencies": {
+    "@noble/curves": "1.9.1",
+    "@noble/hashes": "1.8.0",
+    "jose": "6.2.12",
+    "viem": "2.57.4"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "typescript": "6.0.3",
+    "wrangler": "4.151.0"
+  }
+}
