@@ -33,8 +33,9 @@ captures/
 CLAUDE.local.md
 .claude/settings.local.json
 
-# Firebase rules tests (firebase/): dependencies, local project aliases and emulator logs
+# Firebase (firebase/ and web/): local project aliases, which name a
+# project, the Hosting deploy cache, and the rules tests' dependencies
+.firebaserc
+.firebase/
 firebase/node_modules/
-firebase/.firebaserc
-firebase/.firebase/
 firebase/*.log
