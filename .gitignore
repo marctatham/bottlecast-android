@@ -2,7 +2,7 @@
 bottlecast-upload-keystore.jks
 
 # Built application files
-/build
+/android/build
 /release/output.json
 /debug/output.json
 
