@@ -24,7 +24,9 @@ from firebase_rest import run_quietly
 PACKAGE = "com.bottlecast.app"
 SERVICE_ACCOUNT = "play-publisher@bottlecast-prod.iam.gserviceaccount.com"
 QUOTA_PROJECT = "bottlecast-prod"
-DEFAULT_BUNDLE = "app/build/outputs/bundle/release/app-release.aab"
+# From the repo root, wherever the script is run from
+DEFAULT_BUNDLE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                              "android/app/build/outputs/bundle/release/app-release.aab")
 
 API = f"https://androidpublisher.googleapis.com/androidpublisher/v3/applications/{PACKAGE}"
 UPLOAD_API = f"https://androidpublisher.googleapis.com/upload/androidpublisher/v3/applications/{PACKAGE}"

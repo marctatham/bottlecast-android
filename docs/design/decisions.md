@@ -80,7 +80,7 @@ The owner's answers while planning slice 1 (theme, navigation and Shore). The th
 
   *Changes spec: §1.6 (icons).*
 
-- **Fonts:** all three families are bundled; nothing downloads. Roboto Flex is the official variable font, with weights selected through its `wght` axis and `opsz` set per style; Roboto Mono is Regular only; Roboto Slab keeps its existing files, minus the weights the scale never uses. Sources and licences are in `licenses/`.
+- **Fonts:** all three families are bundled; nothing downloads. Roboto Flex is the official variable font, with weights selected through its `wght` axis and `opsz` set per style; Roboto Mono is Regular only; Roboto Slab keeps its existing files, minus the weights the scale never uses. Sources and licences are in `android/licenses/`.
 
   *Changes spec: §1.3 (fonts).*
 
@@ -239,7 +239,7 @@ Choices made while building it, which the owner can revisit at review:
 - **Language:** ML Kit's language identification (the unbundled model) runs on the phone. A cast gets `und` if detection fails or takes over 1 s.
 - **`inkError` (#B3261E)** is a new ink token, for Compose's "At least 10 characters" error on the parchment. It reaches 4.9:1 on Night's parchment and 6.2:1 on Dawn's, and `InkContrastTest` pins both.
 - **The queued variant** splits the spec's line into the title "Corked" and the body "It'll set sail when you're back online.", to fit the screen's title and body.
-- **Legal links** point at `terms.html`, `guidelines.html` and `privacy.html` on the web project's hosting, which has no `cleanUrls`. The Terms and guidelines are drafted on a local branch of `../bottlecast-web`, and nothing is deployed yet.
+- **Legal links** point at `terms.html`, `guidelines.html` and `privacy.html` on the web project's hosting, which has no `cleanUrls`. The Terms and guidelines are drafted on the local branch `web-terms-drafts`, under `web/public/`, and nothing is deployed yet.
 - **Copy with no spec source:**
   - "A pen name needs 3 to 20 characters."
   - the Terms row's "First cast only" (from the board)
@@ -381,7 +381,7 @@ Slice 5's answers, which slice 6 builds on. The spike is in `worker/`, and its R
   - measure the real invocation again.
 
   An invocation that's stopped part way is safe to run again, because the contract's mint is idempotent per messageId and the claim stays pending for the next cron. If it still runs over, Workers Paid ($5 a month) is the fallback, which is the owner's call.
-- **Reown: no project yet.** The owner creates it before slice 6: one Starter project, "BottleCast", allowing `com.bottlecast.app` and `com.bottlecast.app.debug` (the web origin joins in slice 7), with Reown Auth, email and social login off. Its ID goes in `local.properties` as `reownProjectId`, never in the repo (`open-issues.md`).
+- **Reown: no project yet.** The owner creates it before slice 6: one Starter project, "BottleCast", allowing `com.bottlecast.app` and `com.bottlecast.app.debug` (the web origin joins in slice 7), with Reown Auth, email and social login off. Its ID goes in `android/local.properties` as `reownProjectId`, never in the repo (`open-issues.md`).
 - **Privy: not asked yet,** so "Create one with Google" stays "Coming soon". Privy's pricing page (checked 2026-10-16) doesn't say whether the free Developer plan, up to 499 monthly users, includes JWT-based auth, and its dashboard puts Custom auth behind "Request access". Only Privy can answer (`open-issues.md`).
 - **AppKit builds in the app.** BOM 1.6.17 was checked on a scratch branch, and nothing was merged. Slice 6 needs these:
   - Reown's `sign` module sets `dataExtractionRules` and `fullBackupContent` on its `<application>`, so the app's manifest needs `tools:replace` for both, or the merge fails.

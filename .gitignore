@@ -1,40 +1,36 @@
-# Release builds, secrets, etc.
-bottlecast-upload-keystore.jks
-
-# Built application files
-/build
-/release/output.json
-/debug/output.json
-
-# release files
-# these are stored securely, separately from the repo
-/message-bottle-release.jks
-/properties.properties
-
-# Gradle files
-.gradle/
-
-# Local configuration file (sdk path, etc)
-local.properties
-
-# Log Files
-*.log
-
-# Android Studio captures folder
-captures/
-
-# IntelliJ
-.idea
+# Secrets: signing keys never belong in this public repo. The upload
+# keystore and the signing values are stored separately from the repo.
+*.jks
+*.keystore
+properties.properties
+.env
 
 # OSX
 .DS_Store
+
+# IntelliJ and Android Studio
+.idea
+
+# Log files
+*.log
 
 # Claude Code: personal notes and local settings
 CLAUDE.local.md
 .claude/settings.local.json
 
-# Firebase rules tests (firebase/): dependencies, local project aliases and emulator logs
-firebase/node_modules/
-firebase/.firebaserc
-firebase/.firebase/
-firebase/*.log
+# Dependencies and caches (firebase/, worker/, contracts/, scripts/)
+node_modules/
+__pycache__/
+
+# Android (android/): build outputs, Gradle and Kotlin caches, the
+# local configuration file (SDK path, signing values) and captures
+/android/build
+.gradle/
+.kotlin/
+local.properties
+captures/
+
+# Firebase (firebase/ and web/): local project aliases, which name a
+# project, and the Hosting deploy cache
+.firebaserc
+.firebase/
