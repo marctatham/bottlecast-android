@@ -1,7 +1,9 @@
 // secp256k1 as compiled code: libsecp256k1, through the Rust crate, built to
 // WebAssembly by tiny-secp256k1 (MIT, bitcoinjs). noble's JavaScript pays
-// 20–40 ms on a fresh isolate before V8 has optimised its BigInt maths;
-// compiled code costs the same on its first call as on its hundredth.
+// 20–40 ms on a fresh isolate before V8 has optimised its BigInt maths. This
+// pays far less, but not nothing: deployed, a first call cost about 4–5 ms more
+// than later ones, probably V8 compiling each function on first use, so a
+// Worker should make that call at module scope (src/spike-wasm.ts).
 //
 // The package's own loaders don't fit a Worker: one reads the file with `fs`,
 // the other relies on a bundler's ESM-integration import, and Workers refuses
@@ -44,11 +46,17 @@ const SIGNATURE_SIZE = 64;
  */
 export function instantiateSecp256k1(module: WebAssembly.Module, blindingSeed?: Uint8Array): Secp256k1Wasm {
   if (blindingSeed) expectLength(blindingSeed, 32, "blinding seed");
+  // A copy, zeroed and dropped once libsecp256k1 has drawn all 32 bytes.
+  let seed: Uint8Array | undefined = blindingSeed?.slice();
   let seedUsed = 0;
   const generateInt32 = (): number => {
-    if (blindingSeed && seedUsed < 32) {
-      const value = new DataView(blindingSeed.buffer, blindingSeed.byteOffset + seedUsed, 4).getInt32(0);
+    if (seed) {
+      const value = new DataView(seed.buffer, seedUsed, 4).getInt32(0);
       seedUsed += 4;
+      if (seedUsed === 32) {
+        seed.fill(0);
+        seed = undefined;
+      }
       return value;
     }
     return crypto.getRandomValues(new Int32Array(1))[0];
@@ -76,6 +84,9 @@ export function instantiateSecp256k1(module: WebAssembly.Module, blindingSeed?: 
     signRecoverable(hash, privateKey) {
       expectLength(hash, HASH_SIZE, "hash");
       expectLength(privateKey, PRIVATE_KEY_SIZE, "private key");
+      // As lib/index.js checks: a key outside [1, n) would reach the Rust code,
+      // which refuses it by trapping, not with a clear error.
+      if (!inScalarRange(privateKey)) throw new TypeError("The private key is out of range");
       try {
         hashInput.set(hash);
         privateKeyInput.set(privateKey);

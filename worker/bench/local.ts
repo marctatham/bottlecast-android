@@ -123,7 +123,20 @@ for (const call of mintCalls) {
     }
   }
 }
-console.log("The hand encoding matches viem: 3 calls, 24 transactions, 48 signed\n");
+// And refuses what viem refused, rather than encoding it wrongly.
+const goodCall = { ...mintCalls[0], to: hexToBytes(wallet), writerMark: hexToBytes(markHex) };
+assert.throws(() => encodeMintCall({ ...goodCall, to: new Uint8Array(21) }), RangeError);
+assert.throws(() => encodeMintCall({ ...goodCall, writerMark: new Uint8Array(33) }), RangeError);
+assert.throws(() => encodeMintCall({ ...goodCall, castAt: 2n ** 64n }), RangeError);
+assert.throws(() => encodeMintCall({ ...goodCall, castAt: -1n }), RangeError);
+const goodTx = { chainId: 84532, nonce: 0, maxPriorityFeePerGas: 1n, maxFeePerGas: 2n, gas: 1n, value: 0n, to: hexToBytes(wallet), data: new Uint8Array() };
+assert.throws(() => serializeEip1559({ ...goodTx, nonce: -1 }), RangeError);
+assert.throws(() => serializeEip1559({ ...goodTx, to: new Uint8Array(32) }), RangeError);
+assert.throws(() => serializeEip1559(goodTx, { yParity: 2, r: new Uint8Array(32), s: new Uint8Array(32) }), RangeError);
+// The signer refuses a key outside [1, n) before it reaches libsecp256k1.
+assert.throws(() => secp.signRecoverable(new Uint8Array(32).fill(1), new Uint8Array(32)), TypeError);
+assert.throws(() => secp.signRecoverable(new Uint8Array(32).fill(1), new Uint8Array(32).fill(0xff)), TypeError);
+console.log("The hand encoding matches viem: 3 calls, 24 transactions, 48 signed, and refuses bad input\n");
 
 const ops: Record<string, Op> = {
   hmac: mark,
@@ -143,13 +156,13 @@ const ops: Record<string, Op> = {
 
 console.log(`op        first CPU   p50 CPU   p99 CPU   max CPU   (ms, ${calls} calls)`);
 for (const [name, op] of Object.entries(ops)) {
-  const first = await measure(op);
+  const firstCall = await measure(op);
   const samples: number[] = [];
   for (let i = 0; i < calls; i++) samples.push((await measure(op)).cpu);
   samples.sort((a, b) => a - b);
   const at = (q: number) => samples[Math.min(samples.length - 1, Math.floor(q * samples.length))];
   console.log(
-    [name.padEnd(8), first.cpu, at(0.5), at(0.99), samples[samples.length - 1]]
+    [name.padEnd(8), firstCall.cpu, at(0.5), at(0.99), samples[samples.length - 1]]
       .map((v) => (typeof v === "number" ? v.toFixed(2).padStart(9) : v))
       .join(" "),
   );

@@ -33,6 +33,9 @@ const encoder = new TextEncoder();
 
 /** The calldata: the selector, six head words, then each string's length and padded bytes. */
 export function encodeMintCall(call: MintCall): Uint8Array {
+  expectLength(call.to, 20, "recipient");
+  expectLength(call.writerMark, WORD, "writer mark");
+  expectRange(call.castAt, 64, "castAt");
   const strings = [call.messageId, call.text, call.penName].map((s) => encoder.encode(s));
   const headSize = 6 * WORD;
   const tailSizes = strings.map((bytes) => WORD + Math.ceil(bytes.length / WORD) * WORD);
@@ -64,6 +67,22 @@ export function serializeEip1559(
   tx: Eip1559Transaction,
   signature?: { yParity: number; r: Uint8Array; s: Uint8Array },
 ): Uint8Array {
+  expectLength(tx.to, 20, "contract address");
+  for (const [name, value] of Object.entries({
+    chainId: BigInt(tx.chainId),
+    nonce: BigInt(tx.nonce),
+    maxPriorityFeePerGas: tx.maxPriorityFeePerGas,
+    maxFeePerGas: tx.maxFeePerGas,
+    gas: tx.gas,
+    value: tx.value,
+  })) {
+    expectRange(value, 256, name);
+  }
+  if (signature) {
+    if (signature.yParity !== 0 && signature.yParity !== 1) throw new RangeError(`Bad yParity ${signature.yParity}`);
+    expectLength(signature.r, WORD, "r");
+    expectLength(signature.s, WORD, "s");
+  }
   const fields: Rlp[] = [
     uint(BigInt(tx.chainId)),
     uint(BigInt(tx.nonce)),
@@ -111,6 +130,15 @@ function stripZeros(bytes: Uint8Array): Uint8Array {
 
 function writeUint(out: Uint8Array, at: number, value: bigint): void {
   for (let i = WORD - 1, v = value; v > 0n; i--, v >>= 8n) out[at + i] = Number(v & 0xffn);
+}
+
+// viem refused these; a hand encoding that took them would sign wrong calldata.
+function expectLength(bytes: Uint8Array, size: number, name: string): void {
+  if (bytes.length !== size) throw new RangeError(`Expected a ${size}-byte ${name}, got ${bytes.length}`);
+}
+
+function expectRange(value: bigint, bits: number, name: string): void {
+  if (value < 0n || value >= 1n << BigInt(bits)) throw new RangeError(`${name} doesn't fit uint${bits}: ${value}`);
 }
 
 function concat(...parts: Uint8Array[]): Uint8Array {

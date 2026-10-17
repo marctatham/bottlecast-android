@@ -52,7 +52,7 @@ if (mode === "warm") {
 } else if (mode === "cold") {
   const first = process.argv[4] ?? "mint";
   const sequence = first === "mint" ? ["mint", "link"] : first === "link" ? ["link", "mint"] : [first];
-  if (!(first in bodies)) {
+  if (!Object.hasOwn(bodies, first)) {
     console.error(`Cold runs start with one of ${Object.keys(bodies).join(", ")}, not ${first}`);
     process.exit(1);
   }

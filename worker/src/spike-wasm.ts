@@ -19,7 +19,7 @@
 import { env } from "cloudflare:workers";
 import secp256k1Module from "../node_modules/tiny-secp256k1/lib/secp256k1.wasm";
 import { keccak_256 } from "@noble/hashes/sha3";
-import { errors, type JWK } from "jose";
+import { base64url, errors, type JWK } from "jose";
 import { hashMessage, hexToBytes, toHex, type Hex } from "viem";
 import { publicKeyToAddress } from "viem/accounts";
 import { createSiweMessage } from "viem/siwe";
@@ -72,7 +72,9 @@ const siweMessage = createSiweMessage({
   version: "1",
   issuedAt: new Date(0),
 });
-const rounds = Math.max(1, Number((env as unknown as { SPIKE_WARM_ROUNDS?: string }).SPIKE_WARM_ROUNDS ?? 30));
+const roundsVar = (env as unknown as { SPIKE_WARM_ROUNDS?: string }).SPIKE_WARM_ROUNDS ?? "30";
+const rounds = Number(roundsVar);
+if (!Number.isInteger(rounds) || rounds < 1) throw new Error(`SPIKE_WARM_ROUNDS must be a whole number from 1, not ${roundsVar}`);
 for (let round = 0; round < rounds; round++) {
   signMintWasm(secp, secrets.SPIKE_MINTER_KEY, PLACEHOLDER_ADDRESS, `0x${"00".repeat(32)}`, round);
   const siweSigned = secp.signRecoverable(hexToBytes(hashMessage(siweMessage)), minterKey);
@@ -83,11 +85,10 @@ for (let round = 0; round < rounds; round++) {
 // The WebCrypto steps are async. They're not awaited (module scope can't), but
 // workerd settles them before the first request, as `bench/run.ts` against
 // `wrangler dev` shows from the log order.
-const base64url = (json: object) =>
-  btoa(JSON.stringify(json)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const encodeJson = (json: object) => base64url.encode(JSON.stringify(json));
 // A well-formed ID token with a wrong signature: jose imports the key and
 // runs WebCrypto's verify, then refuses it, as it should.
-const unsignedToken = `${base64url({ alg: "RS256", kid: "spike", typ: "JWT" })}.${base64url({ sub: "warm-up" })}`;
+const unsignedToken = `${encodeJson({ alg: "RS256", kid: "spike", typ: "JWT" })}.${encodeJson({ sub: "warm-up" })}`;
 const warmUps = [
   verifyIdToken(`${unsignedToken}.${"A".repeat(342)}`, JSON.parse(secrets.SPIKE_ID_JWK) as JWK).then(
     () => Promise.reject(new Error("a token with a wrong signature passed")),
