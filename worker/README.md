@@ -1,6 +1,6 @@
 # BottleCast Worker
 
-The Cloudflare Worker that slice 6 builds (`/claim`, `/wallet/nonce`, `/wallet/link` and minting) will live here. For now it holds **slice 5's spike**, which asked whether a Worker on the Free plan can sign a mint and check a wallet's signature within its 10 ms of CPU per invocation. The answers, and what slice 6 does about them, are in [`docs/design/decisions.md`](../docs/design/decisions.md) (2026-10-16, slice 5 spikes).
+The Cloudflare Worker that slice 6 builds (`/claim`, `/wallet/nonce`, `/wallet/link` and minting) will live here. For now it holds **slice 5's spike**, which asked whether a Worker on the Free plan can sign a mint and check a wallet's signature within its 10 ms of CPU per invocation. A follow-up on 2026-10-17 made it fit on a cold isolate: secp256k1 as WebAssembly, the mint encoded by hand, and everything warmed up at startup. The answers, and what slice 6 does about them, are in [`docs/design/decisions.md`](../docs/design/decisions.md) (2026-10-16 and 2026-10-17).
 
 ## What's here
 - `src/ops.ts`: the CPU-heavy steps slice 6 will run.
@@ -11,16 +11,19 @@ The Cloudflare Worker that slice 6 builds (`/claim`, `/wallet/nonce`, `/wallet/l
   - The service-account JWT for Firestore REST.
 - `src/spike.ts`: one bench route per step and per invocation (`/bench/mint`, `/bench/link` and the rest), plus `/bench/rpc` (Base Sepolia reads through viem, counting subrequests) and `/bench/rpc-lean` (the same reads as one JSON-RPC batch, one subrequest) and a `scheduled` handler that runs a cron mint. Every route needs the `X-Spike-Key` header.
 - `src/spike-warm.ts`: the same Worker, plus a warm-up at module scope: one secp256k1 signature and recovery, and one offline mint signature, so they happen while the isolate starts.
-- `src/secp256k1-wasm.ts`: libsecp256k1 as WebAssembly, from `tiny-secp256k1`, bound for signing and recovery. The package's own loaders don't work in a Worker, so the caller hands in the compiled module.
-- `src/spike-wasm.ts`: the same Worker with that signer in place of noble for `/bench/mint`, `/bench/link`, `/bench/sign`, `/bench/siwe` and the cron. Its warm-up runs the mint's JavaScript with a stand-in signer, because Workers allows no random numbers at module scope and libsecp256k1 seeds itself on its first call.
+- `src/secp256k1-wasm.ts`: libsecp256k1 as WebAssembly, from `tiny-secp256k1`, bound for signing and recovery. The package's own loaders don't work in a Worker, so the caller hands in the compiled module. It can take a secret seed for libsecp256k1's blinding, because Workers allows no random numbers at module scope.
+- `src/mint-tx.ts`: the mint call and its EIP-1559 envelope, encoded by hand in place of viem's general-purpose encoder.
+- `src/spike-wasm.ts`: the same Worker with that signer and encoding for `/bench/mint`, `/bench/link`, `/bench/sign`, `/bench/siwe` and the cron. At module scope it seeds the signer from a secret, then runs everything a mint, a link and a cron mint do, 30 times, so V8 has compiled and optimised it before the first request.
 - `bench/`:
   - `keys.ts` makes throwaway keys, all gitignored and never funded.
-  - `local.ts` runs a first read in Node. It first checks that the WebAssembly signer gives noble's bytes: the same 21 signed mints, and the same SIWE signer.
+  - `local.ts` runs a first read in Node. It first checks that the WebAssembly signer and the hand encoding give noble's and viem's bytes: 21 signed mints, the SIWE signer, and the encoding's edge cases.
   - `run.ts` drives a deployed Worker.
   - `summarise.ts` turns `wrangler tail --format json` into a table.
 
 ## Running it
 A Worker can't time itself: its clock stands still while it computes. The CPU numbers come from the `cpuTime` that `wrangler tail` reports for each invocation, in whole milliseconds. Tail samples busy Workers, so it doesn't see every request.
+
+Some networks block tail's host (`tail.developers.workers.dev`), and then tail creates its session but never connects. The same figure is in Workers Logs, which `wrangler.jsonc` turns on: each invocation's `$workers.cpuTimeMs`, with the `?run=` label under `$workers.event.search`. Read it on the Worker's Observability page in the dashboard. Workers Logs miss some events too: 10–20% of them on 2026-10-17.
 
 ```bash
 npm ci
@@ -39,10 +42,9 @@ SPIKE_URL=https://bottlecast-spike.<subdomain>.workers.dev SPIKE_GAP_MS=250 node
 node bench/summarise.ts tail.jsonl
 ```
 
-- **Cold starts:** redeploy with `--var RUN:cold-<n>`, which makes a new version on fresh isolates, then `node bench/run.ts cold <n> mint` (or `link`).
-- **Cold `satoken`:** `node bench/run.ts cold <n> satoken` sends `/bench/satoken` alone, after a redeploy.
+- **Cold starts:** redeploy with `--var RUN:cold-<n>`, which makes a new version on fresh isolates, then `node bench/run.ts cold <n> mint` (or `link`). Any other route, such as `satoken` or `sign`, goes alone: `node bench/run.ts cold <n> sign`.
 - **The warm-up variant:** `npx wrangler deploy src/spike-warm.ts --name bottlecast-spike-warm --secrets-file .secrets.json`.
-- **The WebAssembly variant:** `npx wrangler deploy src/spike-wasm.ts --name bottlecast-spike-wasm --secrets-file .secrets.json`. Add `--triggers "* * * * *"` for the cron.
+- **The WebAssembly variant:** `npx wrangler deploy src/spike-wasm.ts --name bottlecast-spike-wasm --secrets-file .secrets.json`. `--var SPIKE_WARM_ROUNDS:1` warms up once instead of 30 times. Add `--triggers "* * * * *"` for the cron, whose first run came about 7 minutes after the deploy.
 - **Clean-up:** delete the spike Workers afterwards with `npx wrangler delete <name>`. A redeploy without `triggers` leaves an earlier cron running, but deleting the Worker removes it.
 
 ## Results (2026-10-16)
@@ -69,4 +71,24 @@ All CPU figures are Cloudflare's `cpuTime` per invocation, in whole milliseconds
 - **Subrequests:** `/bench/rpc` uses 3, and `/bench/rpc-lean` uses 1. Base Sepolia's public RPC answered 3 of 15 batches with something other than an array, so batches need a fallback.
 - **Locally,** on an M1 Pro with Node 24: the first secp256k1 signature in a process costs about 28 ms of CPU, and the warm operations cost 0.5–1.5 ms.
 
-What this means for slice 6 is in `docs/design/decisions.md` (2026-10-16).
+## Results (2026-10-17): WebAssembly on cold isolates
+With little traffic nearly every invocation starts cold, so this round measured cold requests only, plus the cron and a warm check. CPU is Workers Logs' `cpuTimeMs` per invocation, in whole milliseconds, on the Free plan, with every request served in Madrid. Each stage is a commit on this branch:
+
+| Stage | Cold mint | Cold link | Cron mint | Startup |
+|---|---|---|---|---|
+| 1. WebAssembly signer, first called in the request (`164cae6` with `--var SPIKE_SEED:lazy`) | 6, 8, 9, 10, 11, 12, 13 | 7, 9, 9, 10, 12, 13, 16, 17, 19 | 4, 4, 4, 5, 5, 6, 6, 6, 8, 10, 13, 14 | 18–41 |
+| 1b. The signer seeded from a secret and warmed up once (`164cae6`) | 5, 6, 6, 6, 9, 9, 18 | 5, 6, 6, 7, 7, 8, 9 | 3, 3, 4, 5 | 23–37 |
+| 2. The mint encoded by hand, every step warmed up once (`1f2cd88`) | 1, 1, 2, 3, 3, 3, 3, 4, 5, 7 | 4, 4, 4, 5, 5, 8, 9, 9 | 3–5 (13 runs) | 24–56 |
+| 3. Every step warmed up 30 times (`71f08bf`) | 1, 1, 2, 2, 2, 2, 3, 4, 4, 6 | 1, 2, 2, 3, 3, 4, 4, 4, 5 | 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 3 | 60–124 |
+
+- **Where the cold CPU went.** Each route was also sent alone after a redeploy, up to four times per stage:
+  - In stage 1b, `noop` cost 0–1 ms, so a fresh isolate adds nothing by itself. `idtoken` cost 2–3 ms, `sign` 1–5 and `siwe` 3–6.
+  - In stage 2, `idtoken` cost 0–1 ms, `sign` 2–5, `siwe` 3–5 and `satoken` 1–4. What was left was keccak and viem's SIWE parser running in V8's interpreter. In Node with the optimising tiers off, keccak over a mint costs about 2 ms a call.
+  - In stage 3, `sign` cost 1–2 ms and `siwe` 1–2.
+- **Warm** (stage 2, 100 requests a route): a mint 1 ms median and 4 at most, and a link 1 ms median and 5 at most.
+- **No failures:** every request returned 200, and every invocation ended `ok`.
+- **Gaps:** Workers Logs missed some cold samples, so a few cycles have only one of their two requests. The stage 1 seeded run was stopped after 4 cron runs.
+- **The bundle** with the WebAssembly is 1,943 KiB, or 1,289 KiB gzipped (Free allows 3 MB).
+- **Locally,** noble's first mint signature in a fresh Node process costs 27–29 ms of CPU, and the WebAssembly one about 3 ms, including compiling viem's encoder.
+
+What this means for slice 6 is in `docs/design/decisions.md` (2026-10-16 and 2026-10-17).

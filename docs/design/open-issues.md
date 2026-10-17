@@ -63,20 +63,19 @@ When an item is settled, record the answer in [decisions.md](decisions.md), fix 
   - Slice 4 built the spec's v1 fallback (§3.16b): the Chest's dot and the Shore's "While you were away" banner, and Settings shows "When my bottles are found" as "Coming soon". Push itself is still unplanned.
 
 - [ ] **Worker within the free limits** (Slice 6)
-  - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't.
-  - Slice 5 measured it ([decisions.md](decisions.md), 2026-10-16):
-    - Signing fits in 10 ms of CPU once the isolate is warm.
-    - On a cold isolate it runs at 25–41 ms. A warm-up at module scope brings that to 4–10 ms, right at the limit.
-    - A cold cron mint still ran 4–16 ms with the warm-up, because its service-account JWT wasn't warmed up.
+  - The spec mints one claim per invocation and shows "Sealing · delayed" when it can't. The owner rules out Workers Paid (2026-10-17), so it has to fit the Free plan's 10 ms of CPU.
+  - Slice 5 measured it ([decisions.md](decisions.md), 2026-10-16 and 2026-10-17):
+    - With BottleCast's traffic nearly every invocation starts on a fresh isolate, so the cold figures are the ones that count.
+    - noble's secp256k1 ran 25–41 ms cold, and 4–10 ms even with a warm-up at module scope.
+    - secp256k1 as WebAssembly, the mint encoded by hand, and every hot path run 30 times at module scope bring a cold mint to 1–6 ms, a cold link to 1–5 ms and a cron mint to 1–3 ms.
     - A cron mint needs about 7 of the 50 subrequests.
-    - Every over-limit request that was seen still returned 200, with no 1102.
-  - Proposed:
-    - warm signing and recovery up at module scope;
+  - Proposed for slice 6:
+    - build on `worker/src/spike-wasm.ts`: the WebAssembly signer with its own blinding-seed secret, the hand-encoded mint and the startup warm-up;
     - sign the Firestore token once an hour, not once a mint;
     - read the chain with one batch, falling back to single calls or using a dedicated RPC endpoint, since Base Sepolia's public one refused some batches;
-    - measure the real invocation again.
+    - measure the real invocations again, with Firestore REST and the Firebase JWKS in them.
 
-    Workers Paid ($5 a month) is the fallback if it still runs over.
+    In reserve: keccak as WebAssembly, and the SIWE check on-chain through `eth_call`.
   - Still open: serialising the single minter's nonce. The options are cron-only minting, or a Durable Object that owns it. Someone also has to watch the minter's balance (the Base Sepolia faucet gives 0.1 ETH per rolling 24 hours).
 
 - [ ] **Queued casts refused after a restart** (Slice 9)
