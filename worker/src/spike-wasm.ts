@@ -5,7 +5,7 @@
 //
 // The module is compiled and instantiated while the isolate starts, so that
 // cost lands in startup (limit 1 s), not in a request. Then everything a mint,
-// a link or a cron mint runs is run once at module scope, so V8 has compiled it
+// a link or a cron mint runs is run at module scope, so V8 has compiled it
 // before the first request: a signature and a recovery, an offline mint, the
 // SIWE check, the ID-token check, the service-account JWT and the mark.
 //
@@ -52,14 +52,16 @@ seedInput.set(seedLabel);
 seedInput.set(hmacKey, seedLabel.length);
 const secp = instantiateSecp256k1(secp256k1Module, keccak_256(seedInput));
 
-// The curve, both ways, and an offline mint. These throw if anything's wrong,
-// which fails the deploy rather than leaving a Worker that isn't warmed up.
+// The curve, both ways, an offline mint, and the link's SIWE check on a message
+// the minter signs for itself. These throw if anything's wrong, which fails the
+// deploy rather than leaving a Worker that isn't warmed up. One run compiles
+// the JavaScript, but V8 still interprets it, and keccak alone then costs about
+// 2 ms a mint. So they run 30 times, and V8 has optimised them by the first
+// request; that adds about 40 ms of startup. `--var SPIKE_WARM_ROUNDS:<n>`
+// changes the count (1 reproduces stage 2, README.md).
 const warmUpHash = keccak_256(encoder.encode("bottlecast warm-up"));
 const warmUp = secp.signRecoverable(warmUpHash, minterKey);
 const minterAddress = publicKeyToAddress(toHex(secp.recover(warmUpHash, warmUp.signature, warmUp.recoveryId)!));
-signMintWasm(secp, secrets.SPIKE_MINTER_KEY, PLACEHOLDER_ADDRESS, `0x${"00".repeat(32)}`, 0);
-
-// The link's SIWE check, on a message the minter signs for itself.
 const warmUpNonce = "warmupnonce1";
 const siweMessage = createSiweMessage({
   address: minterAddress,
@@ -70,9 +72,13 @@ const siweMessage = createSiweMessage({
   version: "1",
   issuedAt: new Date(0),
 });
-const siweSigned = secp.signRecoverable(hexToBytes(hashMessage(siweMessage)), minterKey);
-const siweSignature: Hex = `${toHex(siweSigned.signature)}${(27 + siweSigned.recoveryId).toString(16)}`;
-verifySiweWasm(secp, siweMessage, siweSignature, warmUpNonce);
+const rounds = Math.max(1, Number((env as unknown as { SPIKE_WARM_ROUNDS?: string }).SPIKE_WARM_ROUNDS ?? 30));
+for (let round = 0; round < rounds; round++) {
+  signMintWasm(secp, secrets.SPIKE_MINTER_KEY, PLACEHOLDER_ADDRESS, `0x${"00".repeat(32)}`, round);
+  const siweSigned = secp.signRecoverable(hexToBytes(hashMessage(siweMessage)), minterKey);
+  const siweSignature: Hex = `${toHex(siweSigned.signature)}${(27 + siweSigned.recoveryId).toString(16)}`;
+  verifySiweWasm(secp, siweMessage, siweSignature, warmUpNonce);
+}
 
 // The WebCrypto steps are async. They're not awaited (module scope can't), but
 // workerd settles them before the first request, as `bench/run.ts` against
