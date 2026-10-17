@@ -11,9 +11,11 @@ The Cloudflare Worker that slice 6 builds (`/claim`, `/wallet/nonce`, `/wallet/l
   - The service-account JWT for Firestore REST.
 - `src/spike.ts`: one bench route per step and per invocation (`/bench/mint`, `/bench/link` and the rest), plus `/bench/rpc` (Base Sepolia reads through viem, counting subrequests) and `/bench/rpc-lean` (the same reads as one JSON-RPC batch, one subrequest) and a `scheduled` handler that runs a cron mint. Every route needs the `X-Spike-Key` header.
 - `src/spike-warm.ts`: the same Worker, plus a warm-up at module scope: one secp256k1 signature and recovery, and one offline mint signature, so they happen while the isolate starts.
+- `src/secp256k1-wasm.ts`: libsecp256k1 as WebAssembly, from `tiny-secp256k1`, bound for signing and recovery. The package's own loaders don't work in a Worker, so the caller hands in the compiled module.
+- `src/spike-wasm.ts`: the same Worker with that signer in place of noble for `/bench/mint`, `/bench/link`, `/bench/sign`, `/bench/siwe` and the cron. Its warm-up runs the mint's JavaScript with a stand-in signer, because Workers allows no random numbers at module scope and libsecp256k1 seeds itself on its first call.
 - `bench/`:
   - `keys.ts` makes throwaway keys, all gitignored and never funded.
-  - `local.ts` runs a first read in Node.
+  - `local.ts` runs a first read in Node. It first checks that the WebAssembly signer gives noble's bytes: the same 21 signed mints, and the same SIWE signer.
   - `run.ts` drives a deployed Worker.
   - `summarise.ts` turns `wrangler tail --format json` into a table.
 
@@ -38,8 +40,10 @@ node bench/summarise.ts tail.jsonl
 ```
 
 - **Cold starts:** redeploy with `--var RUN:cold-<n>`, which makes a new version on fresh isolates, then `node bench/run.ts cold <n> mint` (or `link`).
+- **Cold `satoken`:** `node bench/run.ts cold <n> satoken` sends `/bench/satoken` alone, after a redeploy.
 - **The warm-up variant:** `npx wrangler deploy src/spike-warm.ts --name bottlecast-spike-warm --secrets-file .secrets.json`.
-- **Clean-up:** delete the spike Workers afterwards with `npx wrangler delete bottlecast-spike` and `npx wrangler delete bottlecast-spike-warm`. A redeploy without `triggers` leaves an earlier cron running, but deleting the Worker removes it.
+- **The WebAssembly variant:** `npx wrangler deploy src/spike-wasm.ts --name bottlecast-spike-wasm --secrets-file .secrets.json`. Add `--triggers "* * * * *"` for the cron.
+- **Clean-up:** delete the spike Workers afterwards with `npx wrangler delete <name>`. A redeploy without `triggers` leaves an earlier cron running, but deleting the Worker removes it.
 
 ## Results (2026-10-16)
 All CPU figures are Cloudflare's `cpuTime` per invocation, in whole milliseconds, on the Free plan.

@@ -1,7 +1,8 @@
 // Drives the spike Worker. The CPU numbers come from `wrangler tail`, not from
 // here: a Worker's clock stands still while it computes, so it can't time itself.
 //   SPIKE_URL=https://bottlecast-spike.<subdomain>.workers.dev node bench/run.ts warm [requests]
-//   SPIKE_URL=… node bench/run.ts cold <label> [first]  one /bench/mint and one /bench/link, `first` going first
+//   SPIKE_URL=… node bench/run.ts cold <label> [first]  one /bench/mint and one /bench/link, `first` going first,
+//                                                     or any other route (`satoken`, `sign`…) alone
 //   SPIKE_URL=… node bench/run.ts rpc                   the reads a mint makes, through viem and as one batch
 // Tail samples busy Workers, so SPIKE_GAP_MS spaces warm requests out to keep more events.
 import { readFileSync } from "node:fs";
@@ -50,11 +51,12 @@ if (mode === "warm") {
   }
 } else if (mode === "cold") {
   const first = process.argv[4] ?? "mint";
-  if (first !== "mint" && first !== "link") {
-    console.error(`Cold runs start with mint or link, not ${first}`);
+  const sequence = first === "mint" ? ["mint", "link"] : first === "link" ? ["link", "mint"] : [first];
+  if (!(first in bodies)) {
+    console.error(`Cold runs start with one of ${Object.keys(bodies).join(", ")}, not ${first}`);
     process.exit(1);
   }
-  for (const route of [first, first === "mint" ? "link" : "mint"]) {
+  for (const route of sequence) {
     const { status, text } = await call(route, `cold-${arg ?? "0"}`);
     console.log(`${route.padEnd(8)} ${status}  ${text.slice(0, 120)}`);
   }

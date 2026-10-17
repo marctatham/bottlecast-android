@@ -1,16 +1,21 @@
 // The CPU-heavy steps slice 6's Worker will run, shared by the spike's routes
-// (src/spike.ts) and the local bench (bench/local.ts), so both measure the
-// same code. Nothing here touches the network or a funded key.
+// (src/spike.ts, src/spike-wasm.ts) and the local bench (bench/local.ts), so
+// both measure the same code. Nothing here touches the network or a funded key.
 import {
   encodeFunctionData,
+  hashMessage,
   recoverMessageAddress,
+  serializeTransaction,
   toHex,
   type Address,
   type Hex,
+  type TransactionSerializableEIP1559,
 } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
+import { privateKeyToAccount, publicKeyToAddress } from "viem/accounts";
 import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
+import { keccak_256 } from "@noble/hashes/sha3";
 import { importJWK, importPKCS8, jwtVerify, SignJWT, type JWK } from "jose";
+import type { Secp256k1Wasm } from "./secp256k1-wasm.ts";
 
 export const BASE_SEPOLIA = 84532;
 
@@ -165,6 +170,88 @@ export async function signServiceAccountJwt(pkcs8Base64: string, clientEmail: st
     .setIssuedAt()
     .setExpirationTime("1h")
     .sign(key);
+}
+
+// The same steps with secp256k1 as WebAssembly (src/secp256k1-wasm.ts) in
+// place of noble. viem still encodes the call and serialises the transaction;
+// only the curve maths moves. The caller passes the signer in, because the
+// Worker and the local bench compile its module differently.
+
+/**
+ * `signMint` with the WebAssembly signer. The recipient is given, as slice 6's
+ * claim will give the finder's wallet, so no public key is derived from the
+ * minter key. Given the minter's own address it returns `signMint`'s bytes.
+ */
+export function signMintWasm(
+  secp: Secp256k1Wasm,
+  minterKey: Hex,
+  recipient: Address,
+  writerMark: Hex,
+  nonce: number,
+): Hex {
+  const transaction: TransactionSerializableEIP1559 = {
+    chainId: BASE_SEPOLIA,
+    type: "eip1559",
+    to: PLACEHOLDER_ADDRESS,
+    data: encodeFunctionData({
+      abi: mintAbi,
+      functionName: "mint",
+      args: [recipient, SAMPLE_MESSAGE_ID, SAMPLE_TEXT, SAMPLE_CAST_AT, SAMPLE_PEN_NAME, writerMark],
+    }),
+    nonce,
+    gas: 400_000n,
+    maxFeePerGas: 1_200_000n,
+    maxPriorityFeePerGas: 1_000_000n,
+    value: 0n,
+  };
+  const hash = keccak_256(hexBytes(serializeTransaction(transaction)));
+  const { signature, recoveryId } = secp.signRecoverable(hash, hexBytes(minterKey));
+  return serializeTransaction(transaction, {
+    r: toHex(signature.subarray(0, 32)),
+    s: toHex(signature.subarray(32)),
+    yParity: recoveryId,
+  });
+}
+
+/** `verifySiwe` with the WebAssembly signer recovering the key. */
+export function verifySiweWasm(secp: Secp256k1Wasm, message: string, signature: Hex, nonce: string): Address {
+  const fields = parseSiweMessage(message);
+  const valid = validateSiweMessage({ message: fields, domain: SPIKE_SIWE_DOMAIN, nonce });
+  if (!valid || !fields.address) throw new Error("The SIWE message isn't valid");
+  const bytes = hexBytes(signature);
+  if (bytes.length !== 65) throw new Error("A personal_sign signature is 65 bytes");
+  // v is 27 or 28 from most wallets, 0 or 1 from some.
+  const v = bytes[64];
+  const publicKey = secp.recover(hexBytes(hashMessage(message)), bytes.subarray(0, 64), v >= 27 ? v - 27 : v);
+  if (!publicKey) throw new Error("The signature doesn't recover a key");
+  const signer = publicKeyToAddress(toHex(publicKey));
+  if (signer.toLowerCase() !== fields.address.toLowerCase()) throw new Error("The signer doesn't match");
+  return signer;
+}
+
+/** `mintInvocation` with the WebAssembly signer. */
+export async function mintInvocationWasm(secp: Secp256k1Wasm, secrets: SpikeSecrets, idToken: string): Promise<Hex> {
+  const uid = await verifyIdToken(idToken, JSON.parse(secrets.SPIKE_ID_JWK) as JWK);
+  const mark = await verifiedMark(secrets.SPIKE_HMAC_KEY, uid, SAMPLE_MESSAGE_ID);
+  return signMintWasm(secp, secrets.SPIKE_MINTER_KEY, PLACEHOLDER_ADDRESS, mark, 0);
+}
+
+/** `linkInvocation` with the WebAssembly signer. */
+export async function linkInvocationWasm(
+  secp: Secp256k1Wasm,
+  secrets: SpikeSecrets,
+  idToken: string,
+  siwe: { message: string; signature: Hex; nonce: string },
+): Promise<Address> {
+  await verifyIdToken(idToken, JSON.parse(secrets.SPIKE_ID_JWK) as JWK);
+  return verifySiweWasm(secp, siwe.message, siwe.signature, siwe.nonce);
+}
+
+/** `cronMint` with the WebAssembly signer. */
+export async function cronMintWasm(secp: Secp256k1Wasm, secrets: SpikeSecrets): Promise<Hex> {
+  await signServiceAccountJwt(secrets.SPIKE_SA_PKCS8, SPIKE_SA_EMAIL);
+  const mark = await verifiedMark(secrets.SPIKE_HMAC_KEY, SAMPLE_UID, SAMPLE_MESSAGE_ID);
+  return signMintWasm(secp, secrets.SPIKE_MINTER_KEY, PLACEHOLDER_ADDRESS, mark, 0);
 }
 
 function hexBytes(hex: Hex): Uint8Array<ArrayBuffer> {
