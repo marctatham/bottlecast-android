@@ -5,16 +5,15 @@ import {
   encodeFunctionData,
   hashMessage,
   recoverMessageAddress,
-  serializeTransaction,
   toHex,
   type Address,
   type Hex,
-  type TransactionSerializableEIP1559,
 } from "viem";
 import { privateKeyToAccount, publicKeyToAddress } from "viem/accounts";
 import { parseSiweMessage, validateSiweMessage } from "viem/siwe";
 import { keccak_256 } from "@noble/hashes/sha3";
 import { importJWK, importPKCS8, jwtVerify, SignJWT, type JWK } from "jose";
+import { encodeMintCall, serializeEip1559, type Eip1559Transaction } from "./mint-tx.ts";
 import type { Secp256k1Wasm } from "./secp256k1-wasm.ts";
 
 export const BASE_SEPOLIA = 84532;
@@ -173,14 +172,15 @@ export async function signServiceAccountJwt(pkcs8Base64: string, clientEmail: st
 }
 
 // The same steps with secp256k1 as WebAssembly (src/secp256k1-wasm.ts) in
-// place of noble. viem still encodes the call and serialises the transaction;
-// only the curve maths moves. The caller passes the signer in, because the
-// Worker and the local bench compile its module differently.
+// place of noble, and the mint encoded by hand (src/mint-tx.ts) in place of
+// viem's encoder. The caller passes the signer in, because the Worker and the
+// local bench compile its module differently.
 
 /**
- * `signMint` with the WebAssembly signer. The recipient is given, as slice 6's
- * claim will give the finder's wallet, so no public key is derived from the
- * minter key. Given the minter's own address it returns `signMint`'s bytes.
+ * `signMint` with the WebAssembly signer and the hand encoding. The recipient
+ * is given, as slice 6's claim will give the finder's wallet, so no public key
+ * is derived from the minter key. Given the minter's own address it returns
+ * `signMint`'s bytes.
  */
 export function signMintWasm(
   secp: Secp256k1Wasm,
@@ -189,28 +189,28 @@ export function signMintWasm(
   writerMark: Hex,
   nonce: number,
 ): Hex {
-  const transaction: TransactionSerializableEIP1559 = {
+  const transaction: Eip1559Transaction = {
     chainId: BASE_SEPOLIA,
-    type: "eip1559",
-    to: PLACEHOLDER_ADDRESS,
-    data: encodeFunctionData({
-      abi: mintAbi,
-      functionName: "mint",
-      args: [recipient, SAMPLE_MESSAGE_ID, SAMPLE_TEXT, SAMPLE_CAST_AT, SAMPLE_PEN_NAME, writerMark],
-    }),
     nonce,
-    gas: 400_000n,
-    maxFeePerGas: 1_200_000n,
     maxPriorityFeePerGas: 1_000_000n,
+    maxFeePerGas: 1_200_000n,
+    gas: 400_000n,
+    to: hexBytes(PLACEHOLDER_ADDRESS),
     value: 0n,
+    data: encodeMintCall({
+      to: hexBytes(recipient),
+      messageId: SAMPLE_MESSAGE_ID,
+      text: SAMPLE_TEXT,
+      castAt: SAMPLE_CAST_AT,
+      penName: SAMPLE_PEN_NAME,
+      writerMark: hexBytes(writerMark),
+    }),
   };
-  const hash = keccak_256(hexBytes(serializeTransaction(transaction)));
+  const hash = keccak_256(serializeEip1559(transaction));
   const { signature, recoveryId } = secp.signRecoverable(hash, hexBytes(minterKey));
-  return serializeTransaction(transaction, {
-    r: toHex(signature.subarray(0, 32)),
-    s: toHex(signature.subarray(32)),
-    yParity: recoveryId,
-  });
+  return toHex(
+    serializeEip1559(transaction, { yParity: recoveryId, r: signature.subarray(0, 32), s: signature.subarray(32) }),
+  );
 }
 
 /** `verifySiwe` with the WebAssembly signer recovering the key. */

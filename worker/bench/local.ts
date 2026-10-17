@@ -8,7 +8,7 @@ import { strict as assert } from "node:assert";
 import { readFileSync } from "node:fs";
 import { performance } from "node:perf_hooks";
 import type { JWK } from "jose";
-import type { Hex } from "viem";
+import { encodeFunctionData, hexToBytes, parseAbi, serializeTransaction, toHex, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import {
   cronMint,
@@ -31,6 +31,7 @@ import {
   verifySiweWasm,
   type SpikeSecrets,
 } from "../src/ops.ts";
+import { encodeMintCall, serializeEip1559 } from "../src/mint-tx.ts";
 import { instantiateSecp256k1 } from "../src/secp256k1-wasm.ts";
 import { idToken, makeKeys, siweBody } from "./fixtures.ts";
 
@@ -90,7 +91,39 @@ const otherR = `${siwe.signature.slice(0, 10)}${siwe.signature[10] === "0" ? "1"
 assert.throws(() => verifySiweWasm(secp, siwe.message, otherR, siwe.nonce));
 assert.throws(() => verifySiweWasm(secp, siwe.message, withV(v === 27 ? 28 : 27), siwe.nonce));
 assert.throws(() => verifySiweWasm(secp, siwe.message, withV(29), siwe.nonce));
-console.log("The WebAssembly signer matches noble: 21 mints byte for byte, and the SIWE signer\n");
+console.log("The WebAssembly signer matches noble: 21 mints byte for byte, and the SIWE signer");
+
+// The hand encoding against viem's, past the sample bottle: empty and
+// word-boundary strings, uint64's ends, nonces either side of RLP's one-byte
+// and length-prefix limits, and signatures whose r or s starts with zeros.
+const mintAbi = parseAbi([
+  "function mint(address to, string messageId, string text, uint64 castAt, string penName, bytes32 writerMark)",
+]);
+const mintCalls = [
+  { messageId: "", text: "", penName: "", castAt: 0n },
+  { messageId: "a".repeat(32), text: "b".repeat(33), penName: "c".repeat(31), castAt: 2n ** 64n - 1n },
+  { messageId: SAMPLE_MESSAGE_ID, text: "🌊".repeat(70), penName: "Driftwood", castAt: 1_791_763_200n },
+];
+for (const call of mintCalls) {
+  const args = [wallet, call.messageId, call.text, call.castAt, call.penName, markHex] as const;
+  const viem = encodeFunctionData({ abi: mintAbi, functionName: "mint", args: [...args] });
+  const hand = toHex(encodeMintCall({ ...call, to: hexToBytes(wallet), writerMark: hexToBytes(markHex) }));
+  assert.equal(hand, viem);
+  for (const nonce of [0, 1, 127, 128, 255, 256, 65_535, 16_777_216]) {
+    const fields = { chainId: 84532, nonce, maxPriorityFeePerGas: 1n, maxFeePerGas: 10n ** 12n, gas: 400_000n, value: 0n };
+    const viemTx = { ...fields, type: "eip1559", to: wallet, data: viem } as const;
+    const handTx = { ...fields, to: hexToBytes(wallet), data: hexToBytes(viem) };
+    assert.equal(toHex(serializeEip1559(handTx)), serializeTransaction(viemTx));
+    for (const [r, s, yParity] of [
+      [`0x00${"ab".repeat(31)}`, `0x0000${"cd".repeat(30)}`, 0],
+      [`0x${"7f".repeat(32)}`, `0x00${"01".repeat(31)}`, 1],
+    ] as const) {
+      const signed = toHex(serializeEip1559(handTx, { yParity, r: hexToBytes(r), s: hexToBytes(s) }));
+      assert.equal(signed, serializeTransaction(viemTx, { r, s, yParity }));
+    }
+  }
+}
+console.log("The hand encoding matches viem: 3 calls, 24 transactions, 48 signed\n");
 
 const ops: Record<string, Op> = {
   hmac: mark,
