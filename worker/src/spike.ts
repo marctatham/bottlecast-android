@@ -21,15 +21,16 @@ import {
   type SpikeSecrets,
 } from "./ops.ts";
 
-interface SpikeEnv extends SpikeSecrets {
+export interface SpikeEnv extends SpikeSecrets {
   SPIKE_KEY: string;
 }
 
 const BASE_SEPOLIA_RPC = "https://sepolia.base.org";
 
-type Body = { idToken?: string; message?: string; signature?: Hex; nonce?: string };
+export type Body = { idToken?: string; message?: string; signature?: Hex; nonce?: string };
+export type Route = (env: SpikeEnv, body: Body) => Promise<unknown>;
 
-const routes: Record<string, (env: SpikeEnv, body: Body) => Promise<unknown>> = {
+export const routes: Record<string, Route> = {
   "/bench/noop": async () => "ok",
 
   "/bench/sign": async (env) => (await signMint(env.SPIKE_MINTER_KEY, await fixedMark(env), 0)).slice(0, 10),
@@ -99,25 +100,33 @@ function idJwk(env: SpikeEnv): JWK {
   return JSON.parse(env.SPIKE_ID_JWK) as JWK;
 }
 
-function fixedMark(env: SpikeEnv): Promise<Hex> {
+export function fixedMark(env: SpikeEnv): Promise<Hex> {
   return verifiedMark(env.SPIKE_HMAC_KEY, SAMPLE_UID, SAMPLE_MESSAGE_ID);
 }
 
-export default {
-  async fetch(request, env): Promise<Response> {
-    if (request.headers.get("X-Spike-Key") !== env.SPIKE_KEY) return new Response(null, { status: 404 });
-    const route = routes[new URL(request.url).pathname];
-    if (!route) return new Response(null, { status: 404 });
-    try {
-      const body = request.method === "POST" ? ((await request.json()) as Body) : {};
-      return Response.json({ result: await route(env, body) });
-    } catch (error) {
-      return Response.json({ error: String(error) }, { status: 400 });
-    }
-  },
+/** The spike Worker: a route table, and the mint its cron signs. */
+export function serve(
+  table: Record<string, Route>,
+  cron: (env: SpikeEnv) => Promise<Hex>,
+): ExportedHandler<SpikeEnv> {
+  return {
+    async fetch(request, env): Promise<Response> {
+      if (request.headers.get("X-Spike-Key") !== env.SPIKE_KEY) return new Response(null, { status: 404 });
+      const route = table[new URL(request.url).pathname];
+      if (!route) return new Response(null, { status: 404 });
+      try {
+        const body = request.method === "POST" ? ((await request.json()) as Body) : {};
+        return Response.json({ result: await route(env, body) });
+      } catch (error) {
+        return Response.json({ error: String(error) }, { status: 400 });
+      }
+    },
 
-  async scheduled(_controller, env): Promise<void> {
-    const signed = await cronMint(env);
-    console.log(`cron mint signed ${signed.length / 2 - 1} bytes`);
-  },
-} satisfies ExportedHandler<SpikeEnv>;
+    async scheduled(_controller, env): Promise<void> {
+      const signed = await cron(env);
+      console.log(`cron mint signed ${signed.length / 2 - 1} bytes`);
+    },
+  };
+}
+
+export default serve(routes, cronMint);

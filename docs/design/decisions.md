@@ -393,3 +393,36 @@ Slice 5's answers, which slice 6 builds on. The spike is in `worker/`, and its R
 - **Cloudflare:** the owner's own account. Wrangler registered the account's workers.dev subdomain by itself on the first deploy (it can be renamed in the dashboard). The spike Workers were deleted once measured.
 
   *Changes spec: nothing.*
+
+## 2026-10-17 — Slice 5 follow-up: cold isolates on the Free plan
+
+Owner's raw answers (2026-10-17): the minter "WebAssembly signer, self-held", over Coinbase's CDP Server Wallet and Workers Paid; after the first round missed, "One more round on Free"; then "I don't want a paid solution".
+
+- **Free only.** The owner rules out Workers Paid, which replaces the 2026-10-16 fallback. Slice 6 has to fit the Free plan's 10 ms of CPU per invocation.
+- **Expect cold isolates.** With BottleCast's traffic nearly every mint and link lands on a fresh isolate, and every cron run does. A keep-warm ping can't help, because isolates belong to one data centre and Cloudflare evicts them when it likes. So the cold figures are the ones that count. Running over on most of them is running over "consistently", which Cloudflare's limits page says ends in 1102.
+- **It fits, with secp256k1 as WebAssembly and a warm-up at startup.** These were measured on the Free plan in Madrid, from Workers Logs' `cpuTimeMs` (whole milliseconds), with throwaway keys and nothing broadcast. Each cold figure is the first or second request after a redeploy. The noble row is slice 5's, measured the day before with `wrangler tail`, so it isn't a same-day control:
+
+  | Variant | Cold mint (ms) | Cold link (ms) | Cron mint (ms) | Startup (ms) |
+  |---|---|---|---|---|
+  | noble, warmed up once (2026-10-16) | 3–10 | 4–7 | 4–16 | 37–60 |
+  | WebAssembly signer, first called in the request | 6–13 | 7–19 | 4–14 | 18–41 |
+  | the signer seeded and warmed up once | 5–18, median 6 | 5–9 | 3–5 (4 runs) | 23–37 |
+  | the mint encoded by hand, every step warmed up once | 1–7, median 3 | 4–9, median 5 | 3–5 | 24–56 |
+  | every step warmed up 30 times | 1–6, median 2 | 1–5, median 3 | 1–3 (11 runs) | 60–124 |
+
+  Warm, a mint and a link each cost 1 ms (median).
+- **What each step fixed:**
+  - libsecp256k1 compiled to WebAssembly (`tiny-secp256k1` 2.2.4) signs in about 1 ms on its first call in Node, where noble pays 20–40 ms building its tables in JavaScript that V8 hasn't optimised yet. It gives noble's signatures byte for byte.
+  - Its first call still cost about 4–5 ms in a request, probably because V8 compiles each WebAssembly function when it's first called. So the Worker signs and recovers once at module scope. libsecp256k1 seeds its side-channel blinding from random numbers on that first call, and Workers allows none at module scope, so the seed comes from a secret.
+  - What remained was ordinary JavaScript that V8 hadn't optimised: `jose`'s ID-token check, viem's encoder and SIWE parser (about 3 ms each), and keccak (about 2 ms a mint). The mint is now encoded by hand, since it's one call in one transaction type. Every step of a mint, a link and a cron mint runs 30 times at startup, so V8 has optimised it by the first request.
+- **Slice 6 builds on this:**
+  - the WebAssembly signer, with its blinding seed in a Worker secret of its own;
+  - the hand-encoded mint (`worker/src/mint-tx.ts`), tested against viem's bytes;
+  - a startup warm-up of every hot path, 30 rounds, which adds about 40 ms of startup (the limit is 1 s);
+  - the 2026-10-16 proposals, which still stand: the Firestore token signed once an hour, one batched chain read, and one claim per invocation;
+  - a new measurement of the real invocations, because Firestore REST and the Firebase JWKS add work this spike didn't have. The 30 rounds lean on V8's tiering, which a workerd update could change, so slice 6's verification measures a cold invocation too.
+
+  In reserve, if those run over: keccak as WebAssembly too, and checking the SIWE signature on-chain with an `eth_call` (free), which leaves `/wallet/link` no curve maths or keccak at all.
+- **Measuring:** the network used blocked `wrangler tail`'s host, so the figures came from Workers Logs, read in the dashboard (`worker/README.md`). Workers Logs missed 10–20% of events, so a few cold samples per variant are missing.
+
+  *Changes spec: nothing.*
